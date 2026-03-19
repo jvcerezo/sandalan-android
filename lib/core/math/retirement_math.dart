@@ -87,8 +87,8 @@ RetirementProjection projectRetirement({
   final msc = math.min(
       30000.0, math.max(4000.0, (monthlySalary / 500).round() * 500.0));
   final totalCYS =
-      contributionYears + math.max(0, retirementAge - currentAge);
-  final sssPension = estimateSSSPension(msc, math.min(totalCYS, 40));
+      contributionYears + math.max<int>(0, retirementAge - currentAge);
+  final sssPension = estimateSSSPension(msc, math.min<int>(totalCYS, 40));
 
   final monthlyGap =
       math.max(0.0, desiredMonthlyIncome - sssPension.monthlyPension);

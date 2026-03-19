@@ -1,25 +1,84 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../shared/widgets/brand_mark.dart';
+import '../providers/auth_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _error;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleEmailSignIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Please fill in all fields.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await ref.read(authRepositoryProvider).signInWithEmail(
+        email: email,
+        password: password,
+      );
+      if (mounted) context.go('/home');
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = _parseAuthError(e);
+      });
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await ref.read(authRepositoryProvider).signInWithGoogle();
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Google sign-in failed. Please try again.';
+      });
+    }
+  }
+
+  String _parseAuthError(dynamic e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('invalid') || msg.contains('400')) {
+      return 'Invalid email or password.';
+    }
+    if (msg.contains('429') || msg.contains('rate')) {
+      return 'Too many attempts. Please try again later.';
+    }
+    return 'Sign in failed. Please try again.';
   }
 
   @override
@@ -36,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 48),
               const Center(child: BrandMark(size: 48)),
               const SizedBox(height: 32),
+
               const Text('Welcome back',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center),
@@ -47,39 +107,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Google Sign-In
               OutlinedButton.icon(
-                onPressed: () {
-                  // TODO: Google OAuth (Phase 1)
-                },
+                onPressed: _isLoading ? null : _handleGoogleSignIn,
                 icon: const Icon(LucideIcons.chrome, size: 18),
                 label: const Text('Continue with Google'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Divider
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or continue with email',
-                        style: TextStyle(
-                            fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('or continue with email',
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                ),
+                const Expanded(child: Divider()),
+              ]),
               const SizedBox(height: 16),
+
+              // Error
+              if (_error != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error.withValues(alpha: 0.05),
+                    border: Border.all(color: colorScheme.error.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(_error!, style: TextStyle(fontSize: 13, color: colorScheme.error)),
+                ),
 
               // Email
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Email'),
               ),
               const SizedBox(height: 12),
@@ -88,14 +155,16 @@ class _LoginScreenState extends State<LoginScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleEmailSignIn(),
                 decoration: InputDecoration(
                   labelText: 'Password',
                   suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword
-                        ? LucideIcons.eye
-                        : LucideIcons.eyeOff, size: 18),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
+                    icon: Icon(
+                      _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
+                      size: 18,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
               ),
@@ -103,43 +172,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Submit
               FilledButton(
-                onPressed: _isLoading ? null : () {
-                  // TODO: Email sign-in (Phase 1)
-                },
+                onPressed: _isLoading ? null : _handleEmailSignIn,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: _isLoading
                     ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
+                        height: 18, width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text('Sign In'),
               ),
               const SizedBox(height: 16),
 
               // Sign up link
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Don't have an account? ",
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text("Don't have an account? ",
+                    style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                GestureDetector(
+                  onTap: () => context.go('/signup'),
+                  child: Text('Create one',
                       style: TextStyle(
-                          fontSize: 13, color: colorScheme.onSurfaceVariant)),
-                  GestureDetector(
-                    onTap: () {
-                      // TODO: Navigate to signup
-                    },
-                    child: Text('Create one',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary)),
-                  ),
-                ],
-              ),
+                          fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                ),
+              ]),
             ],
           ),
         ),

@@ -1,8 +1,6 @@
-/// Application routing configuration using go_router.
-/// Mirrors the Next.js app router structure.
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/widgets/app_scaffold.dart';
 import '../../features/home/screens/home_screen.dart';
@@ -18,13 +16,33 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 
-// Shell route keys
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
+  redirect: (context, state) {
+    final session = Supabase.instance.client.auth.currentSession;
+    final isLoggedIn = session != null;
+    final isAuthRoute = state.uri.path == '/login' || state.uri.path == '/signup';
+    final isOnboarding = state.uri.path == '/onboarding';
+
+    // Not logged in -> redirect to login (unless already on auth route)
+    if (!isLoggedIn && !isAuthRoute) {
+      return '/login';
+    }
+
+    // Logged in on auth route -> redirect to home
+    if (isLoggedIn && isAuthRoute) {
+      return '/home';
+    }
+
+    // Logged in but not onboarded -> redirect to onboarding
+    // (onboarding check is handled inside onboarding screen itself)
+
+    return null;
+  },
   routes: [
     // ─── Auth routes (no bottom nav) ──────────────────────────────────
     GoRoute(
@@ -45,23 +63,18 @@ final appRouter = GoRouter(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => AppScaffold(child: child),
       routes: [
-        // Home tab
         GoRoute(
           path: '/home',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: HomeScreen(),
           ),
         ),
-
-        // Guide tab
         GoRoute(
           path: '/guide',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: GuideScreen(),
           ),
         ),
-
-        // Money group
         GoRoute(
           path: '/dashboard',
           pageBuilder: (context, state) => const NoTransitionPage(
@@ -92,16 +105,12 @@ final appRouter = GoRouter(
             child: GoalsScreen(),
           ),
         ),
-
-        // Tools tab
         GoRoute(
           path: '/tools',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: ToolsHubScreen(),
           ),
         ),
-
-        // Settings tab
         GoRoute(
           path: '/settings',
           pageBuilder: (context, state) => const NoTransitionPage(
@@ -111,5 +120,4 @@ final appRouter = GoRouter(
       ],
     ),
   ],
-  // TODO: Add redirect logic for auth guard once auth is implemented
 );
