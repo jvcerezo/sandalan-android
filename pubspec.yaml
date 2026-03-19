@@ -1,0 +1,90 @@
+name: sandalan
+description: Sandalan — Your Filipino adulting guide and personal finance tracker.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.7.0
+  flutter: ">=3.29.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Backend
+  supabase_flutter: ^2.8.4
+
+  # Navigation
+  go_router: ^14.8.1
+
+  # Offline storage
+  drift: ^2.25.0
+  sqlite3_flutter_libs: ^0.5.30
+
+  # Data classes
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Charts
+  fl_chart: ^0.70.2
+
+  # Animations
+  flutter_animate: ^4.5.2
+
+  # Auth
+  google_sign_in: ^6.2.2
+
+  # Connectivity
+  connectivity_plus: ^6.1.4
+
+  # Local storage
+  shared_preferences: ^2.5.3
+  path_provider: ^2.1.5
+
+  # i18n
+  intl: ^0.20.2
+
+  # Icons
+  lucide_icons: ^0.257.0
+
+  # File handling
+  image_picker: ^1.1.2
+  file_picker: ^8.1.7
+  csv: ^6.0.0
+
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # Environment
+  envied: ^1.1.1
+
+  # URL
+  url_launcher: ^6.3.1
+
+  # Image caching
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.15
+  freezed: ^2.5.8
+  json_serializable: ^6.9.4
+  riverpod_generator: ^2.6.3
+  drift_dev: ^2.25.0
+  envied_generator: ^1.1.1
+
+flutter:
+  uses-material-design: true
+
+  generate: true
+
+  assets:
+    - assets/images/
