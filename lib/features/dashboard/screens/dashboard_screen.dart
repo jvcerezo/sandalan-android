@@ -197,7 +197,7 @@ class _TrendsTab extends StatelessWidget {
     return Column(children: [
       _SectionLabel('TREND VIEWS'),
       const SizedBox(height: 8),
-      // Sub-tabs
+      // Sub-tabs — use Material InkWell for reliable tapping
       Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
@@ -205,95 +205,130 @@ class _TrendsTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(children: List.generate(_views.length, (i) => Expanded(
-          child: GestureDetector(
-            onTap: () => onTrendViewChanged(i),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: trendView == i ? colorScheme.surface : Colors.transparent,
-                borderRadius: BorderRadius.circular(7),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onTrendViewChanged(i);
+              },
+              borderRadius: BorderRadius.circular(7),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: trendView == i ? colorScheme.surface : Colors.transparent,
+                  borderRadius: BorderRadius.circular(7),
+                  boxShadow: trendView == i ? [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                  ] : null,
+                ),
+                child: Center(child: Text(_views[i],
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        color: trendView == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
               ),
-              child: Center(child: Text(_views[i],
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                      color: trendView == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
             ),
           ),
         ))),
       ),
       const SizedBox(height: 12),
 
-      // Spending by Category (donut chart + legend)
-      _OverviewCard(
-        child: transactions.when(
-          data: (txns) {
-            final expenses = txns.where((t) => t.amount < 0 && t.category.toLowerCase() != 'transfer').toList();
-            if (expenses.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: Text('No spending data yet', style: TextStyle(fontSize: 13))),
-              );
-            }
-
-            // Group by category
-            final categoryTotals = <String, double>{};
-            for (final t in expenses) {
-              categoryTotals[t.category] = (categoryTotals[t.category] ?? 0) + t.amount.abs();
-            }
-            final sorted = categoryTotals.entries.toList()
-              ..sort((a, b) => b.value.compareTo(a.value));
-            final total = sorted.fold(0.0, (s, e) => s + e.value);
-
-            final colors = [
-              const Color(0xFFEF4444), const Color(0xFFF97316), const Color(0xFFEAB308),
-              const Color(0xFF22C55E), const Color(0xFF3B82F6), const Color(0xFF8B5CF6),
-              const Color(0xFFEC4899), const Color(0xFF14B8A6),
-            ];
-
-            return Column(children: [
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Spending by Category',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(height: 16),
-              // Donut chart
-              SizedBox(
-                height: 180,
-                child: CustomPaint(
-                  size: const Size(180, 180),
-                  painter: _DonutChartPainter(
-                    values: sorted.map((e) => e.value).toList(),
-                    colors: List.generate(sorted.length, (i) => colors[i % colors.length]),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Legend
-              ...sorted.asMap().entries.map((entry) {
-                final i = entry.key;
-                final e = entry.value;
-                final pct = (e.value / total * 100).toStringAsFixed(1);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Row(children: [
-                    Container(width: 10, height: 10,
-                        decoration: BoxDecoration(color: colors[i % colors.length], shape: BoxShape.circle)),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      Text(formatCurrency(e.value), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      Text('$pct%', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                    ]),
-                  ]),
-                );
-              }),
-            ]);
-          },
-          loading: () => const ShimmerCard(height: 200),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
-      ),
+      // View content based on selected trend view
+      if (trendView == 0) _buildSpendingView(context, transactions),
+      if (trendView == 1) _buildMonthlyView(context, transactions),
+      if (trendView == 2) _buildNetWorthView(context),
+      if (trendView == 3) _buildCompareView(context),
     ]);
+  }
+
+  Widget _buildSpendingView(BuildContext context, AsyncValue<List<Transaction>> transactions) {
+    final chartColors = [
+      const Color(0xFFEF4444), const Color(0xFFF97316), const Color(0xFFEAB308),
+      const Color(0xFF22C55E), const Color(0xFF3B82F6), const Color(0xFF8B5CF6),
+      const Color(0xFFEC4899), const Color(0xFF14B8A6),
+    ];
+
+    return _OverviewCard(
+      child: transactions.when(
+        data: (txns) {
+          final expenses = txns.where((t) => t.amount < 0 && t.category.toLowerCase() != 'transfer').toList();
+          if (expenses.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: Text('No spending data yet', style: TextStyle(fontSize: 13))),
+            );
+          }
+          final categoryTotals = <String, double>{};
+          for (final t in expenses) {
+            categoryTotals[t.category] = (categoryTotals[t.category] ?? 0) + t.amount.abs();
+          }
+          final sorted = categoryTotals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+          final total = sorted.fold(0.0, (s, e) => s + e.value);
+
+          return Column(children: [
+            const Align(alignment: Alignment.centerLeft,
+                child: Text('Spending by Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+            const SizedBox(height: 16),
+            SizedBox(height: 180, child: CustomPaint(size: const Size(180, 180),
+                painter: _DonutChartPainter(
+                  values: sorted.map((e) => e.value).toList(),
+                  colors: List.generate(sorted.length, (i) => chartColors[i % chartColors.length])))),
+            const SizedBox(height: 16),
+            ...sorted.asMap().entries.map((entry) {
+              final i = entry.key; final e = entry.value;
+              final pct = (e.value / total * 100).toStringAsFixed(1);
+              return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(children: [
+                Container(width: 10, height: 10,
+                    decoration: BoxDecoration(color: chartColors[i % chartColors.length], shape: BoxShape.circle)),
+                const SizedBox(width: 8),
+                Expanded(child: Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text(formatCurrency(e.value), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text('$pct%', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                ]),
+              ]));
+            }),
+          ]);
+        },
+        loading: () => const ShimmerCard(height: 200),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyView(BuildContext context, AsyncValue<List<Transaction>> transactions) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return _OverviewCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Monthly Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        Text('Monthly income vs expenses trend coming soon.',
+            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+      ]),
+    );
+  }
+
+  Widget _buildNetWorthView(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return _OverviewCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Net Worth', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        Text('Net worth tracking over time coming soon.',
+            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+      ]),
+    );
+  }
+
+  Widget _buildCompareView(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return _OverviewCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Compare', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        Text('Month-to-month comparison coming soon.',
+            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+      ]),
+    );
   }
 }
 
