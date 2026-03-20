@@ -54,7 +54,7 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolRed,
             title: 'Debt Manager',
             subtitle: 'Loans & payoff strategies',
-            onTap: () {},
+            onTap: () => context.go('/tools/debts'),
           ),
           _ToolItem(
             icon: LucideIcons.receipt,
