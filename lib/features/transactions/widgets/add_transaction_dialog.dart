@@ -299,24 +299,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(children: [
-                    // First slot: static account display (no picker)
-                    // Other slots: account dropdown
-                    if (isFirst && acct != null)
-                      Row(children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                            borderRadius: BorderRadius.circular(8)),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Text(acct.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                            const SizedBox(width: 4),
-                            Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                          ]),
-                        ),
-                      ])
-                    else
-                      PopupMenuButton<String>(
+                    // Account dropdown (first slot pre-filled but still changeable)
+                    PopupMenuButton<String>(
                         onSelected: (id) => setState(() => entry.accountId = id),
                         itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
                           value: a.id,
