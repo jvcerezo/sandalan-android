@@ -5,9 +5,9 @@
 
 class SSSRate {
   static const double employee = 0.045;
-  static const double employer = 0.085;
-  static const double total = 0.13;
-  static const double minMsc = 3000;
+  static const double employer = 0.095;
+  static const double total = 0.14;
+  static const double minMsc = 4000;
   static const double maxMsc = 30000;
   static const double ecMin = 10;
   static const double ecMax = 30;
@@ -51,11 +51,11 @@ class TaxBracket {
 
 const List<TaxBracket> kTrainTaxBrackets = [
   TaxBracket(min: 0, max: 250000, base: 0, rate: 0),
-  TaxBracket(min: 250001, max: 400000, base: 0, rate: 0.15),
-  TaxBracket(min: 400001, max: 800000, base: 22500, rate: 0.20),
-  TaxBracket(min: 800001, max: 2000000, base: 102500, rate: 0.25),
-  TaxBracket(min: 2000001, max: 8000000, base: 402500, rate: 0.30),
-  TaxBracket(min: 8000001, max: double.infinity, base: 2202500, rate: 0.35),
+  TaxBracket(min: 250000, max: 400000, base: 0, rate: 0.15),
+  TaxBracket(min: 400000, max: 800000, base: 22500, rate: 0.20),
+  TaxBracket(min: 800000, max: 2000000, base: 102500, rate: 0.25),
+  TaxBracket(min: 2000000, max: 8000000, base: 402500, rate: 0.30),
+  TaxBracket(min: 8000000, max: double.infinity, base: 2202500, rate: 0.35),
 ];
 
 // ─── Employment Types ─────────────────────────────────────────────────────────

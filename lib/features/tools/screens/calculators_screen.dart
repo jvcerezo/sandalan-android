@@ -164,7 +164,7 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
     final months = years * 12;
 
     final futureValue = init * math.pow(1 + rate, months) +
-        monthly * (math.pow(1 + rate, months) - 1) / (rate > 0 ? rate : 1);
+        (rate > 0 ? monthly * (math.pow(1 + rate, months) - 1) / rate : monthly * months);
     final totalInvested = init + monthly * months;
     final interestEarned = futureValue - totalInvested;
     final multiplier = totalInvested > 0 ? (futureValue / totalInvested) : 0.0;
@@ -208,24 +208,32 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
     final expenses = double.tryParse(_fireExpCtl.text.replaceAll(',', '')) ?? 0;
     final savings = double.tryParse(_fireSavCtl.text.replaceAll(',', '')) ?? 0;
     final contrib = double.tryParse(_fireContribCtl.text.replaceAll(',', '')) ?? 0;
-    final returnRate = (double.tryParse(_fireReturnCtl.text) ?? 0) / 100;
-    final swr = (double.tryParse(_fireSWRCtl.text) ?? 4) / 100;
+    final returnRate = ((double.tryParse(_fireReturnCtl.text) ?? 0) / 100).clamp(0.0, 0.50);
+    final swr = ((double.tryParse(_fireSWRCtl.text) ?? 4) / 100).clamp(0.01, 0.10);
 
     final fireNumber = swr > 0 ? (expenses * 12 / swr) : 0.0;
 
     // Years to FIRE
     int yearsToFire = 0;
     int monthsToFire = 0;
-    if (fireNumber > savings && contrib > 0 && returnRate > 0) {
-      double balance = savings;
-      final monthlyReturn = returnRate / 12;
-      int totalMonths = 0;
-      while (balance < fireNumber && totalMonths < 600) {
-        balance = balance * (1 + monthlyReturn) + contrib;
-        totalMonths++;
+    if (fireNumber > savings && contrib > 0) {
+      if (returnRate > 0) {
+        double balance = savings;
+        final monthlyReturn = returnRate / 12;
+        int totalMonths = 0;
+        while (balance < fireNumber && totalMonths < 600) {
+          balance = balance * (1 + monthlyReturn) + contrib;
+          totalMonths++;
+        }
+        yearsToFire = totalMonths ~/ 12;
+        monthsToFire = totalMonths % 12;
+      } else {
+        // 0% return: simple linear calculation
+        final remaining = fireNumber - savings;
+        final totalMonths = (remaining / contrib).ceil().clamp(0, 600);
+        yearsToFire = totalMonths ~/ 12;
+        monthsToFire = totalMonths % 12;
       }
-      yearsToFire = totalMonths ~/ 12;
-      monthsToFire = totalMonths % 12;
     }
 
     return _Card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
