@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/theme/theme_color.dart';
 import '../../../core/constants/currencies.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
@@ -223,6 +224,7 @@ class _AppearanceSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final themeMode = ref.watch(themeModeProvider);
+    final selectedColor = ref.watch(themeColorProvider);
 
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
       back,
@@ -246,6 +248,21 @@ class _AppearanceSection extends StatelessWidget {
       ])),
       const SizedBox(height: 12),
       _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Accent Color', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Choose a primary color for buttons, links, and highlights',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        Wrap(spacing: 12, runSpacing: 12, children: [
+          for (final color in ThemeColor.values)
+            _ColorDot(
+              color: color,
+              selected: selectedColor == color,
+              onTap: () => ref.read(themeColorProvider.notifier).setColor(color),
+            ),
+        ]),
+      ])),
+      const SizedBox(height: 12),
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Language / Wika', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         Text('Choose your preferred language', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         const SizedBox(height: 10),
@@ -256,6 +273,45 @@ class _AppearanceSection extends StatelessWidget {
         ]),
       ])),
     ]);
+  }
+}
+
+class _ColorDot extends StatelessWidget {
+  final ThemeColor color;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ColorDot({required this.color, required this.selected, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayColor = isDark ? color.darkColor : color.lightColor;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: displayColor,
+            shape: BoxShape.circle,
+            border: selected
+                ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2.5)
+                : Border.all(color: displayColor.withValues(alpha: 0.3), width: 1.5),
+            boxShadow: selected
+                ? [BoxShadow(color: displayColor.withValues(alpha: 0.35), blurRadius: 8, spreadRadius: 1)]
+                : null,
+          ),
+          child: selected
+              ? const Icon(Icons.check, color: Colors.white, size: 20)
+              : null,
+        ),
+        const SizedBox(height: 4),
+        Text(color.label, style: TextStyle(fontSize: 10,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      ]),
+    );
   }
 }
 

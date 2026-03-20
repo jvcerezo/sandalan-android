@@ -81,27 +81,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: summary.when(
-                data: (s) {
-                  final netWorth = s.income - s.expenses;
-                  return _OverviewCard(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text('NET WORTH',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                                letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                        Icon(LucideIcons.trendingUp, size: 18, color: AppColors.income),
-                      ]),
-                      const SizedBox(height: 12),
-                      AnimatedCurrency(value: totalBalance + netWorth,
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
-                              color: (totalBalance + netWorth) >= 0 ? AppColors.income : AppColors.expense)),
+              child: Builder(builder: (_) {
+                // Net worth = total assets (accounts) - total liabilities (debts)
+                final debtSummary = ref.watch(debtSummaryProvider);
+                final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
+                final netWorth = totalBalance - totalDebt;
+                return _OverviewCard(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('NET WORTH',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                              letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                      Icon(netWorth >= 0 ? LucideIcons.trendingUp : LucideIcons.trendingDown,
+                          size: 18, color: netWorth >= 0 ? AppColors.income : AppColors.expense),
                     ]),
-                  );
-                },
-                loading: () => const _OverviewCard(child: ShimmerLoading(height: 48)),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
+                    const SizedBox(height: 12),
+                    AnimatedCurrency(value: netWorth,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
+                            color: netWorth >= 0 ? AppColors.income : AppColors.expense)),
+                  ]),
+                );
+              }),
             ),
           ]),
           const SizedBox(height: 12),

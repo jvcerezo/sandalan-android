@@ -82,6 +82,14 @@ dev_dependencies:
   riverpod_generator: ^2.6.3
   drift_dev: ^2.25.0
   envied_generator: ^1.1.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/app-icon-1024.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/app-icon-1024.png"
 
 flutter:
   uses-material-design: true

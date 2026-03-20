@@ -1,17 +1,20 @@
 /// Material 3 theme configuration matching Sandalan web app.
-/// Uses neutral base with muted green primary (oklch(0.55 0.14 155)).
+/// Uses neutral base with configurable primary color.
 
 import 'package:flutter/material.dart';
+import 'theme_color.dart';
 
 class AppTheme {
-  // Web app primary green: oklch(0.55 0.14 155) ≈ #2D8B5E
-  static const _primaryColor = Color(0xFF2D8B5E);
+  // Default primary green: oklch(0.55 0.14 155) ≈ #2D8B5E
+  static const _defaultPrimaryColor = Color(0xFF2D8B5E);
 
-  static ThemeData light() {
+  static ThemeData light([ThemeColor? themeColor]) {
+    final primaryColor = themeColor?.lightColor ?? _defaultPrimaryColor;
+
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _primaryColor,
+      seedColor: primaryColor,
       brightness: Brightness.light,
-      primary: _primaryColor,
+      primary: primaryColor,
       onPrimary: const Color(0xFFF8FAF9),
       surface: const Color(0xFFFBFDFC),
       onSurface: const Color(0xFF1A2E23),
@@ -59,7 +62,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: _primaryColor, width: 1.5),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -67,7 +70,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: _primaryColor,
+          backgroundColor: primaryColor,
           foregroundColor: const Color(0xFFF8FAF9),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -83,7 +86,7 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: _primaryColor,
+        selectedItemColor: primaryColor,
         unselectedItemColor: const Color(0xFFA3A3A3),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -105,22 +108,8 @@ class AppTheme {
     );
   }
 
-  static ThemeData dark() {
-    // ── Web dark-mode palette (oklch values from globals.css) ──
-    // --background:         oklch(0.14 0.015 160) ≈ #0A1410
-    // --foreground:         oklch(0.97 0.005 155) ≈ #F3F6F4
-    // --card:               oklch(0.19 0.015 160) ≈ #111A15
-    // --popover:            oklch(0.22 0.015 160) ≈ #151D18
-    // --primary:            oklch(0.65 0.16  155) ≈ #3DB676 (gamut-mapped)
-    // --primary-foreground: oklch(0.12 0.02  160) ≈ #040E08
-    // --secondary/muted:    oklch(0.24 0.02  160) ≈ #17221C
-    // --muted-foreground:   oklch(0.65 0.015 155) ≈ #8A948D
-    // --accent:             oklch(0.30 0.03  155) ≈ #223227
-    // --destructive:        oklch(0.704 0.191 22)  ≈ #FF6467
-    // --border:             oklch(1 0 0 / 10%)     = white @ 10%
-    // --input:              oklch(1 0 0 / 15%)     = white @ 15%
-
-    const darkPrimary = Color(0xFF3DB676);
+  static ThemeData dark([ThemeColor? themeColor]) {
+    final darkPrimary = themeColor?.darkColor ?? const Color(0xFF3DB676);
 
     // Web CSS variable -> Flutter ColorScheme mapping
     const background    = Color(0xFF0A1410); // --background
