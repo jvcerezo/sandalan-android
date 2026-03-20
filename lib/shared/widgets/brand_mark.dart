@@ -16,14 +16,19 @@ class BrandMark extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? const Color(0xFFF0F4F2) : const Color(0xFF14213D);
 
+    // Dark mode: use version with white bg (dark house visible on white).
+    // Light mode: use transparent bg version (dark house visible on light surface).
+    final svgAsset = isDark
+        ? 'assets/images/app-icon.svg'
+        : 'assets/images/app-icon-nobg.svg';
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Logo icon (bahay kubo SVG — includes its own white bg with rounded corners)
         ClipRRect(
           borderRadius: BorderRadius.circular(size * 0.22),
           child: SvgPicture.asset(
-            'assets/images/app-icon.svg',
+            svgAsset,
             width: size,
             height: size,
           ),
