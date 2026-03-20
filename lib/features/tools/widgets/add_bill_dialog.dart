@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/tool_providers.dart';
@@ -39,10 +40,14 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
   final _amountCtl = TextEditingController();
   final _providerCtl = TextEditingController();
   final _dueDayCtl = TextEditingController();
+  final _customCategoryCtl = TextEditingController();
   String _category = 'electricity';
   String _billingCycle = 'monthly';
   String? _accountId;
   bool _saving = false;
+  String? _customCategoryError;
+
+  static const _builtInCategoryKeys = ['electricity', 'water', 'internet', 'mobile', 'rent', 'association_dues', 'streaming'];
 
   static const _categories = {
     'electricity': 'Electricity',
@@ -61,17 +66,42 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
     'annual': 'Annual',
   };
 
+  void _validateCustomCategory(String value) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.isEmpty) {
+      setState(() => _customCategoryError = null);
+      return;
+    }
+    final builtInLabels = _categories.values.map((v) => v.toLowerCase()).toList();
+    if (builtInLabels.any((l) => l == trimmed)) {
+      setState(() => _customCategoryError = 'This category already exists \u2014 select it above');
+      return;
+    }
+    setState(() => _customCategoryError = null);
+  }
+
+  bool get _hasCustomCategoryError => _category == 'other' && _customCategoryError != null;
+
+  String get _effectiveCategory {
+    if (_category == 'other') {
+      final custom = InputSanitizer.sanitize(_customCategoryCtl.text);
+      return custom.isNotEmpty ? custom : 'other';
+    }
+    return _category;
+  }
+
   @override
   void dispose() {
     _nameCtl.dispose();
     _amountCtl.dispose();
     _providerCtl.dispose();
     _dueDayCtl.dispose();
+    _customCategoryCtl.dispose();
     super.dispose();
   }
 
   Future<void> _handleSave() async {
-    final name = _nameCtl.text.trim();
+    final name = InputSanitizer.sanitize(_nameCtl.text);
     if (name.isEmpty) {
       _showError('Name is required');
       return;
@@ -89,13 +119,14 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
 
     setState(() => _saving = true);
     try {
+      final sanitizedProvider = InputSanitizer.sanitize(_providerCtl.text);
       await ref.read(billRepositoryProvider).createBill({
         'name': name,
-        'category': _category,
+        'category': _effectiveCategory,
         'amount': amount,
         'billing_cycle': _billingCycle,
         'due_day': dueDay,
-        'provider': _providerCtl.text.trim().isEmpty ? null : _providerCtl.text.trim(),
+        'provider': sanitizedProvider.isEmpty ? null : sanitizedProvider,
         'account_id': _accountId,
         'is_active': true,
       });
@@ -184,6 +215,36 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
                 ),
               );
             }).toList()),
+
+            // "Other" custom category input
+            if (_category == 'other') ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _customCategoryCtl,
+                onChanged: _validateCustomCategory,
+                decoration: InputDecoration(
+                  hintText: 'Type a custom category name...',
+                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  errorText: _customCategoryError,
+                  errorStyle: const TextStyle(fontSize: 11),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.primary),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Billing Cycle
@@ -238,7 +299,7 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
 
             // Submit
             FilledButton(
-              onPressed: _saving ? null : _handleSave,
+              onPressed: _saving || _hasCustomCategoryError ? null : _handleSave,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

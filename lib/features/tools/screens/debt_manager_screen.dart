@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/math/debt_math.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/automation_service.dart';
 import '../../../data/models/debt.dart';
 import '../providers/tool_providers.dart';
 import '../widgets/add_debt_dialog.dart';
@@ -43,6 +45,14 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
     setState(() => _remindersEnabled = newValue);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('debt_reminders_enabled', newValue);
+
+    if (newValue) {
+      await NotificationService.instance.requestPermission();
+      await AutomationService.runOnAppStart();
+    } else {
+      await NotificationService.instance.cancelAll();
+      await AutomationService.runOnAppStart();
+    }
   }
 
   @override

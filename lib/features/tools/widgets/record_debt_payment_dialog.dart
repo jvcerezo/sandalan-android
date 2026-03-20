@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/debt.dart';
 import '../../accounts/providers/account_providers.dart';
@@ -80,9 +81,9 @@ class _RecordDebtPaymentDialogState extends ConsumerState<RecordDebtPaymentDialo
       await txnRepo.createTransaction(
         amount: -amount,
         category: 'Debt Payment',
-        description: _noteCtl.text.trim().isEmpty
+        description: InputSanitizer.sanitize(_noteCtl.text).isEmpty
             ? 'Payment for ${widget.debt.name}'
-            : _noteCtl.text.trim(),
+            : InputSanitizer.sanitize(_noteCtl.text),
         date: _date,
         accountId: _accountId,
       );

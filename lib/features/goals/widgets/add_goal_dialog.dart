@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../providers/goal_providers.dart';
 
 // Formats numbers with thousand separators: 10000 → 10,000
@@ -52,14 +53,25 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   void dispose() { _nameCtl.dispose(); _targetCtl.dispose(); _savedCtl.dispose(); _customCategoryCtl.dispose(); super.dispose(); }
 
   /// Check if the custom category duplicates an existing one (case-insensitive).
+  /// Checks both built-in categories and existing goal categories.
   void _validateCustomCategory(String value) {
     final trimmed = value.trim().toLowerCase();
-    if (trimmed.isNotEmpty &&
-        kGoalCategories.any((c) => c.toLowerCase() == trimmed && c != 'Other')) {
-      setState(() => _customCategoryError = 'This category already exists \u2014 select it above');
-    } else {
+    if (trimmed.isEmpty) {
       setState(() => _customCategoryError = null);
+      return;
     }
+    // Check built-in categories
+    if (kGoalCategories.any((c) => c.toLowerCase() == trimmed && c != 'Other')) {
+      setState(() => _customCategoryError = 'This category already exists \u2014 select it above');
+      return;
+    }
+    // Check existing goal categories
+    final goals = ref.read(goalsProvider).valueOrNull ?? [];
+    if (goals.any((g) => g.category.toLowerCase() == trimmed)) {
+      setState(() => _customCategoryError = 'This category already exists');
+      return;
+    }
+    setState(() => _customCategoryError = null);
   }
 
   bool get _hasCustomCategoryError => _category == 'Other' && _customCategoryError != null;
@@ -90,15 +102,18 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   }
 
   Future<void> _save() async {
-    final name = _nameCtl.text.trim();
+    final name = InputSanitizer.sanitize(_nameCtl.text);
     final target = double.tryParse(_targetCtl.text.replaceAll(',', ''));
     if (name.isEmpty || target == null || target <= 0) return;
     setState(() => _saving = true);
     try {
       final saved = double.tryParse(_savedCtl.text.replaceAll(',', '')) ?? 0;
+      final category = _category == 'Other'
+          ? InputSanitizer.sanitize(_customCategoryCtl.text).trim()
+          : _effectiveCategory;
       await ref.read(goalRepositoryProvider).createGoal(
           name: name, targetAmount: target, currentAmount: saved,
-          category: _effectiveCategory, deadline: _deadline);
+          category: category.isEmpty ? 'Other' : category, deadline: _deadline);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) { setState(() => _saving = false); }
   }

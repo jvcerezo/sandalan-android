@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../accounts/providers/account_providers.dart';
@@ -193,7 +194,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         final repo = ref.read(transactionRepositoryProvider);
         final tags = _tagsController.text.trim().isEmpty
             ? null
-            : _tagsController.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+            : _tagsController.text.split(',').map((t) => InputSanitizer.sanitize(t)).where((t) => t.isNotEmpty).toList();
 
         // Create a transaction for each split entry
         for (final entry in _splitEntries) {
@@ -202,7 +203,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           await repo.createTransaction(
             amount: -amt,
             category: _effectiveCategory,
-            description: _noteController.text.trim(),
+            description: InputSanitizer.sanitize(_noteController.text),
             date: _date,
             accountId: entry.accountId,
             tags: tags,
@@ -264,7 +265,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       final repo = ref.read(transactionRepositoryProvider);
       final tags = _tagsController.text.trim().isEmpty
           ? null
-          : _tagsController.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+          : _tagsController.text.split(',').map((t) => InputSanitizer.sanitize(t)).where((t) => t.isNotEmpty).toList();
 
       final edit = widget.editTransaction;
       if (edit != null) {
@@ -272,7 +273,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           id: edit.id,
           amount: _isIncome ? amount : -amount,
           category: _effectiveCategory,
-          description: _noteController.text.trim(),
+          description: InputSanitizer.sanitize(_noteController.text),
           date: _date,
           accountId: _selectedAccountId,
           tags: tags,
@@ -281,7 +282,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         await repo.createTransaction(
           amount: _isIncome ? amount : -amount,
           category: _effectiveCategory,
-          description: _noteController.text.trim(),
+          description: InputSanitizer.sanitize(_noteController.text),
           date: _date,
           accountId: _selectedAccountId,
           tags: tags,

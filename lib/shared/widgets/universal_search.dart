@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/input_sanitizer.dart';
 import '../../data/guide/guide_data.dart';
 import '../../features/transactions/providers/transaction_providers.dart';
 import '../../features/accounts/providers/account_providers.dart';
@@ -266,7 +267,7 @@ class _UniversalSearchSheetState extends ConsumerState<_UniversalSearchSheet> {
     if (query.trim().isEmpty) return [];
 
     final results = <SearchResult>[];
-    final q = query.trim();
+    final q = InputSanitizer.sanitize(query);
 
     // Search transactions
     final transactions = ref.read(transactionsProvider).valueOrNull ?? [];

@@ -9,10 +9,10 @@ import 'notification_service.dart';
 
 /// Preference keys for automation toggles.
 class AutomationKeys {
-  static const autoContributions = 'auto_contributions';
-  static const autoBills = 'auto_bills';
-  static const autoDebts = 'auto_debts';
-  static const autoInsurance = 'auto_insurance';
+  static const autoContributions = 'auto_generate_contributions';
+  static const autoBills = 'bills_reminders_enabled';
+  static const autoDebts = 'debt_reminders_enabled';
+  static const autoInsurance = 'insurance_reminders_enabled';
   static const pushEnabled = 'push_notifications';
   static const morningSummary = 'morning_summary';
 }

@@ -5,6 +5,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/automation_service.dart';
 import '../../../data/models/bill.dart';
 import '../providers/tool_providers.dart';
 import '../widgets/add_bill_dialog.dart';
@@ -39,6 +41,16 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
     setState(() => _remindersEnabled = newValue);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('bills_reminders_enabled', newValue);
+
+    if (newValue) {
+      // Re-schedule bill notifications
+      await NotificationService.instance.requestPermission();
+      await AutomationService.runOnAppStart();
+    } else {
+      // Cancel bill notifications and re-run to keep other categories
+      await NotificationService.instance.cancelAll();
+      await AutomationService.runOnAppStart();
+    }
   }
 
   @override

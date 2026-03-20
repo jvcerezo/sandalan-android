@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/tool_providers.dart';
@@ -40,11 +41,13 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
   final _coverageCtl = TextEditingController();
   final _providerCtl = TextEditingController();
   final _policyNumCtl = TextEditingController();
+  final _customTypeCtl = TextEditingController();
   String _type = 'life';
   String _frequency = 'annual';
   DateTime? _renewalDate;
   String? _accountId;
   bool _saving = false;
+  String? _customTypeError;
 
   static const _types = {
     'life': 'Life',
@@ -62,6 +65,30 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
     'annual': 'Annual',
   };
 
+  void _validateCustomType(String value) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.isEmpty) {
+      setState(() => _customTypeError = null);
+      return;
+    }
+    final builtInLabels = _types.values.map((v) => v.toLowerCase()).toList();
+    if (builtInLabels.any((l) => l == trimmed)) {
+      setState(() => _customTypeError = 'This type already exists \u2014 select it above');
+      return;
+    }
+    setState(() => _customTypeError = null);
+  }
+
+  bool get _hasCustomTypeError => _type == 'other' && _customTypeError != null;
+
+  String get _effectiveType {
+    if (_type == 'other') {
+      final custom = InputSanitizer.sanitize(_customTypeCtl.text);
+      return custom.isNotEmpty ? custom : 'other';
+    }
+    return _type;
+  }
+
   @override
   void dispose() {
     _nameCtl.dispose();
@@ -69,11 +96,12 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
     _coverageCtl.dispose();
     _providerCtl.dispose();
     _policyNumCtl.dispose();
+    _customTypeCtl.dispose();
     super.dispose();
   }
 
   Future<void> _handleSave() async {
-    final name = _nameCtl.text.trim();
+    final name = InputSanitizer.sanitize(_nameCtl.text);
     if (name.isEmpty) {
       _showError('Policy name is required');
       return;
@@ -91,14 +119,16 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
 
     setState(() => _saving = true);
     try {
+      final sanitizedProvider = InputSanitizer.sanitize(_providerCtl.text);
+      final sanitizedPolicyNum = InputSanitizer.sanitize(_policyNumCtl.text);
       await ref.read(insuranceRepositoryProvider).createPolicy({
         'name': name,
-        'type': _type,
+        'type': _effectiveType,
         'premium_amount': premium,
         'premium_frequency': _frequency,
         'coverage_amount': coverage,
-        'provider': _providerCtl.text.trim().isEmpty ? null : _providerCtl.text.trim(),
-        'policy_number': _policyNumCtl.text.trim().isEmpty ? null : _policyNumCtl.text.trim(),
+        'provider': sanitizedProvider.isEmpty ? null : sanitizedProvider,
+        'policy_number': sanitizedPolicyNum.isEmpty ? null : sanitizedPolicyNum,
         'renewal_date': _renewalDate?.toIso8601String().substring(0, 10),
         'account_id': _accountId,
         'is_active': true,
@@ -182,6 +212,36 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
                 ),
               );
             }).toList()),
+
+            // "Other" custom type input
+            if (_type == 'other') ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _customTypeCtl,
+                onChanged: _validateCustomType,
+                decoration: InputDecoration(
+                  hintText: 'Type a custom insurance type...',
+                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  errorText: _customTypeError,
+                  errorStyle: const TextStyle(fontSize: 11),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.primary),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Annual Premium
@@ -280,7 +340,7 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
 
             // Submit
             FilledButton(
-              onPressed: _saving ? null : _handleSave,
+              onPressed: _saving || _hasCustomTypeError ? null : _handleSave,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

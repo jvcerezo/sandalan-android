@@ -4,13 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/account_types.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../providers/account_providers.dart';
 
-// Formats numbers with thousand separators: 10000 → 10,000
+// Formats numbers with thousand separators: 10000 → 10,000 (supports negatives)
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final text = newValue.text.replaceAll(',', '');
+    var text = newValue.text.replaceAll(',', '');
+    if (text.isEmpty) return newValue;
+
+    // Preserve negative sign
+    final isNegative = text.startsWith('-');
+    if (isNegative) text = text.substring(1);
     if (text.isEmpty) return newValue;
 
     // Split by decimal
@@ -25,7 +31,7 @@ class _ThousandsSeparatorFormatter extends TextInputFormatter {
       buffer.write(intPart[i]);
     }
 
-    final formatted = '$buffer$decPart';
+    final formatted = '${isNegative ? '-' : ''}$buffer$decPart';
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
@@ -84,13 +90,16 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   }
 
   Future<void> _save() async {
-    final name = _nameCtl.text.trim();
+    final name = InputSanitizer.sanitize(_nameCtl.text);
     if (name.isEmpty) return;
     setState(() => _saving = true);
     try {
       final balance = double.tryParse(_balanceCtl.text.replaceAll(',', '')) ?? 0;
+      final type = _type == 'custom'
+          ? InputSanitizer.sanitize(_customTypeCtl.text)
+          : _effectiveType;
       await ref.read(accountRepositoryProvider).createAccount(
-          name: name, type: _effectiveType, currency: _currency, balance: balance);
+          name: name, type: type.isEmpty ? 'custom' : type, currency: _currency, balance: balance);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) { setState(() => _saving = false); }
   }

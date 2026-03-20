@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/tool_providers.dart';
@@ -66,7 +67,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
   }
 
   Future<void> _handleSave() async {
-    final name = _nameCtl.text.trim();
+    final name = InputSanitizer.sanitize(_nameCtl.text);
     if (name.isEmpty) {
       _showError('Name is required');
       return;
@@ -105,7 +106,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
         originalAmount: balance,
         interestRate: rate / 100,
         minimumPayment: minPay,
-        lender: _lenderCtl.text.trim().isEmpty ? null : _lenderCtl.text.trim(),
+        lender: InputSanitizer.sanitize(_lenderCtl.text).isEmpty ? null : InputSanitizer.sanitize(_lenderCtl.text),
         dueDay: dueDay,
         accountId: _accountId,
       );

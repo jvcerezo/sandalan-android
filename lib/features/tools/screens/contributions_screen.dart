@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/automation_service.dart';
 import '../../../core/constants/ph_rates.dart';
 import '../../../core/math/ph_math.dart';
 import '../../../data/models/contribution.dart';
@@ -24,6 +27,33 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
   bool _autoGenerate = true;
 
   double get _salary => double.tryParse(_salaryController.text.replaceAll(',', '')) ?? 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPref();
+  }
+
+  Future<void> _loadPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _autoGenerate = prefs.getBool('auto_generate_contributions') ?? true;
+      });
+    }
+  }
+
+  Future<void> _toggleAutoGenerate() async {
+    final newValue = !_autoGenerate;
+    setState(() => _autoGenerate = newValue);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('auto_generate_contributions', newValue);
+
+    if (newValue) {
+      // Re-run automation to auto-generate contributions
+      await AutomationService.runOnAppStart();
+    }
+  }
 
   @override
   void dispose() {
@@ -133,19 +163,22 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
               )),
             ])),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _autoGenerate ? AppColors.warning.withValues(alpha: 0.15) : colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+            GestureDetector(
+              onTap: _toggleAutoGenerate,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _autoGenerate ? AppColors.warning.withValues(alpha: 0.15) : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (_autoGenerate) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
+                  if (_autoGenerate) const SizedBox(width: 4),
+                  Text(_autoGenerate ? 'On' : 'Off',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                          color: _autoGenerate ? AppColors.warning : colorScheme.onSurfaceVariant)),
+                ]),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (_autoGenerate) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
-                if (_autoGenerate) const SizedBox(width: 4),
-                Text(_autoGenerate ? 'On' : 'Off',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                        color: _autoGenerate ? AppColors.warning : colorScheme.onSurfaceVariant)),
-              ]),
             ),
           ]),
         ),

@@ -5,6 +5,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/automation_service.dart';
 import '../../../data/models/insurance_policy.dart';
 import '../providers/tool_providers.dart';
 import '../widgets/add_insurance_dialog.dart';
@@ -40,6 +42,14 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
     setState(() => _remindersEnabled = newValue);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('insurance_reminders_enabled', newValue);
+
+    if (newValue) {
+      await NotificationService.instance.requestPermission();
+      await AutomationService.runOnAppStart();
+    } else {
+      await NotificationService.instance.cancelAll();
+      await AutomationService.runOnAppStart();
+    }
   }
 
   @override
@@ -129,17 +139,24 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
             )),
           ])),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+          GestureDetector(
+            onTap: _toggleReminders,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _remindersEnabled
+                    ? AppColors.warning.withValues(alpha: 0.15)
+                    : cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (_remindersEnabled) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
+                if (_remindersEnabled) const SizedBox(width: 4),
+                Text(_remindersEnabled ? 'On' : 'Off',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        color: _remindersEnabled ? AppColors.warning : cs.onSurfaceVariant)),
+              ]),
             ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
-              SizedBox(width: 4),
-              Text('On', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.warning)),
-            ]),
           ),
         ])),
         const SizedBox(height: 16),

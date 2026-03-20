@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../providers/budget_providers.dart';
 
 // Formats numbers with thousand separators: 10000 → 10,000
@@ -64,7 +65,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
   /// The effective category to save — uses custom input when "Other" is selected.
   String get _effectiveCategory {
     if (_category == 'Other') {
-      final custom = _customCategoryCtl.text.trim();
+      final custom = InputSanitizer.sanitize(_customCategoryCtl.text);
       return custom.isNotEmpty ? custom : 'Other';
     }
     return _category;

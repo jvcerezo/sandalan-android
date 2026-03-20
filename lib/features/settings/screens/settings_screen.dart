@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/theme/theme_color.dart';
 import '../../../core/constants/currencies.dart';
@@ -242,7 +243,7 @@ class _ProfileSection extends StatelessWidget {
         TextField(controller: nameCtl, decoration: const InputDecoration(isDense: true)),
         const SizedBox(height: 12),
         FilledButton(onPressed: () async {
-          await ref.read(profileRepositoryProvider).updateProfile(fullName: nameCtl.text);
+          await ref.read(profileRepositoryProvider).updateProfile(fullName: InputSanitizer.sanitize(nameCtl.text));
           ref.invalidate(profileProvider);
         }, style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12),
             minimumSize: const Size(double.infinity, 0)), child: const Text('Save')),

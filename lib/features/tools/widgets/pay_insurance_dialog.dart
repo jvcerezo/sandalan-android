@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/insurance_policy.dart';
 import '../../accounts/providers/account_providers.dart';
@@ -87,9 +88,9 @@ class _PayInsuranceDialogState extends ConsumerState<PayInsuranceDialog> {
       await txnRepo.createTransaction(
         amount: -amount,
         category: 'Insurance',
-        description: _noteCtl.text.trim().isEmpty
+        description: InputSanitizer.sanitize(_noteCtl.text).isEmpty
             ? '${widget.policy.name} premium payment'
-            : _noteCtl.text.trim(),
+            : InputSanitizer.sanitize(_noteCtl.text),
         date: _date,
         accountId: _accountId,
       );
