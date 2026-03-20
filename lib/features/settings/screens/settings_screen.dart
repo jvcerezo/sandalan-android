@@ -12,6 +12,7 @@ import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../app.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../shared/widgets/tour_overlay.dart';
 
 // ─── Main Settings Menu ────────────────────────────────────────────────────────
 
@@ -806,7 +807,9 @@ class _AccountSection extends StatelessWidget {
         const Text('Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         Text('Manage your account settings', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         const SizedBox(height: 12),
-        OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.compass, size: 16),
+        OutlinedButton.icon(onPressed: () {
+          TourController.of(context).start();
+        }, icon: const Icon(LucideIcons.compass, size: 16),
             label: const Text('Take a Tour'), style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(double.infinity, 0))),
         const SizedBox(height: 8),

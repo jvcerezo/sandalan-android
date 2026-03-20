@@ -241,7 +241,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
           // Saved So Far + Deadline
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Saved So Far', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              const Text('Saved So Far (optional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -255,7 +255,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                     _ThousandsSeparatorFormatter(),
                   ],
-                  decoration: InputDecoration(isDense: true, hintText: '0.00', prefixText: '\u20B1 ',
+                  decoration: InputDecoration(isDense: true, hintText: '0.00 (optional)', prefixText: '\u20B1 ',
                       prefixStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
                       border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                   style: const TextStyle(fontSize: 14)),
@@ -263,7 +263,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
             ])),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Deadline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              const Text('Deadline (optional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
               GestureDetector(
                 onTap: () async {
@@ -281,7 +281,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
                   child: Row(children: [
                     Text(_deadline != null
                         ? '${_deadline!.month.toString().padLeft(2, '0')}/${_deadline!.day.toString().padLeft(2, '0')}/${_deadline!.year}'
-                        : 'mm/dd/yyyy',
+                        : 'mm/dd/yyyy (optional)',
                         style: TextStyle(fontSize: 12, color: _deadline != null ? cs.onSurface : cs.onSurfaceVariant)),
                     const Spacer(),
                     Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),

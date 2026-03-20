@@ -10,6 +10,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../app.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'brand_mark.dart';
+import 'tour_overlay.dart';
 
 class _NavItem {
   final String label;
@@ -202,6 +203,7 @@ class NavDrawer extends ConsumerWidget {
                       label: 'Take a Tour',
                       onTap: () {
                         Navigator.of(context).pop();
+                        TourController.of(context).start();
                       },
                     ),
 

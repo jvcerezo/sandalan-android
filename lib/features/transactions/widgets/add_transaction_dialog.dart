@@ -565,7 +565,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               Expanded(child: TextField(
                 controller: _noteController,
                 decoration: InputDecoration(
-                  hintText: 'Add a note...',
+                  hintText: 'Add a note... (optional)',
                   hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                   border: InputBorder.none, contentPadding: EdgeInsets.zero,
                 ),
@@ -602,7 +602,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             TextField(
               controller: _tagsController,
               decoration: InputDecoration(
-                hintText: 'Add tags...',
+                hintText: 'Add tags... (optional)',
                 hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                 border: InputBorder.none, contentPadding: EdgeInsets.zero,
               ),

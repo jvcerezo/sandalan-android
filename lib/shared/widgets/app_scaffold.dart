@@ -11,6 +11,7 @@ import 'brand_mark.dart';
 import 'nav_drawer.dart';
 import 'context_fab.dart';
 import 'universal_search.dart';
+import 'tour_overlay.dart';
 
 final _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -24,68 +25,70 @@ class AppScaffold extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
 
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const NavDrawer(),
-      body: Column(
-        children: [
-          // ─── Top Header Bar ──────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surface.withValues(alpha: 0.95),
-              border: Border(
-                bottom: BorderSide(
-                  color: colorScheme.outline.withValues(alpha: 0.15),
+    return TourHost(
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: const NavDrawer(),
+        body: Column(
+          children: [
+            // ─── Top Header Bar ──────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surface.withValues(alpha: 0.95),
+                border: Border(
+                  bottom: BorderSide(
+                    color: colorScheme.outline.withValues(alpha: 0.15),
+                  ),
                 ),
               ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: SizedBox(
-                height: 56,
-                child: Row(
-                  children: [
-                    // Hamburger
-                    IconButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _scaffoldKey.currentState?.openDrawer();
-                      },
-                      icon: const Icon(LucideIcons.menu, size: 22),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-
-                    // Logo (centered)
-                    const Expanded(
-                      child: Center(
-                        child: BrandMark(size: 28),
+              child: SafeArea(
+                bottom: false,
+                child: SizedBox(
+                  height: 56,
+                  child: Row(
+                    children: [
+                      // Hamburger
+                      IconButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _scaffoldKey.currentState?.openDrawer();
+                        },
+                        icon: const Icon(LucideIcons.menu, size: 22),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                       ),
-                    ),
 
-                    // Search
-                    IconButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        showUniversalSearch(context);
-                      },
-                      icon: const Icon(LucideIcons.search, size: 20),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                    ),
-                  ],
+                      // Logo (centered)
+                      const Expanded(
+                        child: Center(
+                          child: BrandMark(size: 28),
+                        ),
+                      ),
+
+                      // Search
+                      IconButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          showUniversalSearch(context);
+                        },
+                        icon: const Icon(LucideIcons.search, size: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // ─── Page Content ────────────────────────────────────────
-          Expanded(child: child),
-        ],
+            // ─── Page Content ────────────────────────────────────────
+            Expanded(child: child),
+          ],
+        ),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: ContextFAB(currentPath: location),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: ContextFAB(currentPath: location),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

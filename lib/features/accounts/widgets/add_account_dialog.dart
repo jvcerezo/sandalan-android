@@ -268,7 +268,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                       FilteringTextInputFormatter.allow(RegExp(r'[\d.,\-]')),
                       _ThousandsSeparatorFormatter(),
                     ],
-                    decoration: InputDecoration(isDense: true, hintText: '0.00',
+                    decoration: InputDecoration(isDense: true, hintText: '0.00 (optional)',
                         hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                         border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                     style: const TextStyle(fontSize: 14))),

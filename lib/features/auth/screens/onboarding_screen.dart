@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../shared/widgets/brand_mark.dart';
+import '../../../shared/widgets/tour_overlay.dart';
 import '../../../core/constants/account_types.dart';
 import '../providers/auth_provider.dart';
 
@@ -144,6 +145,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
       // Complete onboarding
       await ref.read(authRepositoryProvider).completeOnboarding();
+
+      // Schedule the tour to auto-start on the home screen.
+      await scheduleTour();
 
       if (mounted) {
         final targetPath = _selectedStage.isNotEmpty ? '/guide' : '/home';
