@@ -1,0 +1,567 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/theme/color_tokens.dart';
+import '../../../core/constants/ph_rates.dart';
+import '../../../core/math/ph_math.dart';
+import '../../../data/models/contribution.dart';
+import '../../../shared/widgets/shimmer_loading.dart' show ShimmerLoading;
+import '../providers/tool_providers.dart';
+
+class ContributionsScreen extends ConsumerStatefulWidget {
+  const ContributionsScreen({super.key});
+
+  @override
+  ConsumerState<ContributionsScreen> createState() => _ContributionsScreenState();
+}
+
+class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
+  final _salaryController = TextEditingController(text: '25000');
+  String _employmentType = 'employed';
+  bool _autoGenerate = true;
+
+  double get _salary => double.tryParse(_salaryController.text.replaceAll(',', '')) ?? 0;
+
+  @override
+  void dispose() {
+    _salaryController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final contributions = ref.watch(contributionsProvider);
+    final salary = _salary;
+
+    // Calculate breakdowns
+    final sss = calculateSSS(salary);
+    final phil = calculatePhilHealth(salary);
+    final pag = calculatePagIbig(salary);
+    final sssEmployee = sss.employee;
+    final sssEmployer = sss.employer;
+    final philEmployee = phil.employee;
+    final philEmployer = phil.employer;
+    final pagEmployee = pag.employee;
+    final pagEmployer = pag.employer;
+    final totalYou = sssEmployee + philEmployee + pagEmployee;
+    final totalEmployer = sssEmployer + philEmployer + pagEmployer;
+    final totalAll = totalYou + totalEmployer;
+    final netTakeHome = salary - totalYou;
+
+    final msc = sss.msc;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+      children: [
+        // ← Tools
+        GestureDetector(
+          onTap: () => context.go('/tools'),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(LucideIcons.arrowLeft, size: 14, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text('Tools', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+            ]),
+          ),
+        ),
+
+        // Header
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(LucideIcons.landmark, size: 20, color: AppColors.info),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text("Gov't Contributions",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text('SSS · PhilHealth · Pag-IBIG — salary breakdown & deductions using 2024 rates',
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+          ])),
+        ]),
+        const SizedBox(height: 16),
+
+        // Rate cards
+        Row(children: [
+          _RateCard(label: 'SSS', rate: '13%', detail: 'MSC ₱3k–₱30k', color: AppColors.info),
+          const SizedBox(width: 8),
+          _RateCard(label: 'PhilHealth', rate: '5%', detail: '₱10k–₱100k', color: AppColors.income),
+          const SizedBox(width: 8),
+          _RateCard(label: 'Pag-IBIG', rate: '2%', detail: 'Max ₱100', color: AppColors.warning),
+        ]),
+        const SizedBox(height: 16),
+
+        // Auto-generate card
+        _Card(
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.income.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(LucideIcons.zap, size: 18, color: AppColors.income),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Auto-Generate Monthly Entries',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text('Automatically create SSS, PhilHealth, and Pag-IBIG entries each month based on your last salary.',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              ...[
+                'New entries created on the 1st of each month as unpaid',
+                'Uses your most recent salary and employment type',
+                'You still mark each as paid when you actually pay',
+                'Reminder notifications sent 3 days before month-end',
+              ].map((text) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('•  ', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                  Expanded(child: Text(text, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))),
+                ]),
+              )),
+            ])),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _autoGenerate ? AppColors.warning.withValues(alpha: 0.15) : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (_autoGenerate) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
+                if (_autoGenerate) const SizedBox(width: 4),
+                Text(_autoGenerate ? 'On' : 'Off',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        color: _autoGenerate ? AppColors.warning : colorScheme.onSurfaceVariant)),
+              ]),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 16),
+
+        // Monthly Salary form
+        _Card(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Monthly Salary', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 14),
+            const Text('Basic Monthly Salary (₱)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _salaryController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(isDense: true),
+            ),
+            const SizedBox(height: 12),
+            const Text('Employment Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<String>(
+              value: _employmentType,
+              isDense: true,
+              items: const [
+                DropdownMenuItem(value: 'employed', child: Text('Employed')),
+                DropdownMenuItem(value: 'self_employed', child: Text('Self-Employed')),
+                DropdownMenuItem(value: 'voluntary', child: Text('Voluntary')),
+                DropdownMenuItem(value: 'ofw', child: Text('OFW')),
+              ],
+              onChanged: (v) => setState(() => _employmentType = v ?? 'employed'),
+            ),
+            const SizedBox(height: 12),
+            const Text('Period (YYYY-MM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            TextField(
+              readOnly: true,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'March 2026',
+                suffixIcon: Icon(LucideIcons.calendar, size: 16, color: colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 16),
+
+        // Monthly Breakdown table
+        _Card(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Monthly Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('2024 rates', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+              ),
+            ]),
+            const SizedBox(height: 12),
+
+            // Header
+            _TableRow(isHeader: true, fund: 'FUND', you: 'YOU', employer: 'EMPLOYER', total: 'TOTAL'),
+            const Divider(height: 1),
+
+            // SSS
+            _TableRow(fund: 'SSS', you: formatCurrency(sssEmployee),
+                employer: formatCurrency(sssEmployer), total: formatCurrency(sssEmployee + sssEmployer),
+                fundColor: AppColors.info, detail: 'MSC: ${formatCurrency(msc)}'),
+            const Divider(height: 1),
+
+            // PhilHealth
+            _TableRow(fund: 'PhilHealth', you: formatCurrency(philEmployee),
+                employer: formatCurrency(philEmployer), total: formatCurrency(philEmployee + philEmployer),
+                fundColor: AppColors.income, detail: 'Based on salary ≤ ₱100k'),
+            const Divider(height: 1),
+
+            // Pag-IBIG
+            _TableRow(fund: 'Pag-IBIG', you: formatCurrency(pagEmployee),
+                employer: formatCurrency(pagEmployer), total: formatCurrency(pagEmployee + pagEmployer),
+                fundColor: AppColors.warning, detail: 'Max ₱100 each'),
+            const Divider(height: 1),
+
+            // Total
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(children: [
+                const Expanded(flex: 2, child: Text('Total', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
+                Expanded(flex: 2, child: Text(formatCurrency(totalYou),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700), textAlign: TextAlign.right)),
+                Expanded(flex: 2, child: Text(formatCurrency(totalEmployer),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700), textAlign: TextAlign.right)),
+                Expanded(flex: 2, child: Text(formatCurrency(totalAll),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700), textAlign: TextAlign.right)),
+              ]),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+
+        // Summary cards
+        Row(children: [
+          _SummaryCard(label: 'Gross Monthly', value: formatCurrency(salary)),
+          const SizedBox(width: 8),
+          _SummaryCard(label: 'Deductions', value: formatCurrency(totalYou)),
+          const SizedBox(width: 8),
+          _SummaryCard(label: 'Net Take-Home', value: formatCurrency(netTakeHome),
+              valueColor: AppColors.income, highlight: true),
+        ]),
+        const SizedBox(height: 12),
+
+        // Update button
+        FilledButton.icon(
+          onPressed: () async {
+            HapticFeedback.mediumImpact();
+            final now = DateTime.now();
+            final period = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+            final repo = ref.read(contributionRepositoryProvider);
+            for (final type in ['sss', 'philhealth', 'pagibig']) {
+              final emp = type == 'sss' ? sssEmployee : type == 'philhealth' ? philEmployee : pagEmployee;
+              final empr = type == 'sss' ? sssEmployer : type == 'philhealth' ? philEmployer : pagEmployer;
+              await repo.createContribution(
+                type: type, period: period, monthlySalary: salary,
+                employeeShare: emp, employerShare: empr,
+                totalContribution: emp + empr, employmentType: _employmentType,
+              );
+            }
+            ref.invalidate(contributionsProvider);
+            ref.invalidate(contributionSummaryProvider);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Contributions updated')),
+              );
+            }
+          },
+          icon: const Icon(LucideIcons.save, size: 16),
+          label: Text('Update ${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}'),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Rates based on SSS 2024 schedule (13% total, MSC ₱3k–₱30k), PhilHealth 5% premium (₱10k–₱100k salary), and Pag-IBIG 2% (max ₱100 each). Consult your HR or the respective agency for exact figures.',
+          style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant, height: 1.4),
+        ),
+        const SizedBox(height: 20),
+
+        // Contribution History
+        _Card(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Contribution History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(LucideIcons.plus, size: 14),
+                label: const Text('Log Past'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            contributions.when(
+              data: (list) {
+                if (list.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: Text('No contributions recorded yet',
+                        style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant))),
+                  );
+                }
+                // Group by period
+                final grouped = <String, List<Contribution>>{};
+                for (final c in list) {
+                  grouped.putIfAbsent(c.period, () => []).add(c);
+                }
+                return Column(children: grouped.entries.map((entry) {
+                  final period = entry.key;
+                  final items = entry.value;
+                  final totalYourShare = items.fold(0.0, (s, c) => s + c.employeeShare);
+                  final allPaid = items.every((c) => c.isPaid);
+                  // Parse period for display
+                  final parts = period.split('-');
+                  const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+                  final displayPeriod = '${monthNames[int.parse(parts[1])]} ${parts[0]}';
+
+                  return _HistoryMonth(
+                    period: displayPeriod,
+                    count: items.length,
+                    yourShare: totalYourShare,
+                    isPaid: allPaid,
+                    items: items,
+                  );
+                }).toList());
+              },
+              loading: () => const ShimmerLoading(height: 60),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+          ]),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Widgets ───────────────────────────────────────────────────────────────────
+
+class _Card extends StatelessWidget {
+  final Widget child;
+  const _Card({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _RateCard extends StatelessWidget {
+  final String label, rate, detail;
+  final Color color;
+  const _RateCard({required this.label, required this.rate, required this.detail, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+          Text(rate, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(detail, style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _TableRow extends StatelessWidget {
+  final String fund, you, employer, total;
+  final Color? fundColor;
+  final String? detail;
+  final bool isHeader;
+  const _TableRow({required this.fund, required this.you, required this.employer,
+      required this.total, this.fundColor, this.detail, this.isHeader = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final style = isHeader
+        ? TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: colorScheme.onSurfaceVariant)
+        : const TextStyle(fontSize: 12, fontWeight: FontWeight.w500);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(flex: 2, child: Text(fund, style: isHeader ? style : TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fundColor))),
+          Expanded(flex: 2, child: Text(you, style: style, textAlign: TextAlign.right)),
+          Expanded(flex: 2, child: Text(employer, style: style, textAlign: TextAlign.right)),
+          Expanded(flex: 2, child: Text(total, style: isHeader ? style : const TextStyle(fontSize: 12, fontWeight: FontWeight.w700), textAlign: TextAlign.right)),
+        ]),
+        if (detail != null) ...[
+          const SizedBox(height: 2),
+          Row(children: [
+            Icon(LucideIcons.info, size: 10, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(detail!, style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant)),
+          ]),
+        ],
+      ]),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final String label, value;
+  final Color? valueColor;
+  final bool highlight;
+  const _SummaryCard({required this.label, required this.value, this.valueColor, this.highlight = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: highlight ? AppColors.income.withValues(alpha: 0.08) : colorScheme.surface,
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: valueColor)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _HistoryMonth extends StatefulWidget {
+  final String period;
+  final int count;
+  final double yourShare;
+  final bool isPaid;
+  final List<Contribution> items;
+  const _HistoryMonth({required this.period, required this.count,
+      required this.yourShare, required this.isPaid, required this.items});
+
+  @override
+  State<_HistoryMonth> createState() => _HistoryMonthState();
+}
+
+class _HistoryMonthState extends State<_HistoryMonth> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    const typeColors = {'sss': AppColors.info, 'philhealth': AppColors.income, 'pagibig': AppColors.warning};
+    const typeLabels = {'sss': 'SSS', 'philhealth': 'PhilHealth', 'pagibig': 'Pag-IBIG'};
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.10)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(children: [
+        // Month header
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(children: [
+              Icon(LucideIcons.checkCircle2, size: 18,
+                  color: widget.isPaid ? AppColors.income : colorScheme.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(widget.period, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                Text('${widget.count} contributions · your share: ${formatCurrency(widget.yourShare)}',
+                    style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+              ])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: widget.isPaid ? AppColors.income : AppColors.warning,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(widget.isPaid ? 'Paid' : 'Unpaid',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white)),
+              ),
+              const SizedBox(width: 6),
+              Icon(_expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: 16,
+                  color: colorScheme.onSurfaceVariant),
+            ]),
+          ),
+        ),
+
+        // Expanded items
+        if (_expanded)
+          ...widget.items.map((c) {
+            final color = typeColors[c.type] ?? AppColors.info;
+            final label = typeLabels[c.type] ?? c.type;
+            return Container(
+              padding: const EdgeInsets.fromLTRB(44, 8, 12, 8),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.08))),
+              ),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Your share: ${formatCurrency(c.employeeShare)}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text('Employer: ${formatCurrency(c.employerShare ?? 0)}',
+                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                ])),
+                Icon(c.isPaid ? LucideIcons.checkCircle2 : LucideIcons.circle, size: 16,
+                    color: c.isPaid ? AppColors.income : colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Icon(LucideIcons.trash2, size: 14, color: AppColors.expense.withValues(alpha: 0.5)),
+              ]),
+            );
+          }),
+      ]),
+    );
+  }
+}
+

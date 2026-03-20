@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 
@@ -27,7 +28,7 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolBlue,
             title: "Gov't Contributions",
             subtitle: 'SSS, PhilHealth, Pag-IBIG',
-            onTap: () {},
+            onTap: () => context.go('/tools/contributions'),
           ),
           _ToolItem(
             icon: LucideIcons.receipt,
