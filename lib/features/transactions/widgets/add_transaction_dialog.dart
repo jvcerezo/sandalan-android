@@ -65,6 +65,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   final List<_SplitEntry> _splitEntries = [];
   int _repeatInterval = 1;
   String _repeatFrequency = 'monthly';
+  TimeOfDay? _repeatTime;
+  DateTime? _repeatEndDate;
   bool _saving = false;
 
   @override
@@ -493,32 +495,62 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Time (optional)', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                          borderRadius: BorderRadius.circular(8)),
-                        child: Row(children: [
-                          Text('--:-- --', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                          const Spacer(),
-                          Icon(LucideIcons.clock, size: 14, color: cs.onSurfaceVariant),
-                        ]),
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: _repeatTime ?? TimeOfDay.now(),
+                          );
+                          if (picked != null) setState(() => _repeatTime = picked);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                            borderRadius: BorderRadius.circular(8)),
+                          child: Row(children: [
+                            Text(
+                              _repeatTime != null ? _repeatTime!.format(context) : '--:-- --',
+                              style: TextStyle(fontSize: 12,
+                                  color: _repeatTime != null ? cs.onSurface : cs.onSurfaceVariant),
+                            ),
+                            const Spacer(),
+                            Icon(LucideIcons.clock, size: 14, color: cs.onSurfaceVariant),
+                          ]),
+                        ),
                       ),
                     ])),
                     const SizedBox(width: 8),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('End date (optional)', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                       const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                          borderRadius: BorderRadius.circular(8)),
-                        child: Row(children: [
-                          Text('mm/dd/yyyy', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                          const Spacer(),
-                          Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
-                        ]),
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _repeatEndDate ?? DateTime.now().add(const Duration(days: 365)),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 3650)),
+                          );
+                          if (picked != null) setState(() => _repeatEndDate = picked);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                            borderRadius: BorderRadius.circular(8)),
+                          child: Row(children: [
+                            Text(
+                              _repeatEndDate != null
+                                  ? '${_repeatEndDate!.month.toString().padLeft(2, '0')}/${_repeatEndDate!.day.toString().padLeft(2, '0')}/${_repeatEndDate!.year}'
+                                  : 'mm/dd/yyyy',
+                              style: TextStyle(fontSize: 12,
+                                  color: _repeatEndDate != null ? cs.onSurface : cs.onSurfaceVariant),
+                            ),
+                            const Spacer(),
+                            Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
+                          ]),
+                        ),
                       ),
                     ])),
                   ]),
