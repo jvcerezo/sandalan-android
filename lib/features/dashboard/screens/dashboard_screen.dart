@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,20 +62,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _SectionLabel('OVERVIEW'),
           const SizedBox(height: 8),
 
-          // Total Balance
-          _OverviewCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('TOTAL BALANCE',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                Icon(LucideIcons.landmark, size: 18, color: colorScheme.onSurfaceVariant),
-              ]),
-              const SizedBox(height: 12),
-              AnimatedCurrency(value: totalBalance,
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            ]),
-          ),
+          // Total Balance & Net Worth
+          Row(children: [
+            Expanded(
+              child: _OverviewCard(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text('TOTAL BALANCE',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                            letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                    Icon(LucideIcons.landmark, size: 18, color: colorScheme.onSurfaceVariant),
+                  ]),
+                  const SizedBox(height: 12),
+                  AnimatedCurrency(value: totalBalance,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: summary.when(
+                data: (s) {
+                  final netWorth = s.income - s.expenses;
+                  return _OverviewCard(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text('NET WORTH',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                        Icon(LucideIcons.trendingUp, size: 18, color: AppColors.income),
+                      ]),
+                      const SizedBox(height: 12),
+                      AnimatedCurrency(value: totalBalance + netWorth,
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
+                              color: (totalBalance + netWorth) >= 0 ? AppColors.income : AppColors.expense)),
+                    ]),
+                  );
+                },
+                loading: () => const _OverviewCard(child: ShimmerLoading(height: 48)),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+          ]),
           const SizedBox(height: 12),
 
           // Income / Expenses
@@ -284,12 +313,44 @@ class _TrendsTab extends StatelessWidget {
             const Align(alignment: Alignment.centerLeft,
                 child: Text('Spending by Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
             const SizedBox(height: 16),
-            SizedBox(height: 180, child: CustomPaint(size: const Size(180, 180),
-                painter: _DonutChartPainter(
-                  values: sorted.map((e) => e.value).toList(),
-                  colors: List.generate(sorted.length, (i) => chartColors[i % chartColors.length]),
-                  centerLabel: formatCurrency(total)))),
-            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 50,
+                  sections: sorted.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final e = entry.value;
+                    final pct = (e.value / total * 100);
+                    return PieChartSectionData(
+                      color: chartColors[i % chartColors.length],
+                      value: e.value,
+                      title: pct >= 8 ? '${pct.toStringAsFixed(0)}%' : '',
+                      titleStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                      radius: 45,
+                    );
+                  }).toList(),
+                  centerSpaceColor: Theme.of(context).colorScheme.surface,
+                ),
+              ),
+            ),
+            // Center text overlay
+            Transform.translate(
+              offset: const Offset(0, -120),
+              child: SizedBox(
+                height: 0,
+                child: OverflowBox(
+                  maxHeight: 40,
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(formatCurrency(total),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text('Total', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  ]),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             ...sorted.asMap().entries.map((entry) {
               final i = entry.key; final e = entry.value;
               final pct = (e.value / total * 100).toStringAsFixed(1);
@@ -316,54 +377,226 @@ class _TrendsTab extends StatelessWidget {
     return _OverviewCard(
       child: transactions.when(
         data: (txns) {
+          // Build last 6 months list (always show 6 months even without data)
+          final now = DateTime.now();
+          final last6Months = List.generate(6, (i) {
+            final d = DateTime(now.year, now.month - 5 + i);
+            return '${d.year}-${d.month.toString().padLeft(2, '0')}';
+          });
+
           // Group transactions by month
           final monthlyData = <String, ({double income, double expenses})>{};
           for (final t in txns) {
             if (t.category.toLowerCase() == 'transfer') continue;
-            final month = t.date.substring(0, 7); // YYYY-MM
+            final month = t.date.substring(0, 7);
             final existing = monthlyData[month] ?? (income: 0.0, expenses: 0.0);
             monthlyData[month] = t.amount > 0
                 ? (income: existing.income + t.amount, expenses: existing.expenses)
                 : (income: existing.income, expenses: existing.expenses + t.amount.abs());
           }
-          final sorted = monthlyData.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-          final last6 = sorted.length > 6 ? sorted.sublist(sorted.length - 6) : sorted;
 
-          if (last6.isEmpty) {
+          final incomes = last6Months.map((m) => monthlyData[m]?.income ?? 0.0).toList();
+          final expenses = last6Months.map((m) => monthlyData[m]?.expenses ?? 0.0).toList();
+          final nets = List.generate(6, (i) => incomes[i] - expenses[i]);
+          final maxVal = [...incomes, ...expenses].fold(0.0, (a, b) => math.max(a, b));
+          final allNets = [...nets, 0.0];
+          final minNet = allNets.reduce(math.min);
+          final maxNet = allNets.reduce(math.max);
+
+          if (maxVal == 0) {
             return const Padding(padding: EdgeInsets.symmetric(vertical: 24),
                 child: Center(child: Text('No data yet', style: TextStyle(fontSize: 13))));
           }
 
-          final maxVal = last6.fold(0.0, (m, e) =>
-              math.max(m, math.max(e.value.income, e.value.expenses)));
+          final colorScheme = Theme.of(context).colorScheme;
 
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Monthly Trend', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             SizedBox(
-              height: 200,
-              child: CustomPaint(
-                size: const Size(double.infinity, 200),
-                painter: _BarChartPainter(
-                  months: last6.map((e) => _formatMonth(e.key)).toList(),
-                  incomes: last6.map((e) => e.value.income).toList(),
-                  expenses: last6.map((e) => e.value.expenses).toList(),
-                  maxValue: maxVal,
-                  isDark: Theme.of(context).brightness == Brightness.dark,
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: maxVal * 1.15,
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      tooltipBorderRadius: BorderRadius.circular(8),
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final label = rodIndex == 0 ? 'Income' : 'Expenses';
+                        final value = rodIndex == 0 ? incomes[groupIndex] : expenses[groupIndex];
+                        return BarTooltipItem(
+                          '$label\n',
+                          TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+                          children: [
+                            TextSpan(
+                              text: formatCurrency(value),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
+                                  color: rodIndex == 0 ? AppColors.income : Colors.grey.shade500),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= last6Months.length) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(_formatMonth(last6Months[idx]),
+                                style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 46,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.max || value == meta.min) return const SizedBox.shrink();
+                          String label;
+                          if (value >= 1000000) {
+                            label = '${(value / 1000000).toStringAsFixed(1)}M';
+                          } else if (value >= 1000) {
+                            label = '${(value / 1000).toStringAsFixed(0)}K';
+                          } else {
+                            label = value.toStringAsFixed(0);
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text('\u20B1$label',
+                                style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant),
+                                textAlign: TextAlign.right),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: maxVal > 0 ? maxVal / 4 : 1,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: colorScheme.outline.withValues(alpha: 0.08),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: List.generate(6, (i) => BarChartGroupData(
+                    x: i,
+                    barRods: [
+                      BarChartRodData(
+                        toY: incomes[i],
+                        color: AppColors.income,
+                        width: 14,
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(3), topRight: Radius.circular(3)),
+                      ),
+                      BarChartRodData(
+                        toY: expenses[i],
+                        color: Colors.grey.shade400,
+                        width: 14,
+                        borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(3), topRight: Radius.circular(3)),
+                      ),
+                    ],
+                  )),
+                  extraLinesData: ExtraLinesData(
+                    extraLinesOnTop: true,
+                  ),
                 ),
               ),
             ),
+            // Net line as a separate small LineChart overlay description
+            if (nets.any((n) => n != 0)) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 60,
+                child: LineChart(
+                  LineChartData(
+                    minY: minNet < 0 ? minNet * 1.2 : 0,
+                    maxY: maxNet > 0 ? maxNet * 1.2 : 1,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: List.generate(6, (i) => FlSpot(i.toDouble(), nets[i])),
+                        isCurved: true,
+                        color: AppColors.info,
+                        barWidth: 2,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) =>
+                              FlDotCirclePainter(radius: 3, color: AppColors.info, strokeWidth: 0),
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: AppColors.info.withValues(alpha: 0.08),
+                        ),
+                      ),
+                    ],
+                    titlesData: FlTitlesData(
+                      show: true,
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 46,
+                          getTitlesWidget: (value, meta) {
+                            if (value == meta.max || value == meta.min) return const SizedBox.shrink();
+                            String label;
+                            final absVal = value.abs();
+                            if (absVal >= 1000000) {
+                              label = '${(value / 1000000).toStringAsFixed(1)}M';
+                            } else if (absVal >= 1000) {
+                              label = '${(value / 1000).toStringAsFixed(0)}K';
+                            } else {
+                              label = value.toStringAsFixed(0);
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Text('\u20B1$label',
+                                  style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant),
+                                  textAlign: TextAlign.right),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    gridData: FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                        tooltipBorderRadius: BorderRadius.circular(8),
+                        getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+                          return LineTooltipItem(
+                            'Net: ${formatCurrency(spot.y)}',
+                            TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.info),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _LegendDot(color: Colors.grey.shade400, label: 'Expenses'),
-              const SizedBox(width: 16),
               _LegendDot(color: AppColors.income, label: 'Income'),
               const SizedBox(width: 16),
-              Row(children: [
-                Icon(LucideIcons.arrowRight, size: 10, color: AppColors.info),
-                const SizedBox(width: 4),
-                Text('Net', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ]),
+              _LegendDot(color: Colors.grey.shade400, label: 'Expenses'),
+              const SizedBox(width: 16),
+              _LegendDot(color: AppColors.info, label: 'Net'),
             ]),
           ]);
         },
@@ -374,24 +607,177 @@ class _TrendsTab extends StatelessWidget {
   }
 
   Widget _buildNetWorthView(BuildContext context) {
-    final summary = ref.watch(transactionsSummaryProvider);
+    final transactions = ref.watch(transactionsProvider);
+    final totalBalance = ref.watch(totalBalanceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
     return _OverviewCard(
-      child: summary.when(
-        data: (s) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Net Worth Over Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: CustomPaint(
-              size: const Size(double.infinity, 200),
-              painter: _LineChartPainter(
-                value: s.balance,
-                color: AppColors.income,
-                isDark: Theme.of(context).brightness == Brightness.dark,
+      child: transactions.when(
+        data: (txns) {
+          // Build cumulative net worth over last 6 months
+          final now = DateTime.now();
+          final last6Months = List.generate(6, (i) {
+            final d = DateTime(now.year, now.month - 5 + i);
+            return '${d.year}-${d.month.toString().padLeft(2, '0')}';
+          });
+
+          // Calculate running balance per month
+          final monthlyNet = <String, double>{};
+          for (final t in txns) {
+            if (t.category.toLowerCase() == 'transfer') continue;
+            final month = t.date.substring(0, 7);
+            monthlyNet[month] = (monthlyNet[month] ?? 0) + t.amount;
+          }
+
+          // Build cumulative values - work backwards from totalBalance
+          double cumulative = totalBalance;
+          final cumulativeValues = <double>[];
+          // First pass: compute net per month for last 6 months
+          final netsForMonths = last6Months.map((m) => monthlyNet[m] ?? 0.0).toList();
+          // Work backwards from current balance
+          for (int i = 5; i >= 0; i--) {
+            cumulativeValues.insert(0, cumulative);
+            if (i > 0) cumulative -= netsForMonths[i];
+          }
+
+          final currentValue = cumulativeValues.last;
+          final minVal = cumulativeValues.reduce(math.min);
+          final maxVal = cumulativeValues.reduce(math.max);
+          final range = maxVal - minVal;
+
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Net Worth Over Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(formatCurrency(currentValue),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.income)),
+                Text('Current', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+              ]),
+            ]),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  minY: range > 0 ? minVal - range * 0.1 : 0,
+                  maxY: range > 0 ? maxVal + range * 0.1 : maxVal * 1.2,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: List.generate(6, (i) => FlSpot(i.toDouble(), cumulativeValues[i])),
+                      isCurved: true,
+                      curveSmoothness: 0.35,
+                      color: AppColors.income,
+                      barWidth: 3,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) {
+                          if (index == 5) {
+                            // Highlight current value with larger dot
+                            return FlDotCirclePainter(
+                              radius: 5,
+                              color: AppColors.income,
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            );
+                          }
+                          return FlDotCirclePainter(
+                            radius: 2.5,
+                            color: AppColors.income,
+                            strokeWidth: 0,
+                          );
+                        },
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.income.withValues(alpha: 0.25),
+                            AppColors.income.withValues(alpha: 0.02),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    show: true,
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 28,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= last6Months.length) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(_formatMonth(last6Months[idx]),
+                                style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                          );
+                        },
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 50,
+                        getTitlesWidget: (value, meta) {
+                          if (value == meta.max || value == meta.min) return const SizedBox.shrink();
+                          String label;
+                          final absVal = value.abs();
+                          if (absVal >= 1000000) {
+                            label = '${(value / 1000000).toStringAsFixed(1)}M';
+                          } else if (absVal >= 1000) {
+                            label = '${(value / 1000).toStringAsFixed(0)}K';
+                          } else {
+                            label = value.toStringAsFixed(0);
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Text('\u20B1$label',
+                                style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant),
+                                textAlign: TextAlign.right),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: range > 0 ? range / 4 : 1,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: colorScheme.outline.withValues(alpha: 0.08),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      tooltipBorderRadius: BorderRadius.circular(8),
+                      getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+                        final idx = spot.spotIndex;
+                        return LineTooltipItem(
+                          '${_formatMonth(last6Months[idx])}\n',
+                          TextStyle(fontSize: 11, color: colorScheme.onSurface),
+                          children: [
+                            TextSpan(
+                              text: formatCurrency(spot.y),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.income),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ]),
+          ]);
+        },
         loading: () => const ShimmerCard(height: 200),
         error: (_, __) => const SizedBox.shrink(),
       ),
@@ -1225,56 +1611,7 @@ class _BreakdownRow extends StatelessWidget {
   }
 }
 
-// ─── Donut Chart Painter ───────────────────────────────────────────────────────
-
-class _DonutChartPainter extends CustomPainter {
-  final List<double> values;
-  final List<Color> colors;
-  final String? centerLabel;
-
-  _DonutChartPainter({required this.values, required this.colors, this.centerLabel});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final total = values.fold(0.0, (s, v) => s + v);
-    if (total == 0) return;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 8;
-    final strokeWidth = radius * 0.35;
-
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.butt;
-
-    double startAngle = -math.pi / 2;
-    for (int i = 0; i < values.length; i++) {
-      final sweep = (values[i] / total) * 2 * math.pi;
-      paint.color = colors[i];
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
-        startAngle, sweep, false, paint,
-      );
-      startAngle += sweep;
-    }
-
-    // Draw center label (total spending)
-    if (centerLabel != null) {
-      final tp = TextPainter(
-        text: TextSpan(
-          text: centerLabel,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// ─── Custom painters removed — replaced by fl_chart widgets ────────────────────
 
 // ─── Gauge Painter ─────────────────────────────────────────────────────────────
 
@@ -1336,148 +1673,6 @@ class _GaugePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ─── Bar Chart Painter (Monthly Trend) ─────────────────────────────────────────
-
-class _BarChartPainter extends CustomPainter {
-  final List<String> months;
-  final List<double> incomes;
-  final List<double> expenses;
-  final double maxValue;
-  final bool isDark;
-
-  _BarChartPainter({
-    required this.months,
-    required this.incomes,
-    required this.expenses,
-    required this.maxValue,
-    required this.isDark,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (months.isEmpty || maxValue == 0) return;
-
-    final leftPad = 45.0;
-    final bottomPad = 24.0;
-    final chartW = size.width - leftPad - 20;
-    final chartH = size.height - bottomPad - 8;
-    final barGroupWidth = chartW / months.length;
-    final barWidth = barGroupWidth * 0.25;
-
-    final gridColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06);
-    final labelStyle = TextStyle(fontSize: 9, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.4));
-
-    // Y-axis grid lines + labels
-    for (int i = 0; i <= 4; i++) {
-      final y = 8 + chartH * (1 - i / 4);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 20, y), Paint()..color = gridColor);
-      final val = (maxValue * i / 4);
-      final label = val >= 1000 ? '${(val / 1000).toStringAsFixed(0)}K' : val.toStringAsFixed(0);
-      final tp = TextPainter(text: TextSpan(text: label, style: labelStyle), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(leftPad - tp.width - 6, y - tp.height / 2));
-    }
-
-    // Bars + X labels
-    for (int i = 0; i < months.length; i++) {
-      final cx = leftPad + barGroupWidth * i + barGroupWidth / 2;
-
-      // Expense bar (grey)
-      final expH = (expenses[i] / maxValue) * chartH;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(cx - barWidth - 1, 8 + chartH - expH, barWidth, expH), const Radius.circular(2)),
-        Paint()..color = isDark ? Colors.grey.shade600 : Colors.grey.shade300,
-      );
-
-      // Income bar (green)
-      final incH = (incomes[i] / maxValue) * chartH;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(cx + 1, 8 + chartH - incH, barWidth, incH), const Radius.circular(2)),
-        Paint()..color = AppColors.income,
-      );
-
-      // X label
-      final tp = TextPainter(text: TextSpan(text: months[i], style: labelStyle), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(cx - tp.width / 2, size.height - bottomPad + 6));
-    }
-
-    // Net line
-    final linePaint = Paint()
-      ..color = AppColors.info
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    final linePath = Path();
-    for (int i = 0; i < months.length; i++) {
-      final cx = leftPad + barGroupWidth * i + barGroupWidth / 2;
-      final net = incomes[i] - expenses[i];
-      final y = 8 + chartH * (1 - net / maxValue).clamp(0, 1);
-      if (i == 0) linePath.moveTo(cx, y); else linePath.lineTo(cx, y);
-    }
-    canvas.drawPath(linePath, linePaint);
-
-    // Net dots
-    for (int i = 0; i < months.length; i++) {
-      final cx = leftPad + barGroupWidth * i + barGroupWidth / 2;
-      final net = incomes[i] - expenses[i];
-      final y = 8 + chartH * (1 - net / maxValue).clamp(0, 1);
-      canvas.drawCircle(Offset(cx, y), 3, Paint()..color = AppColors.info);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ─── Line Chart Painter (Net Worth) ────────────────────────────────────────────
-
-class _LineChartPainter extends CustomPainter {
-  final double value;
-  final Color color;
-  final bool isDark;
-
-  _LineChartPainter({required this.value, required this.color, required this.isDark});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final leftPad = 50.0;
-    final bottomPad = 24.0;
-    final chartW = size.width - leftPad - 20;
-    final chartH = size.height - bottomPad - 8;
-
-    final gridColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06);
-    final labelStyle = TextStyle(fontSize: 9, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.4));
-
-    // Y-axis
-    for (int i = 0; i <= 4; i++) {
-      final y = 8 + chartH * (1 - i / 4);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 20, y), Paint()..color = gridColor);
-      final val = value * i / 4;
-      final label = val >= 1000 ? '₱${(val / 1000).toStringAsFixed(0)}K' : '₱${val.toStringAsFixed(0)}';
-      final tp = TextPainter(text: TextSpan(text: label, style: labelStyle), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(leftPad - tp.width - 6, y - tp.height / 2));
-    }
-
-    // Simulated growth line (flat then sharp rise to current value)
-    final months = ["May '25", "Aug '25", "Nov '25", 'Jan', 'Mar'];
-    final values = [0.0, 0.0, 0.0, value * 0.3, value];
-
-    final linePaint = Paint()..color = color..strokeWidth = 2.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
-    final path = Path();
-
-    for (int i = 0; i < months.length; i++) {
-      final x = leftPad + chartW * i / (months.length - 1);
-      final y = 8 + chartH * (1 - values[i] / value).clamp(0, 1);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
-
-      // X label
-      final tp = TextPainter(text: TextSpan(text: months[i], style: labelStyle), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, Offset(x - tp.width / 2, size.height - bottomPad + 6));
-    }
-    canvas.drawPath(path, linePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 // ─── Legend Dot ────────────────────────────────────────────────────────────────
 

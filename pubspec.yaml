@@ -32,7 +32,7 @@ dependencies:
   json_annotation: ^4.9.0
 
   # Charts
-  fl_chart: ^0.70.2
+  fl_chart: ^1.2.0
 
   # Animations
   flutter_animate: ^4.5.2
@@ -60,6 +60,7 @@ dependencies:
 
   # Notifications
   flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
 
   # Environment
   envied: ^1.1.1

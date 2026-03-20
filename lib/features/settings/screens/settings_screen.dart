@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/services/automation_service.dart';
 import '../../../app.dart';
 import '../../auth/providers/auth_provider.dart';
 
@@ -287,8 +290,45 @@ class _AutomationSection extends StatefulWidget {
 
 class _AutomationSectionState extends State<_AutomationSection> {
   bool _autoContrib = true, _billReminders = true, _debtReminders = true, _insuranceReminders = true;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _autoContrib = prefs.getBool(AutomationKeys.autoContributions) ?? true;
+      _billReminders = prefs.getBool(AutomationKeys.autoBills) ?? true;
+      _debtReminders = prefs.getBool(AutomationKeys.autoDebts) ?? true;
+      _insuranceReminders = prefs.getBool(AutomationKeys.autoInsurance) ?? true;
+      _loaded = true;
+    });
+  }
+
+  Future<void> _setAndSave(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+
+    // When a reminder toggle is turned off, cancel related notifications.
+    // When turned on, re-run automation to schedule them.
+    if (value) {
+      await AutomationService.runOnAppStart();
+    } else {
+      // Cancel all and re-schedule only the still-enabled categories.
+      await NotificationService.instance.cancelAll();
+      await AutomationService.runOnAppStart();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_loaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
       widget.back,
       _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -302,16 +342,28 @@ class _AutomationSectionState extends State<_AutomationSection> {
         const SizedBox(height: 8),
         _ToggleRow(title: 'Auto-generate monthly contributions',
             sub: 'Create SSS, PhilHealth, and Pag-IBIG entries each month from your last salary',
-            value: _autoContrib, onChanged: (v) => setState(() => _autoContrib = v)),
+            value: _autoContrib, onChanged: (v) {
+              setState(() => _autoContrib = v);
+              _setAndSave(AutomationKeys.autoContributions, v);
+            }),
         _ToggleRow(title: 'Bill reminders',
             sub: 'Show upcoming bills on your Home page and send push notifications before due dates',
-            value: _billReminders, onChanged: (v) => setState(() => _billReminders = v)),
+            value: _billReminders, onChanged: (v) {
+              setState(() => _billReminders = v);
+              _setAndSave(AutomationKeys.autoBills, v);
+            }),
         _ToggleRow(title: 'Debt payment reminders',
             sub: 'Show upcoming debt payments on your Home page and send push notifications',
-            value: _debtReminders, onChanged: (v) => setState(() => _debtReminders = v)),
+            value: _debtReminders, onChanged: (v) {
+              setState(() => _debtReminders = v);
+              _setAndSave(AutomationKeys.autoDebts, v);
+            }),
         _ToggleRow(title: 'Insurance premium reminders',
             sub: 'Show upcoming insurance premiums and send push notifications before renewal dates',
-            value: _insuranceReminders, onChanged: (v) => setState(() => _insuranceReminders = v)),
+            value: _insuranceReminders, onChanged: (v) {
+              setState(() => _insuranceReminders = v);
+              _setAndSave(AutomationKeys.autoInsurance, v);
+            }),
       ])),
     ]);
   }
@@ -327,8 +379,49 @@ class _NotificationsSection extends StatefulWidget {
 
 class _NotificationsSectionState extends State<_NotificationsSection> {
   bool _push = true, _morning = true;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _push = prefs.getBool(AutomationKeys.pushEnabled) ?? true;
+      _morning = prefs.getBool(AutomationKeys.morningSummary) ?? true;
+      _loaded = true;
+    });
+  }
+
+  Future<void> _onPushChanged(bool value) async {
+    setState(() => _push = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AutomationKeys.pushEnabled, value);
+
+    if (!value) {
+      // Turning off push notifications cancels everything.
+      await NotificationService.instance.cancelAll();
+    } else {
+      // Re-request permission and re-schedule.
+      await NotificationService.instance.requestPermission();
+      await AutomationService.runOnAppStart();
+    }
+  }
+
+  Future<void> _onMorningChanged(bool value) async {
+    setState(() => _morning = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AutomationKeys.morningSummary, value);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_loaded) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
       widget.back,
       _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -342,10 +435,10 @@ class _NotificationsSectionState extends State<_NotificationsSection> {
         const SizedBox(height: 8),
         _ToggleRow(title: 'Push notifications',
             sub: 'Receive notifications on your phone for upcoming payments and reminders',
-            value: _push, onChanged: (v) => setState(() => _push = v)),
+            value: _push, onChanged: _onPushChanged),
         _ToggleRow(title: 'Morning summary',
             sub: 'Get a daily summary of what\'s due today at 9:00 AM',
-            value: _morning, onChanged: (v) => setState(() => _morning = v)),
+            value: _morning, onChanged: _onMorningChanged),
       ])),
     ]);
   }
