@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/animated_counter.dart';
-import '../painters/ph_map_painter.dart';
-import '../../../core/theme/color_tokens.dart' show StageColors;
+import '../../../data/guide/guide_data.dart';
 
 // ─── Stage Data ────────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ class _JourneyNode extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to stage detail
+            context.go('/guide/${_stages[index].id}');
           },
           child: SizedBox(
             width: 160,

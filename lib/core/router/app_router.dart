@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/guide/screens/guide_screen.dart';
+import '../../features/guide/screens/stage_detail_screen.dart';
+import '../../features/guide/screens/article_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/transactions/screens/transactions_screen.dart';
 import '../../features/accounts/screens/accounts_screen.dart';
@@ -83,6 +85,21 @@ final appRouter = GoRouter(
           path: '/guide',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: GuideScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/guide/:stageSlug',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
+          ),
+        ),
+        GoRoute(
+          path: '/guide/:stageSlug/:guideSlug',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: ArticleScreen(
+              stageSlug: state.pathParameters['stageSlug']!,
+              guideSlug: state.pathParameters['guideSlug']!,
+            ),
           ),
         ),
         GoRoute(
