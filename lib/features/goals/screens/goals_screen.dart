@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/goal.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../../shared/widgets/animated_counter.dart';
 import '../providers/goal_providers.dart';
 import '../widgets/add_goal_dialog.dart';
 
@@ -24,11 +28,19 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     final goals = ref.watch(goalsProvider);
     final summary = ref.watch(goalsSummaryProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Header
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+    return RefreshIndicator(
+      onRefresh: () async {
+        HapticFeedback.mediumImpact();
+        ref.invalidate(goalsProvider);
+        ref.invalidate(goalsSummaryProvider);
+        await ref.read(goalsProvider.future);
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Header
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Goals', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           FilledButton.icon(
             onPressed: () => _showAddGoal(context),
@@ -51,7 +63,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
             _StatCard(label: 'Progress', value: '${(gs.overallProgress * 100).toStringAsFixed(0)}%',
                 icon: LucideIcons.trendingUp),
           ]),
-          loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
+          loading: () => const ShimmerStatRow(count: 4),
           error: (_, __) => const SizedBox.shrink(),
         ),
         const SizedBox(height: 16),
@@ -77,12 +89,14 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                 subtitle: _showCompleted ? 'Keep working toward your goals!' : 'Set a goal to start saving.',
               );
             }
-            return Column(children: filtered.map((g) => _GoalCard(goal: g)).toList());
+            return Column(children: filtered.asMap().entries.map((e) =>
+                StaggeredFadeIn(index: e.key, child: _GoalCard(goal: e.value))).toList());
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Column(children: List.generate(3, (_) => const ShimmerCard())),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
       ],
+    ),
     );
   }
 
@@ -180,14 +194,10 @@ class _GoalCard extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0, 1),
-              minHeight: 6,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              color: color,
-            ),
+          AnimatedProgressBar(
+            value: progress,
+            minHeight: 6,
+            color: color,
           ),
           const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/account.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../../shared/widgets/animated_counter.dart';
 import '../providers/account_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../widgets/add_account_dialog.dart';
@@ -20,12 +24,21 @@ class AccountsScreen extends ConsumerWidget {
     final totalBalance = ref.watch(totalBalanceProvider);
     final contribSummary = ref.watch(contributionSummaryProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Header
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          const Text('Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+    return RefreshIndicator(
+      onRefresh: () async {
+        HapticFeedback.mediumImpact();
+        ref.invalidate(accountsProvider);
+        ref.invalidate(archivedAccountsProvider);
+        ref.invalidate(contributionSummaryProvider);
+        await ref.read(accountsProvider.future);
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Header
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            const Text('Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           FilledButton.icon(
             onPressed: () => _showAddAccount(context, ref),
             icon: const Icon(LucideIcons.plus, size: 16),
@@ -34,8 +47,10 @@ class AccountsScreen extends ConsumerWidget {
           ),
         ]),
         const SizedBox(height: 4),
-        Text('Total: ${formatCurrency(totalBalance)}',
-            style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+        AnimatedCurrency(
+          value: totalBalance,
+          style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 20),
 
         // Active accounts
@@ -51,8 +66,9 @@ class AccountsScreen extends ConsumerWidget {
                     label: const Text('Add Account'),
                   ),
                 )
-              : Column(children: accs.map((a) => _AccountCard(account: a)).toList()),
-          loading: () => const Center(child: CircularProgressIndicator()),
+              : Column(children: accs.asMap().entries.map((e) =>
+                  StaggeredFadeIn(index: e.key, child: _AccountCard(account: e.value))).toList()),
+          loading: () => Column(children: List.generate(3, (_) => const ShimmerCard(height: 72))),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
         const SizedBox(height: 20),
@@ -90,6 +106,7 @@ class AccountsScreen extends ConsumerWidget {
           error: (_, __) => const SizedBox.shrink(),
         ),
       ],
+    ),
     );
   }
 

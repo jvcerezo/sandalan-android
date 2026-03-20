@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../../shared/widgets/animated_counter.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../../goals/providers/goal_providers.dart';
 import '../../../data/models/transaction.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
+
+  Future<void> _onRefresh(WidgetRef ref) async {
+    HapticFeedback.mediumImpact();
+    ref.invalidate(transactionsSummaryProvider);
+    ref.invalidate(recentTransactionsProvider);
+    ref.invalidate(goalsSummaryProvider);
+    // Wait for data to reload
+    await Future.wait([
+      ref.read(transactionsSummaryProvider.future),
+      ref.read(recentTransactionsProvider.future),
+    ]);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,88 +34,112 @@ class DashboardScreen extends ConsumerWidget {
     final recentTxns = ref.watch(recentTransactionsProvider);
     final goalsSummary = ref.watch(goalsSummaryProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Dashboard',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Row(children: [
-              _ActionChip(label: 'Income', color: AppColors.income,
+    return RefreshIndicator(
+      onRefresh: () => _onRefresh(ref),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Header
+          StaggeredFadeIn(
+            index: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Dashboard',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Row(children: [
+                  _ActionChip(label: 'Income', color: AppColors.income,
+                      onTap: () => context.go('/transactions')),
+                  const SizedBox(width: 8),
+                  _ActionChip(label: 'Expense', color: AppColors.expense,
+                      onTap: () => context.go('/transactions')),
+                ]),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Balance card
+          StaggeredFadeIn(
+            index: 1,
+            child: summary.when(
+              data: (s) => _BalanceCard(balance: s.balance, income: s.income, expenses: s.expenses),
+              loading: () => const ShimmerBalanceCard(),
+              error: (e, _) => Card(child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Error loading summary', style: TextStyle(color: colorScheme.error)),
+              )),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick links
+          StaggeredFadeIn(
+            index: 2,
+            child: Row(children: [
+              _QuickLink(icon: LucideIcons.arrowLeftRight, label: 'Transactions',
                   onTap: () => context.go('/transactions')),
               const SizedBox(width: 8),
-              _ActionChip(label: 'Expense', color: AppColors.expense,
-                  onTap: () => context.go('/transactions')),
+              _QuickLink(icon: LucideIcons.landmark, label: 'Accounts',
+                  onTap: () => context.go('/accounts')),
+              const SizedBox(width: 8),
+              _QuickLink(icon: LucideIcons.pieChart, label: 'Budgets',
+                  onTap: () => context.go('/budgets')),
+              const SizedBox(width: 8),
+              _QuickLink(icon: LucideIcons.target, label: 'Goals',
+                  onTap: () => context.go('/goals')),
             ]),
-          ],
-        ),
-        const SizedBox(height: 20),
+          ),
+          const SizedBox(height: 20),
 
-        // Balance card
-        summary.when(
-          data: (s) => _BalanceCard(balance: s.balance, income: s.income, expenses: s.expenses),
-          loading: () => const SizedBox(height: 120, child: Center(child: CircularProgressIndicator())),
-          error: (e, _) => Card(child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text('Error loading summary', style: TextStyle(color: colorScheme.error)),
-          )),
-        ),
-        const SizedBox(height: 16),
-
-        // Quick links
-        Row(children: [
-          _QuickLink(icon: LucideIcons.arrowLeftRight, label: 'Transactions',
-              onTap: () => context.go('/transactions')),
-          const SizedBox(width: 8),
-          _QuickLink(icon: LucideIcons.landmark, label: 'Accounts',
-              onTap: () => context.go('/accounts')),
-          const SizedBox(width: 8),
-          _QuickLink(icon: LucideIcons.pieChart, label: 'Budgets',
-              onTap: () => context.go('/budgets')),
-          const SizedBox(width: 8),
-          _QuickLink(icon: LucideIcons.target, label: 'Goals',
-              onTap: () => context.go('/goals')),
-        ]),
-        const SizedBox(height: 20),
-
-        // Goals snapshot
-        goalsSummary.when(
-          data: (gs) => gs.total > 0 ? _GoalsSnapshot(
-            active: gs.active, completed: gs.completed, progress: gs.overallProgress,
-          ) : const SizedBox.shrink(),
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
-
-        // Recent transactions
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Recent Transactions',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            GestureDetector(
-              onTap: () => context.go('/transactions'),
-              child: Text('See all', style: TextStyle(fontSize: 13, color: colorScheme.primary)),
+          // Goals snapshot
+          StaggeredFadeIn(
+            index: 3,
+            child: goalsSummary.when(
+              data: (gs) => gs.total > 0 ? _GoalsSnapshot(
+                active: gs.active, completed: gs.completed, progress: gs.overallProgress,
+              ) : const SizedBox.shrink(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        recentTxns.when(
-          data: (txns) => txns.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 32),
-                  child: Center(child: Text('No transactions yet',
-                      style: TextStyle(color: colorScheme.onSurfaceVariant))),
-                )
-              : Column(children: txns.map((t) => _TransactionTile(transaction: t)).toList()),
-          loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
-      ],
+          ),
+
+          // Recent transactions
+          const SizedBox(height: 16),
+          StaggeredFadeIn(
+            index: 4,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Recent Transactions',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                GestureDetector(
+                  onTap: () => context.go('/transactions'),
+                  child: Text('See all', style: TextStyle(fontSize: 13, color: colorScheme.primary)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          recentTxns.when(
+            data: (txns) => txns.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Center(child: Text('No transactions yet',
+                        style: TextStyle(color: colorScheme.onSurfaceVariant))),
+                  )
+                : Column(children: txns.asMap().entries.map((e) =>
+                    StaggeredFadeIn(
+                      index: 5 + e.key,
+                      child: _TransactionTile(transaction: e.value),
+                    ),
+                  ).toList()),
+            loading: () => const ShimmerList(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -113,7 +153,10 @@ class _ActionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -139,7 +182,10 @@ class _BalanceCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Total Balance', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
           const SizedBox(height: 4),
-          Text(formatCurrency(balance), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+          AnimatedCurrency(
+            value: balance,
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           Row(children: [
             _BalanceStat(label: 'Income', value: income, color: AppColors.income, icon: LucideIcons.trendingUp),
@@ -171,7 +217,8 @@ class _BalanceStat extends StatelessWidget {
         const SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          Text(formatCurrency(value), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+          AnimatedCurrency(value: value, currencyCode: 'PHP',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
         ]),
       ]),
     );
@@ -189,7 +236,10 @@ class _QuickLink extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
@@ -225,11 +275,7 @@ class _GoalsSnapshot extends StatelessWidget {
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
           ]),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(value: progress, minHeight: 6,
-                backgroundColor: colorScheme.surfaceContainerHighest, color: AppColors.income),
-          ),
+          AnimatedProgressBar(value: progress, minHeight: 6, color: AppColors.income),
           const SizedBox(height: 4),
           Text('${(progress * 100).toStringAsFixed(0)}% overall',
               style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
@@ -7,6 +8,8 @@ import '../../../core/constants/categories.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/widgets/staggered_fade_in.dart';
 import '../providers/transaction_providers.dart';
 import '../widgets/add_transaction_dialog.dart';
 
@@ -132,8 +135,16 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     label: const Text('Add Transaction'),
                   ),
                 )
-              : _TransactionList(transactions: txns),
-          loading: () => const Center(child: CircularProgressIndicator()),
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    HapticFeedback.mediumImpact();
+                    ref.invalidate(transactionsProvider);
+                    ref.invalidate(transactionsCountProvider);
+                    await ref.read(transactionsProvider.future);
+                  },
+                  child: _TransactionList(transactions: txns),
+                ),
+          loading: () => const ShimmerList(itemCount: 8),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
       ),
