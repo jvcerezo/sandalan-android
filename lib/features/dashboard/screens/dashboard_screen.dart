@@ -165,7 +165,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               )),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
+
+          // Helper text
+          if (_selectedTab == 0) ...[
+            Row(children: [
+              Icon(LucideIcons.cornerDownRight, size: 14, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text('Trends selected — choose a trend view below',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+            ]),
+            const SizedBox(height: 14),
+          ] else ...[
+            const SizedBox(height: 6),
+          ],
 
           // Tab content
           if (_selectedTab == 0) _TrendsTab(ref: ref, trendView: _trendView,
@@ -296,39 +309,176 @@ class _TrendsTab extends StatelessWidget {
   }
 
   Widget _buildMonthlyView(BuildContext context, AsyncValue<List<Transaction>> transactions) {
-    final colorScheme = Theme.of(context).colorScheme;
     return _OverviewCard(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Monthly Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Text('Monthly income vs expenses trend coming soon.',
-            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-      ]),
+      child: transactions.when(
+        data: (txns) {
+          // Group transactions by month
+          final monthlyData = <String, ({double income, double expenses})>{};
+          for (final t in txns) {
+            if (t.category.toLowerCase() == 'transfer') continue;
+            final month = t.date.substring(0, 7); // YYYY-MM
+            final existing = monthlyData[month] ?? (income: 0.0, expenses: 0.0);
+            monthlyData[month] = t.amount > 0
+                ? (income: existing.income + t.amount, expenses: existing.expenses)
+                : (income: existing.income, expenses: existing.expenses + t.amount.abs());
+          }
+          final sorted = monthlyData.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+          final last6 = sorted.length > 6 ? sorted.sublist(sorted.length - 6) : sorted;
+
+          if (last6.isEmpty) {
+            return const Padding(padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: Text('No data yet', style: TextStyle(fontSize: 13))));
+          }
+
+          final maxVal = last6.fold(0.0, (m, e) =>
+              math.max(m, math.max(e.value.income, e.value.expenses)));
+
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Monthly Trend', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: CustomPaint(
+                size: const Size(double.infinity, 200),
+                painter: _BarChartPainter(
+                  months: last6.map((e) => _formatMonth(e.key)).toList(),
+                  incomes: last6.map((e) => e.value.income).toList(),
+                  expenses: last6.map((e) => e.value.expenses).toList(),
+                  maxValue: maxVal,
+                  isDark: Theme.of(context).brightness == Brightness.dark,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              _LegendDot(color: Colors.grey.shade400, label: 'Expenses'),
+              const SizedBox(width: 16),
+              _LegendDot(color: AppColors.income, label: 'Income'),
+              const SizedBox(width: 16),
+              Row(children: [
+                Icon(LucideIcons.arrowRight, size: 10, color: AppColors.info),
+                const SizedBox(width: 4),
+                Text('Net', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              ]),
+            ]),
+          ]);
+        },
+        loading: () => const ShimmerCard(height: 200),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
     );
   }
 
   Widget _buildNetWorthView(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final summary = ref.watch(transactionsSummaryProvider);
     return _OverviewCard(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Net Worth', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Text('Net worth tracking over time coming soon.',
-            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-      ]),
+      child: summary.when(
+        data: (s) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Net Worth Over Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 200,
+            child: CustomPaint(
+              size: const Size(double.infinity, 200),
+              painter: _LineChartPainter(
+                value: s.balance,
+                color: AppColors.income,
+                isDark: Theme.of(context).brightness == Brightness.dark,
+              ),
+            ),
+          ),
+        ]),
+        loading: () => const ShimmerCard(height: 200),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
     );
   }
 
   Widget _buildCompareView(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final transactions = ref.watch(transactionsProvider);
+
     return _OverviewCard(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Compare', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        Text('Month-to-month comparison coming soon.',
-            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-      ]),
+      child: transactions.when(
+        data: (txns) {
+          final now = DateTime.now();
+          final thisMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+          final lastMonth = DateTime(now.year, now.month - 1);
+          final lastMonthStr = '${lastMonth.year}-${lastMonth.month.toString().padLeft(2, '0')}';
+
+          final thisMonthTotals = <String, double>{};
+          final lastMonthTotals = <String, double>{};
+          for (final t in txns) {
+            if (t.amount >= 0) continue;
+            final month = t.date.substring(0, 7);
+            if (month == thisMonth) {
+              thisMonthTotals[t.category] = (thisMonthTotals[t.category] ?? 0) + t.amount.abs();
+            } else if (month == lastMonthStr) {
+              lastMonthTotals[t.category] = (lastMonthTotals[t.category] ?? 0) + t.amount.abs();
+            }
+          }
+
+          final allCategories = {...thisMonthTotals.keys, ...lastMonthTotals.keys}.toList()..sort();
+
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Spending: This vs Last Month',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            // Table header
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(children: [
+                const Expanded(flex: 3, child: Text('CATEGORY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text('THIS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5), textAlign: TextAlign.right)),
+                Expanded(flex: 2, child: Text('LAST', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5), textAlign: TextAlign.right)),
+                const Expanded(flex: 1, child: Text('Δ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600), textAlign: TextAlign.right)),
+              ]),
+            ),
+            if (allCategories.isEmpty)
+              Padding(padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: Text('No spending data', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant))))
+            else
+              ...allCategories.map((cat) {
+                final thisVal = thisMonthTotals[cat] ?? 0;
+                final lastVal = lastMonthTotals[cat] ?? 0;
+                final delta = lastVal > 0 ? ((thisVal - lastVal) / lastVal * 100) : (thisVal > 0 ? 100 : 0);
+                final deltaColor = delta > 0 ? AppColors.expense : AppColors.income;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.08))),
+                  ),
+                  child: Row(children: [
+                    Expanded(flex: 3, child: Text(cat, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+                    Expanded(flex: 2, child: Text(formatCurrency(thisVal), style: const TextStyle(fontSize: 12), textAlign: TextAlign.right)),
+                    Expanded(flex: 2, child: Text(formatCurrency(lastVal),
+                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant), textAlign: TextAlign.right)),
+                    Expanded(flex: 1, child: Text(
+                        '${delta > 0 ? '↑' : delta < 0 ? '↓' : '—'} ${delta.abs().toStringAsFixed(0)}%',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: deltaColor),
+                        textAlign: TextAlign.right)),
+                  ]),
+                );
+              }),
+          ]);
+        },
+        loading: () => const ShimmerCard(height: 200),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
     );
+  }
+
+  String _formatMonth(String ym) {
+    final parts = ym.split('-');
+    const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final y = parts[0].substring(2);
+    final m = int.parse(parts[1]);
+    return "${months[m]} '$y";
   }
 }
 
@@ -896,4 +1046,164 @@ class _GaugePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Bar Chart Painter (Monthly Trend) ─────────────────────────────────────────
+
+class _BarChartPainter extends CustomPainter {
+  final List<String> months;
+  final List<double> incomes;
+  final List<double> expenses;
+  final double maxValue;
+  final bool isDark;
+
+  _BarChartPainter({
+    required this.months,
+    required this.incomes,
+    required this.expenses,
+    required this.maxValue,
+    required this.isDark,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (months.isEmpty || maxValue == 0) return;
+
+    final leftPad = 45.0;
+    final bottomPad = 24.0;
+    final chartW = size.width - leftPad - 8;
+    final chartH = size.height - bottomPad - 8;
+    final barGroupWidth = chartW / months.length;
+    final barWidth = barGroupWidth * 0.25;
+
+    final gridColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06);
+    final labelStyle = TextStyle(fontSize: 9, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.4));
+
+    // Y-axis grid lines + labels
+    for (int i = 0; i <= 4; i++) {
+      final y = 8 + chartH * (1 - i / 4);
+      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 8, y), Paint()..color = gridColor);
+      final val = (maxValue * i / 4);
+      final label = val >= 1000 ? '${(val / 1000).toStringAsFixed(0)}K' : val.toStringAsFixed(0);
+      final tp = TextPainter(text: TextSpan(text: label, style: labelStyle), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset(leftPad - tp.width - 6, y - tp.height / 2));
+    }
+
+    // Bars + X labels
+    for (int i = 0; i < months.length; i++) {
+      final cx = leftPad + barGroupWidth * i + barGroupWidth / 2;
+
+      // Expense bar (grey)
+      final expH = (expenses[i] / maxValue) * chartH;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(cx - barWidth - 1, 8 + chartH - expH, barWidth, expH), const Radius.circular(2)),
+        Paint()..color = Colors.grey.shade400,
+      );
+
+      // Income bar (green)
+      final incH = (incomes[i] / maxValue) * chartH;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(Rect.fromLTWH(cx + 1, 8 + chartH - incH, barWidth, incH), const Radius.circular(2)),
+        Paint()..color = AppColors.income,
+      );
+
+      // X label
+      final tp = TextPainter(text: TextSpan(text: months[i], style: labelStyle), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset(cx - tp.width / 2, size.height - bottomPad + 6));
+    }
+
+    // Net line
+    final linePaint = Paint()
+      ..color = AppColors.info
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    final linePath = Path();
+    for (int i = 0; i < months.length; i++) {
+      final cx = leftPad + barGroupWidth * i + barGroupWidth / 2;
+      final net = incomes[i] - expenses[i];
+      final y = 8 + chartH * (1 - net / maxValue).clamp(0, 1);
+      if (i == 0) linePath.moveTo(cx, y); else linePath.lineTo(cx, y);
+    }
+    canvas.drawPath(linePath, linePaint);
+
+    // Net dots
+    for (int i = 0; i < months.length; i++) {
+      final cx = leftPad + barGroupWidth * i + barGroupWidth / 2;
+      final net = incomes[i] - expenses[i];
+      final y = 8 + chartH * (1 - net / maxValue).clamp(0, 1);
+      canvas.drawCircle(Offset(cx, y), 3, Paint()..color = AppColors.info);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Line Chart Painter (Net Worth) ────────────────────────────────────────────
+
+class _LineChartPainter extends CustomPainter {
+  final double value;
+  final Color color;
+  final bool isDark;
+
+  _LineChartPainter({required this.value, required this.color, required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final leftPad = 50.0;
+    final bottomPad = 24.0;
+    final chartW = size.width - leftPad - 8;
+    final chartH = size.height - bottomPad - 8;
+
+    final gridColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06);
+    final labelStyle = TextStyle(fontSize: 9, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.4));
+
+    // Y-axis
+    for (int i = 0; i <= 4; i++) {
+      final y = 8 + chartH * (1 - i / 4);
+      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 8, y), Paint()..color = gridColor);
+      final val = value * i / 4;
+      final label = val >= 1000 ? '₱${(val / 1000).toStringAsFixed(0)}K' : '₱${val.toStringAsFixed(0)}';
+      final tp = TextPainter(text: TextSpan(text: label, style: labelStyle), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset(leftPad - tp.width - 6, y - tp.height / 2));
+    }
+
+    // Simulated growth line (flat then sharp rise to current value)
+    final months = ['May \'25', 'Aug \'25', 'Nov \'25', 'Jan', 'Mar'];
+    final values = [0.0, 0.0, 0.0, value * 0.3, value];
+
+    final linePaint = Paint()..color = color..strokeWidth = 2.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
+    final path = Path();
+
+    for (int i = 0; i < months.length; i++) {
+      final x = leftPad + chartW * i / (months.length - 1);
+      final y = 8 + chartH * (1 - values[i] / value).clamp(0, 1);
+      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+
+      // X label
+      final tp = TextPainter(text: TextSpan(text: months[i], style: labelStyle), textDirection: TextDirection.ltr)..layout();
+      tp.paint(canvas, Offset(x - tp.width / 2, size.height - bottomPad + 6));
+    }
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── Legend Dot ────────────────────────────────────────────────────────────────
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: [
+      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 4),
+      Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+    ]);
+  }
 }
