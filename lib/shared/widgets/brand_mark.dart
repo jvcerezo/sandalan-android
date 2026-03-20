@@ -1,7 +1,8 @@
-/// Sandalan brand mark widget matching the web app's logo.
+/// Sandalan brand mark widget using the actual bahay kubo SVG logo.
 /// "Sandal" in dark text + "an" in primary green.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BrandMark extends StatelessWidget {
   final double size;
@@ -18,18 +19,13 @@ class BrandMark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Logo icon (bahay kubo)
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: colorScheme.primary,
-            borderRadius: BorderRadius.circular(size * 0.22),
-          ),
-          child: Icon(
-            Icons.home_rounded,
-            color: colorScheme.onPrimary,
-            size: size * 0.55,
+        // Logo icon (bahay kubo SVG — includes its own white bg with rounded corners)
+        ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.22),
+          child: SvgPicture.asset(
+            'assets/images/app-icon.svg',
+            width: size,
+            height: size,
           ),
         ),
         if (showText) ...[

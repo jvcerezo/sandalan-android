@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-label="Sandalan Logo">
+  <rect width="200" height="200" rx="44" fill="#FFFFFF" />
+  <line x1="108" y1="36" x2="40" y2="86" stroke="#55C48A" stroke-width="7" stroke-linecap="butt" />
+  <line x1="92" y1="36" x2="160" y2="86" stroke="#55C48A" stroke-width="7" stroke-linecap="butt" />
+  <polygon points="100,50 60,80 140,80" fill="#14213D" />
+  <rect x="48" y="79" width="104" height="4" fill="#14213D" />
+  <polygon points="52,86 66,86 66,126 58,126" fill="#14213D" />
+  <path d="M 69 86 H 131 V 126 H 111 V 102 H 89 V 126 H 69 Z" fill="#14213D" />
+  <polygon points="134,86 148,86 142,126 134,126" fill="#14213D" />
+  <rect x="57" y="129" width="86" height="5" fill="#F7FBF8" />
+  <rect x="68" y="134" width="7" height="10" fill="#14213D" />
+  <rect x="96" y="134" width="7" height="10" fill="#14213D" />
+  <rect x="124" y="134" width="7" height="10" fill="#14213D" />
+  <rect x="48" y="144" width="104" height="5" fill="#14213D" />
+</svg>
