@@ -17,6 +17,10 @@ import '../../features/tools/screens/thirteenth_month_screen.dart';
 import '../../features/tools/screens/debt_manager_screen.dart';
 import '../../features/tools/screens/bills_screen.dart';
 import '../../features/tools/screens/insurance_screen.dart';
+import '../../features/tools/screens/retirement_screen.dart';
+import '../../features/tools/screens/rent_vs_buy_screen.dart';
+import '../../features/tools/screens/panganay_mode_screen.dart';
+import '../../features/tools/screens/calculators_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
@@ -128,6 +132,22 @@ final appRouter = GoRouter(
           pageBuilder: (context, state) => const NoTransitionPage(
             child: ThirteenthMonthScreen(),
           ),
+        ),
+        GoRoute(
+          path: '/tools/retirement',
+          pageBuilder: (context, state) => const NoTransitionPage(child: RetirementScreen()),
+        ),
+        GoRoute(
+          path: '/tools/rent-vs-buy',
+          pageBuilder: (context, state) => const NoTransitionPage(child: RentVsBuyScreen()),
+        ),
+        GoRoute(
+          path: '/tools/panganay',
+          pageBuilder: (context, state) => const NoTransitionPage(child: PanganayModeScreen()),
+        ),
+        GoRoute(
+          path: '/tools/calculators',
+          pageBuilder: (context, state) => const NoTransitionPage(child: CalculatorsScreen()),
         ),
         GoRoute(
           path: '/tools/insurance',
