@@ -11,6 +11,7 @@ import '../../../shared/widgets/animated_counter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../../tools/providers/tool_providers.dart';
+import '../providers/upcoming_payments_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -298,6 +299,13 @@ class _FinStat extends StatelessWidget {
 
 // ─── Upcoming Payments ─────────────────────────────────────────────────────────
 
+const _typeConfig = <PaymentType, ({IconData icon, Color color})>{
+  PaymentType.bill: (icon: LucideIcons.receipt, color: Color(0xFF3B82F6)),
+  PaymentType.debt: (icon: LucideIcons.creditCard, color: Color(0xFF8B5CF6)),
+  PaymentType.insurance: (icon: LucideIcons.shield, color: Color(0xFF10B981)),
+  PaymentType.contribution: (icon: LucideIcons.landmark, color: Color(0xFFF59E0B)),
+};
+
 class _UpcomingPaymentsSection extends StatelessWidget {
   final WidgetRef ref;
   const _UpcomingPaymentsSection({required this.ref});
@@ -305,11 +313,14 @@ class _UpcomingPaymentsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bills = ref.watch(billsSummaryProvider);
+    final upcoming = ref.watch(upcomingPaymentsProvider);
 
-    return bills.when(
-      data: (summary) {
-        if (summary.dueSoonCount == 0 && summary.monthlyTotal == 0) return const SizedBox.shrink();
+    return upcoming.when(
+      data: (data) {
+        if (data.items.isEmpty) return const SizedBox.shrink();
+
+        final visible = data.items.take(5).toList();
+        final remaining = data.items.length - visible.length;
 
         return Column(
           children: [
@@ -319,58 +330,75 @@ class _UpcomingPaymentsSection extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('UPCOMING PAYMENTS',
-                      style: TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
-                      )),
-                  Text(formatCurrency(summary.monthlyTotal),
+                  Row(children: [
+                    Text('UPCOMING PAYMENTS',
+                        style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
+                        )),
+                    if (data.overdueCount > 0) ...[
+                      const SizedBox(width: 8),
+                      Row(children: [
+                        const Icon(LucideIcons.alertCircle, size: 12, color: AppColors.expense),
+                        const SizedBox(width: 3),
+                        Text('${data.overdueCount} overdue',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                                color: AppColors.expense)),
+                      ]),
+                    ],
+                  ]),
+                  Text(formatCurrency(data.totalDue),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
             const SizedBox(height: 8),
 
-            // Payment items from bills
+            // Items
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
-                children: ref.watch(billsProvider).when(
-                  data: (billList) {
-                    final active = billList.where((b) => b.isActive).take(5).toList();
-                    if (active.isEmpty) {
-                      return [Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Text('No upcoming payments',
-                            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-                      )];
-                    }
-                    return active.asMap().entries.map((entry) {
-                      final b = entry.value;
-                      final isLast = entry.key == active.length - 1;
-                      return _PaymentItem(
-                        icon: LucideIcons.receipt,
-                        iconColor: AppColors.info,
-                        iconBg: AppColors.info.withValues(alpha: 0.1),
-                        title: b.name,
-                        subtitle: b.category,
-                        amount: b.amount,
-                        urgency: b.dueDay != null ? '${b.dueDay! - DateTime.now().day}d' : '',
-                        showDivider: !isLast,
-                      );
-                    }).toList();
-                  },
-                  loading: () => [const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: ShimmerLoading(height: 40),
-                  )],
-                  error: (_, __) => [const SizedBox.shrink()],
-                ),
+                children: visible.asMap().entries.map((entry) {
+                  final item = entry.value;
+                  final isLast = entry.key == visible.length - 1;
+                  final config = _typeConfig[item.type]!;
+                  final urgencyLabel = item.daysUntilDue < 0
+                      ? 'Overdue'
+                      : item.daysUntilDue == 0
+                          ? 'Due today'
+                          : '${item.daysUntilDue}d';
+                  final urgencyColor = item.daysUntilDue < 0
+                      ? AppColors.expense
+                      : item.daysUntilDue <= 3
+                          ? AppColors.warning
+                          : colorScheme.onSurfaceVariant;
+
+                  return _PaymentItem(
+                    icon: config.icon,
+                    iconColor: config.color,
+                    iconBg: config.color.withValues(alpha: 0.1),
+                    title: item.title,
+                    subtitle: item.subtitle,
+                    amount: item.amount,
+                    urgency: urgencyLabel,
+                    urgencyColor: urgencyColor,
+                    showDivider: !isLast,
+                  );
+                }).toList(),
               ),
             ),
+
+            if (remaining > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('+$remaining more upcoming',
+                    style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                    textAlign: TextAlign.center),
+              ),
+
             const SizedBox(height: 18),
           ],
         );
@@ -389,6 +417,7 @@ class _PaymentItem extends StatelessWidget {
   final String subtitle;
   final double amount;
   final String urgency;
+  final Color? urgencyColor;
   final bool showDivider;
 
   const _PaymentItem({
@@ -399,6 +428,7 @@ class _PaymentItem extends StatelessWidget {
     required this.subtitle,
     required this.amount,
     required this.urgency,
+    this.urgencyColor,
     this.showDivider = true,
   });
 
@@ -441,7 +471,7 @@ class _PaymentItem extends StatelessWidget {
                   if (urgency.isNotEmpty)
                     Text(urgency,
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant)),
+                            color: urgencyColor ?? colorScheme.onSurfaceVariant)),
                 ],
               ),
               const SizedBox(width: 4),
