@@ -38,12 +38,15 @@ final appRouter = GoRouter(
   initialLocation: '/home',
   redirect: (context, state) {
     final session = Supabase.instance.client.auth.currentSession;
-    final isLoggedIn = session != null;
+    // Also check for a cached user — they may be offline with an expired JWT
+    // but still have a valid local identity from a previous login
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    final isLoggedIn = session != null || currentUser != null;
     final isGuest = GuestModeService.isGuestSync();
     final isAuthRoute = state.uri.path == '/login' || state.uri.path == '/signup';
     final isOnboarding = state.uri.path == '/onboarding';
 
-    // Allow through if logged in OR guest
+    // Allow through if logged in (active or cached session) OR guest
     if (!isLoggedIn && !isGuest && !isAuthRoute) {
       return '/login';
     }
