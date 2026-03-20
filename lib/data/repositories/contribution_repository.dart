@@ -5,15 +5,21 @@ class ContributionSummary {
   final double totalPaid;
   final double totalUnpaid;
   final double sssPaid;
+  final double sssEmployerPaid;
   final double philhealthPaid;
+  final double philhealthEmployerPaid;
   final double pagibigPaid;
+  final double pagibigEmployerPaid;
 
   const ContributionSummary({
     required this.totalPaid,
     required this.totalUnpaid,
     required this.sssPaid,
+    required this.sssEmployerPaid,
     required this.philhealthPaid,
+    required this.philhealthEmployerPaid,
     required this.pagibigPaid,
+    required this.pagibigEmployerPaid,
   });
 }
 
@@ -36,9 +42,12 @@ class ContributionRepository {
     return ContributionSummary(
       totalPaid: all.where((c) => c.isPaid).fold(0, (s, c) => s + c.totalContribution),
       totalUnpaid: all.where((c) => !c.isPaid).fold(0, (s, c) => s + c.totalContribution),
-      sssPaid: all.where((c) => c.isPaid && c.type == 'sss').fold(0, (s, c) => s + c.totalContribution),
-      philhealthPaid: all.where((c) => c.isPaid && c.type == 'philhealth').fold(0, (s, c) => s + c.totalContribution),
-      pagibigPaid: all.where((c) => c.isPaid && c.type == 'pagibig').fold(0, (s, c) => s + c.totalContribution),
+      sssPaid: all.where((c) => c.isPaid && c.type == 'sss').fold(0.0, (s, c) => s + c.employeeShare),
+      sssEmployerPaid: all.where((c) => c.isPaid && c.type == 'sss').fold(0.0, (s, c) => s + (c.employerShare ?? 0)),
+      philhealthPaid: all.where((c) => c.isPaid && c.type == 'philhealth').fold(0.0, (s, c) => s + c.employeeShare),
+      philhealthEmployerPaid: all.where((c) => c.isPaid && c.type == 'philhealth').fold(0.0, (s, c) => s + (c.employerShare ?? 0)),
+      pagibigPaid: all.where((c) => c.isPaid && c.type == 'pagibig').fold(0.0, (s, c) => s + c.employeeShare),
+      pagibigEmployerPaid: all.where((c) => c.isPaid && c.type == 'pagibig').fold(0.0, (s, c) => s + (c.employerShare ?? 0)),
     );
   }
 

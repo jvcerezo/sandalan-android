@@ -80,13 +80,14 @@ class AccountsScreen extends ConsumerWidget {
                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1.2,
                     color: colorScheme.onSurfaceVariant)),
             const SizedBox(height: 8),
-            Row(children: [
-              _ContribCard(label: 'SSS', amount: cs.sssPaid, color: AppColors.info),
-              const SizedBox(width: 8),
-              _ContribCard(label: 'PhilHealth', amount: cs.philhealthPaid, color: AppColors.income),
-              const SizedBox(width: 8),
-              _ContribCard(label: 'Pag-IBIG', amount: cs.pagibigPaid, color: AppColors.warning),
-            ]),
+            _ContribDetailCard(label: 'SSS', yourShare: cs.sssPaid,
+                employerShare: cs.sssEmployerPaid, color: AppColors.info),
+            const SizedBox(height: 8),
+            _ContribDetailCard(label: 'PhilHealth', yourShare: cs.philhealthPaid,
+                employerShare: cs.philhealthEmployerPaid, color: AppColors.income),
+            const SizedBox(height: 8),
+            _ContribDetailCard(label: 'Pag-IBIG', yourShare: cs.pagibigPaid,
+                employerShare: cs.pagibigEmployerPaid, color: AppColors.warning),
           ]),
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
@@ -183,27 +184,59 @@ class _AccountCard extends StatelessWidget {
   }
 }
 
-class _ContribCard extends StatelessWidget {
+class _ContribDetailCard extends StatelessWidget {
   final String label;
-  final double amount;
+  final double yourShare;
+  final double employerShare;
   final Color color;
-  const _ContribCard({required this.label, required this.amount, required this.color});
+  const _ContribDetailCard({
+    required this.label,
+    required this.yourShare,
+    required this.employerShare,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(formatCurrency(amount), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-        ]),
+    final colorScheme = Theme.of(context).colorScheme;
+    final total = yourShare + employerShare;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+        borderRadius: BorderRadius.circular(12),
       ),
+      child: Row(children: [
+        // Color indicator
+        Container(
+          width: 4, height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Label + total
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
+            const SizedBox(height: 2),
+            Text('Total: ${formatCurrency(total)}',
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+          ]),
+        ),
+        // Your share / Employer share
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text('Your share', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+          Text(formatCurrency(yourShare), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text('Employer', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+          Text(formatCurrency(employerShare),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant)),
+        ]),
+      ]),
     );
   }
 }
