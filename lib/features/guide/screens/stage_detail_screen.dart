@@ -223,13 +223,13 @@ class _ChecklistRow extends StatelessWidget {
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
                     decoration: isDone ? TextDecoration.lineThrough : null,
                     color: isDone ? cs.onSurfaceVariant : cs.onSurface)),
-            if (item.fee != null || item.processingTime != null)
+            if (item.fees != null || item.processingTime != null)
               Text([
-                if (item.fee != null) item.fee!,
+                if (item.fees != null) item.fees!,
                 if (item.processingTime != null) item.processingTime!,
               ].join(' · '), style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
           ])),
-          if (item.priority == 'high')
+          if (item.priority == 'critical')
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               margin: const EdgeInsets.only(right: 4),

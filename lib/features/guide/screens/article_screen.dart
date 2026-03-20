@@ -15,7 +15,7 @@ class ArticleScreen extends StatefulWidget {
 
 class _ArticleScreenState extends State<ArticleScreen> {
   bool _isRead = false;
-  double _scrollProgress = 0;
+  final _scrollProgress = ValueNotifier<double>(0.0);
   final _scrollController = ScrollController();
 
   @override
@@ -27,9 +27,10 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final max = _scrollController.position.maxScrollExtent;
+    final pos = _scrollController.position;
+    final max = pos.maxScrollExtent;
     if (max <= 0) return;
-    setState(() => _scrollProgress = (_scrollController.offset / max).clamp(0, 1));
+    _scrollProgress.value = (pos.pixels / max).clamp(0.0, 1.0);
   }
 
   Future<void> _loadReadStatus() async {
@@ -41,6 +42,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _scrollProgress.dispose();
     super.dispose();
   }
 
@@ -67,11 +69,14 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
     return Column(children: [
       // Reading progress bar
-      LinearProgressIndicator(
-        value: _scrollProgress,
-        minHeight: 3,
-        backgroundColor: Colors.transparent,
-        color: stage.color,
+      ValueListenableBuilder<double>(
+        valueListenable: _scrollProgress,
+        builder: (context, progress, _) => LinearProgressIndicator(
+          value: progress,
+          minHeight: 3,
+          backgroundColor: Colors.transparent,
+          color: stage.color,
+        ),
       ),
       Expanded(child: ListView(
         controller: _scrollController,
