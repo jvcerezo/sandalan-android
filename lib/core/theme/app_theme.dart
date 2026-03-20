@@ -16,10 +16,10 @@ class AppTheme {
       brightness: Brightness.light,
       primary: primaryColor,
       onPrimary: const Color(0xFFF8FAF9),
-      surface: const Color(0xFFFBFDFC),
+      surface: const Color(0xFFF5F8F6),
       onSurface: const Color(0xFF1A2E23),
       surfaceContainerHighest: const Color(0xFFF0F4F2),
-      outline: const Color(0xFFD1D9D4),
+      outline: const Color(0xFFB8C4BC),
       error: const Color(0xFFDC2626),
     );
 
@@ -27,7 +27,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFFBFDFC),
+      scaffoldBackgroundColor: const Color(0xFFF5F8F6), // slightly darker than white so cards pop
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -41,10 +41,11 @@ class AppTheme {
         iconTheme: IconThemeData(color: Color(0xFF1A2E23)),
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: 2,
+        shadowColor: const Color(0xFF1A2E23).withValues(alpha: 0.10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: const Color(0xFF1A2E23).withValues(alpha: 0.08)),
+          side: BorderSide(color: const Color(0xFFCCD5CF), width: 1),
         ),
         color: Colors.white,
         margin: EdgeInsets.zero,
@@ -53,11 +54,11 @@ class AppTheme {
         filled: false,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: const Color(0xFF1A2E23).withValues(alpha: 0.15)),
+          borderSide: BorderSide(color: const Color(0xFFB8C4BC), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: const Color(0xFF1A2E23).withValues(alpha: 0.15)),
+          borderSide: BorderSide(color: const Color(0xFFB8C4BC), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -95,7 +96,7 @@ class AppTheme {
         unselectedLabelStyle: const TextStyle(fontSize: 11),
       ),
       dividerTheme: DividerThemeData(
-        color: const Color(0xFF1A2E23).withValues(alpha: 0.08),
+        color: const Color(0xFFCCD5CF),
         thickness: 1,
         space: 0,
       ),
@@ -128,16 +129,16 @@ class AppTheme {
   static ThemeData dark([ThemeColor? themeColor]) {
     final darkPrimary = themeColor?.darkColor ?? const Color(0xFF3DB676);
 
-    // Web CSS variable -> Flutter ColorScheme mapping
-    const background    = Color(0xFF0A1410); // --background
-    const foreground    = Color(0xFFF3F6F4); // --foreground
-    const card          = Color(0xFF111A15); // --card
-    const popover       = Color(0xFF151D18); // --popover
-    const primaryFg     = Color(0xFF040E08); // --primary-foreground
-    const secondary     = Color(0xFF17221C); // --secondary / --muted
-    const mutedFg       = Color(0xFF8A948D); // --muted-foreground
-    const accent        = Color(0xFF223227); // --accent
-    const destructive   = Color(0xFFFF6467); // --destructive
+    // Dark theme palette — tuned for clear card/bg contrast
+    const background    = Color(0xFF0A1410); // deep dark green-black
+    const foreground    = Color(0xFFF3F6F4); // near-white text
+    const card          = Color(0xFF142018); // lifted from bg — visible separation
+    const popover       = Color(0xFF182620); // modals/sheets — even more lifted
+    const primaryFg     = Color(0xFF040E08); // text on primary buttons
+    const secondary     = Color(0xFF1C2D24); // muted backgrounds (chips, tags)
+    const mutedFg       = Color(0xFF8A948D); // secondary text
+    const accent        = Color(0xFF263830); // hover/active states
+    const destructive   = Color(0xFFFF6467); // errors/delete
 
     final colorScheme = ColorScheme.fromSeed(
       seedColor: darkPrimary,
@@ -150,8 +151,8 @@ class AppTheme {
       surfaceContainer: card,
       surfaceContainerHigh: popover,
       surfaceContainerHighest: secondary,
-      outline: Colors.white.withValues(alpha: 0.10),
-      outlineVariant: Colors.white.withValues(alpha: 0.06),
+      outline: Colors.white.withValues(alpha: 0.16),
+      outlineVariant: Colors.white.withValues(alpha: 0.08),
       secondary: accent,
       onSecondary: foreground,
       tertiary: mutedFg,
@@ -177,10 +178,11 @@ class AppTheme {
         iconTheme: IconThemeData(color: foreground),
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
         ),
         color: card,
         margin: EdgeInsets.zero,
@@ -189,11 +191,11 @@ class AppTheme {
         filled: false,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.22)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.22)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -217,7 +219,7 @@ class AppTheme {
           foregroundColor: foreground,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
@@ -231,7 +233,7 @@ class AppTheme {
         unselectedLabelStyle: const TextStyle(fontSize: 11),
       ),
       dividerTheme: DividerThemeData(
-        color: Colors.white.withValues(alpha: 0.10),
+        color: Colors.white.withValues(alpha: 0.14),
         thickness: 1,
         space: 0,
       ),
