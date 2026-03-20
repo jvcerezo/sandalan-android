@@ -505,19 +505,22 @@ class _PlanningTab extends StatelessWidget {
           const SizedBox(height: 12),
           budgets.when(
             data: (list) => list.isEmpty
-                ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('No budgets set this month.',
-                        style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () => context.go('/budgets'),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Text('Set up budgets', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
-                        const SizedBox(width: 4),
-                        Icon(LucideIcons.arrowRight, size: 14, color: colorScheme.primary),
-                      ]),
-                    ),
-                  ])
+                ? Center(
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      const SizedBox(height: 8),
+                      Text('No budgets set this month.',
+                          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () => context.go('/budgets'),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text('Set up budgets', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                          const SizedBox(width: 4),
+                          Icon(LucideIcons.arrowRight, size: 14, color: colorScheme.primary),
+                        ]),
+                      ),
+                    ]),
+                  )
                 : Column(children: list.map((b) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -541,19 +544,21 @@ class _PlanningTab extends StatelessWidget {
             data: (list) {
               final active = list.where((g) => !g.isCompleted).toList();
               if (active.isEmpty) {
-                return Column(children: [
-                  const SizedBox(height: 8),
-                  Icon(LucideIcons.target, size: 32, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
-                  const SizedBox(height: 8),
-                  Text('No active goals yet', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: () => context.go('/goals'),
-                    icon: const Icon(LucideIcons.plus, size: 14),
-                    label: const Text('New Goal'),
-                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
-                  ),
-                ]);
+                return Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const SizedBox(height: 8),
+                    Icon(LucideIcons.target, size: 32, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                    const SizedBox(height: 8),
+                    Text('No active goals yet', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed: () => context.go('/goals'),
+                      icon: const Icon(LucideIcons.plus, size: 14),
+                      label: const Text('New Goal'),
+                      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)),
+                    ),
+                  ]),
+                );
               }
               return Column(children: active.map((g) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
