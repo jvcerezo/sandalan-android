@@ -60,37 +60,40 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
         ),
         const SizedBox(height: 8),
 
-        // ─── Banner with gradient overlay ───────────────────────
+        // ─── Banner with photo + gradient overlay ────────────────
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          height: 180,
+          height: 200,
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                stage.color.withValues(alpha: 0.3),
-                stage.color.withValues(alpha: 0.05),
-              ],
-            ),
           ),
-          child: Stack(children: [
-            // Decorative pattern
-            Positioned(
-              right: -20, top: -20,
-              child: Icon(stage.icon, size: 140, color: stage.color.withValues(alpha: 0.08)),
+          child: Stack(fit: StackFit.expand, children: [
+            // Photo
+            Image.asset(
+              stage.coverImage,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [stage.color.withValues(alpha: 0.3), stage.color.withValues(alpha: 0.05)],
+                  ),
+                ),
+                child: Center(child: Icon(stage.icon, size: 64, color: stage.color.withValues(alpha: 0.3))),
+              ),
             ),
             // Dark gradient overlay for text readability
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
-                  ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
                 ),
               ),
             ),
@@ -98,8 +101,9 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
             Positioned(
               left: 16, bottom: 16, right: 16,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(stage.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                Text(stage.subtitle, style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.8))),
+                Text(stage.title, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: -0.3)),
+                const SizedBox(height: 2),
+                Text(stage.subtitle, style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.85))),
               ]),
             ),
           ]),

@@ -95,6 +95,7 @@ class LifeStage {
   final String description;
   final Color color;
   final IconData icon;
+  final String coverImage;
   final List<Guide> guides;
   final List<String> checklistItemIds;
 
@@ -106,6 +107,7 @@ class LifeStage {
     required this.description,
     required this.color,
     required this.icon,
+    required this.coverImage,
     required this.guides,
     this.checklistItemIds = const [],
   });
@@ -128,6 +130,7 @@ final List<LifeStage> kLifeStages = [
     description: 'Your first job, first IDs, first payslip. Everything you need to start adulting in the Philippines.',
     color: Colors.blue,
     icon: LucideIcons.graduationCap,
+    coverImage: 'assets/images/stages/unang-hakbang.jpg',
     checklistItemIds: ['tin', 'sss', 'philhealth', 'pagibig', 'philsys', 'umid', 'passport', 'drivers-license', 'voters-id', 'first-time-jobseeker', 'savings-account', 'understand-payslip'],
     guides: _unangHakbangGuides,
   ),
@@ -139,6 +142,7 @@ final List<LifeStage> kLifeStages = [
     description: 'Emergency fund, first investments, credit building, and freelancer taxes. Build the financial habits that last a lifetime.',
     color: Colors.green,
     icon: LucideIcons.toyBrick,
+    coverImage: 'assets/images/stages/pundasyon.jpg',
     checklistItemIds: ['digital-savings', 'emergency-fund-3mo', 'credit-card', 'sss-active', 'philhealth-active', 'pagibig-active', '13th-month', 'bir-2316', 'substituted-filing', 'bir-freelancer', 'bir-deductions'],
     guides: _pundasyonGuides,
   ),
@@ -150,6 +154,7 @@ final List<LifeStage> kLifeStages = [
     description: 'Marriage, homeownership, insurance, and starting a family. The decisions that shape your next decades.',
     color: Colors.purple,
     icon: LucideIcons.home,
+    coverImage: 'assets/images/stages/tahanan.jpg',
     checklistItemIds: ['philhealth-benefits', 'hmo', 'life-insurance', 'ctpl', 'emergency-fund-6mo'],
     guides: _tahananGuides,
   ),
@@ -161,6 +166,7 @@ final List<LifeStage> kLifeStages = [
     description: 'Peak earning years. Build wealth, diversify investments, and secure your children\'s future.',
     color: Colors.amber,
     icon: LucideIcons.trendingUp,
+    coverImage: 'assets/images/stages/tugatog.jpg',
     checklistItemIds: ['mp2', 'uitf', 'stocks-pse', 'sss-voluntary'],
     guides: _tugatogGuides,
   ),
@@ -172,6 +178,7 @@ final List<LifeStage> kLifeStages = [
     description: 'Retirement planning, estate planning, and managing the sandwich generation. Prepare for what\'s ahead.',
     color: Colors.red,
     icon: LucideIcons.shield,
+    coverImage: 'assets/images/stages/paghahanda.jpg',
     checklistItemIds: ['beneficiaries', 'will', 'estate-tax'],
     guides: _paghahandaGuides,
   ),
@@ -183,6 +190,7 @@ final List<LifeStage> kLifeStages = [
     description: 'Retirement, senior citizen benefits, healthcare, and passing wealth to the next generation.',
     color: Colors.yellow.shade700,
     icon: LucideIcons.sun,
+    coverImage: 'assets/images/stages/gintong-taon.jpg',
     checklistItemIds: [],
     guides: _gintongTaonGuides,
   ),
