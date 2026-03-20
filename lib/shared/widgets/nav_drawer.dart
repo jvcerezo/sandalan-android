@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/services/notification_service.dart';
 import '../../app.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'brand_mark.dart';
@@ -219,8 +220,8 @@ class NavDrawer extends ConsumerWidget {
                       },
                     ),
 
-                    // Sign out or Create Account (for guests)
-                    if (isGuest)
+                    // Guest: show both Create Account and Sign Out
+                    if (isGuest) ...[
                       _DrawerFooterItem(
                         icon: LucideIcons.userPlus,
                         label: 'Create Account',
@@ -228,17 +229,24 @@ class NavDrawer extends ConsumerWidget {
                           Navigator.of(context).pop();
                           context.go('/signup');
                         },
-                      )
-                    else
+                      ),
                       _DrawerFooterItem(
                         icon: LucideIcons.logOut,
                         label: 'Sign Out',
                         onTap: () async {
                           Navigator.of(context).pop();
-                          // Clear guest mode if active
-                          if (GuestModeService.isGuestSync()) {
-                            await GuestModeService.disableGuestMode();
-                          }
+                          await NotificationService.instance.cancelAll();
+                          await GuestModeService.disableGuestMode();
+                          if (context.mounted) context.go('/login');
+                        },
+                      ),
+                    ] else
+                      _DrawerFooterItem(
+                        icon: LucideIcons.logOut,
+                        label: 'Sign Out',
+                        onTap: () async {
+                          Navigator.of(context).pop();
+                          await NotificationService.instance.cancelAll();
                           await ref.read(authRepositoryProvider).signOut();
                           if (context.mounted) context.go('/login');
                         },

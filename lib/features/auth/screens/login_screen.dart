@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../data/local/app_database.dart';
+import '../../../core/utils/email_validator.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 import '../providers/auth_provider.dart';
@@ -55,6 +56,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       setState(() => _error = 'Please fill in all fields.');
+      return;
+    }
+    final emailError = EmailValidator.validate(email);
+    if (emailError != null) {
+      setState(() => _error = emailError);
       return;
     }
 
@@ -114,7 +120,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text('Sign in to continue your financial journey',
                   style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // Quick login for previously authenticated users
+              Builder(builder: (context) {
+                final cachedUser = Supabase.instance.client.auth.currentUser;
+                if (cachedUser == null) return const SizedBox.shrink();
+
+                final name = cachedUser.userMetadata?['full_name'] as String? ?? '';
+                final email = cachedUser.email ?? '';
+                final avatarUrl = cachedUser.userMetadata?['avatar_url'] as String?;
+
+                return Column(children: [
+                  GestureDetector(
+                    onTap: () {
+                      // User has a cached session — go straight to home
+                      context.go('/home');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
+                        color: colorScheme.primary.withValues(alpha: 0.05),
+                      ),
+                      child: Row(children: [
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(avatarUrl) : null,
+                          child: avatarUrl == null || avatarUrl.isEmpty
+                              ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,
+                                      color: colorScheme.primary))
+                              : null,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name.isNotEmpty ? name : 'Continue as',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                            Text(email,
+                                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                          ],
+                        )),
+                        Icon(LucideIcons.arrowRight, size: 18, color: colorScheme.primary),
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('or sign in with a different account',
+                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                    ),
+                    const Expanded(child: Divider()),
+                  ]),
+                  const SizedBox(height: 16),
+                ]);
+              }),
 
               // Error
               if (_error != null)

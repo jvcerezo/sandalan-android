@@ -20,14 +20,18 @@ class _ThousandsSeparatorFormatter extends TextInputFormatter {
 
     // Split by decimal
     final parts = text.split('.');
-    final intPart = parts[0];
-    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+    final stripped = int.tryParse(parts[0])?.toString() ?? parts[0];
+    String decPart = '';
+    if (parts.length > 1) {
+      final dec = parts[1].length > 2 ? parts[1].substring(0, 2) : parts[1];
+      decPart = '.$dec';
+    }
 
     // Add commas
     final buffer = StringBuffer();
-    for (int i = 0; i < intPart.length; i++) {
-      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(intPart[i]);
+    for (int i = 0; i < stripped.length; i++) {
+      if (i > 0 && (stripped.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(stripped[i]);
     }
 
     final formatted = '$buffer$decPart';
@@ -784,10 +788,12 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             // Tags
             TextField(
               controller: _tagsController,
+              maxLength: 500,
               decoration: InputDecoration(
                 hintText: 'Add tags... (optional)',
                 hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                 border: InputBorder.none, contentPadding: EdgeInsets.zero,
+                counterText: '',
               ),
               style: const TextStyle(fontSize: 13),
             ),

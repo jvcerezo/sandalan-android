@@ -55,12 +55,23 @@ class LocalTransactionRepository {
   }
 
   /// Transaction summary computed from local data.
-  /// Only counts confirmed transactions (excludes pending bills/insurance).
+  /// Only counts confirmed transactions from the CURRENT MONTH
+  /// (excludes pending bills/insurance, transfers, and goal funding).
+  /// Balance = sum of all account balances (matches totalBalanceProvider).
   Future<TransactionsSummary> getTransactionsSummary() async {
-    final transactions = await _db.getTransactions(_userId);
+    final now = DateTime.now();
+    final firstOfMonth = DateTime(now.year, now.month, 1);
+    final lastOfMonth = DateTime(now.year, now.month + 1, 0);
+    final startDate = firstOfMonth.toIso8601String().substring(0, 10);
+    final endDate = lastOfMonth.toIso8601String().substring(0, 10);
+
+    final transactions = await _db.getFilteredTransactions(
+      _userId,
+      startDate: startDate,
+      endDate: endDate,
+      pageSize: 100000,
+    );
     final accounts = await _db.getAllAccounts(_userId);
-    final goals = await _db.getGoals(_userId);
-    final contributions = await _db.getContributions(_userId);
 
     final nonTransfer = transactions
         .where((t) {
@@ -74,33 +85,56 @@ class LocalTransactionRepository {
         .where((t) => (t['amount'] as num) > 0)
         .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble());
 
-    final paidContribs = contributions.where((c) {
-      final isPaid = c['is_paid'];
-      return isPaid == 1 || isPaid == true;
-    });
-    final contribExpenses = paidContribs
-        .fold<double>(0, (s, c) => s + (c['employee_share'] as num).toDouble());
-
     final expenses = nonTransfer
         .where((t) => (t['amount'] as num) < 0)
-        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble().abs()) +
-        contribExpenses;
+        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble().abs());
 
     final accountsTotal = accounts
         .fold<double>(0, (sum, a) => sum + (a['balance'] as num).toDouble());
-    final unlinkedBalance = transactions
-        .where((t) => t['account_id'] == null)
-        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble());
-    final goalsSaved = goals
-        .fold<double>(0, (sum, g) => sum + (g['current_amount'] as num).toDouble());
 
-    final balance = ((accountsTotal + goalsSaved + unlinkedBalance) * 100).roundToDouble() / 100;
+    final balance = (accountsTotal * 100).roundToDouble() / 100;
 
     return TransactionsSummary(
       balance: balance,
       income: (income * 100).roundToDouble() / 100,
       expenses: (expenses * 100).roundToDouble() / 100,
     );
+  }
+
+  /// Get ALL confirmed transactions for the current month (no pagination).
+  /// Used by dashboard charts and insights.
+  Future<List<Transaction>> getCurrentMonthTransactions() async {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, 1).toIso8601String().substring(0, 10);
+    final endDate = DateTime(now.year, now.month + 1, 0).toIso8601String().substring(0, 10);
+    final rows = await _db.getFilteredTransactions(
+      _userId,
+      startDate: startDate,
+      endDate: endDate,
+      pageSize: 100000,
+    );
+    return rows
+        .where((t) => (t['status'] as String? ?? 'confirmed') == 'confirmed')
+        .map(_rowToTransaction)
+        .toList();
+  }
+
+  /// Get ALL confirmed transactions for the last N months (no pagination).
+  /// Used by monthly trend and compare views.
+  Future<List<Transaction>> getTransactionsForLastMonths(int months) async {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month - months + 1, 1).toIso8601String().substring(0, 10);
+    final endDate = DateTime(now.year, now.month + 1, 0).toIso8601String().substring(0, 10);
+    final rows = await _db.getFilteredTransactions(
+      _userId,
+      startDate: startDate,
+      endDate: endDate,
+      pageSize: 100000,
+    );
+    return rows
+        .where((t) => (t['status'] as String? ?? 'confirmed') == 'confirmed')
+        .map(_rowToTransaction)
+        .toList();
   }
 
   // ─── Writes (to local DB, marked pending) ───────────────────────────────

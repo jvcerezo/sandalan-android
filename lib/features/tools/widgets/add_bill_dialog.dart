@@ -14,12 +14,16 @@ class _ThousandsSeparatorFormatter extends TextInputFormatter {
     final text = newValue.text.replaceAll(',', '');
     if (text.isEmpty) return newValue;
     final parts = text.split('.');
-    final intPart = parts[0];
-    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+    final stripped = int.tryParse(parts[0])?.toString() ?? parts[0];
+    String decPart = '';
+    if (parts.length > 1) {
+      final dec = parts[1].length > 2 ? parts[1].substring(0, 2) : parts[1];
+      decPart = '.$dec';
+    }
     final buffer = StringBuffer();
-    for (int i = 0; i < intPart.length; i++) {
-      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(intPart[i]);
+    for (int i = 0; i < stripped.length; i++) {
+      if (i > 0 && (stripped.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(stripped[i]);
     }
     final formatted = '$buffer$decPart';
     return TextEditingValue(
@@ -109,6 +113,10 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
     final amount = double.tryParse(_amountCtl.text.replaceAll(',', ''));
     if (amount == null || amount <= 0) {
       _showError('Amount must be greater than 0');
+      return;
+    }
+    if (amount > 999999999) {
+      _showError('Amount must be less than \u20B1999,999,999');
       return;
     }
     int? dueDay;

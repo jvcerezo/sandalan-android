@@ -7,6 +7,7 @@ import '../../data/repositories/local_contribution_repository.dart';
 import '../../data/repositories/local_debt_repository.dart';
 import '../../data/repositories/local_insurance_repository.dart';
 import '../../data/repositories/local_transaction_repository.dart';
+import '../../data/repositories/transaction_repository.dart';
 import 'notification_service.dart';
 
 /// Preference keys for automation toggles.
@@ -17,6 +18,7 @@ class AutomationKeys {
   static const autoInsurance = 'insurance_reminders_enabled';
   static const pushEnabled = 'push_notifications';
   static const morningSummary = 'morning_summary';
+  static const dailyLogReminder = 'daily_log_reminder_enabled';
   static const contribSalary = 'contribution_salary';
   static const contribEmploymentType = 'contribution_employment_type';
 }
@@ -66,6 +68,11 @@ class AutomationService {
     // ── Schedule contribution reminders ──────────────────────────────────────
     if (prefs.getBool(AutomationKeys.autoContributions) ?? false) {
       await _scheduleContributionReminders(db, client);
+    }
+
+    // ── Schedule daily "Log Your Expenses" reminder ─────────────────────────
+    if (prefs.getBool(AutomationKeys.dailyLogReminder) ?? true) {
+      await _scheduleDailyLogReminder(db, client);
     }
   }
 
@@ -418,6 +425,51 @@ class AutomationService {
       );
     } catch (e) {
       if (kDebugMode) debugPrint('AutomationService: contribution reminders failed: $e');
+    }
+  }
+
+  // ── Daily "Log Your Expenses" reminder at 7 PM Manila time ─────────────
+
+  /// Tags that indicate an auto-generated (non-manual) transaction.
+  static const _autoTags = {'auto-generated', 'bill', 'debt', 'insurance', 'contribution'};
+
+  static Future<void> _scheduleDailyLogReminder(AppDatabase db, SupabaseClient client) async {
+    try {
+      final txnRepo = LocalTransactionRepository(db, client);
+      final now = DateTime.now();
+      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+      // Query today's confirmed transactions
+      final todayTxns = await txnRepo.getTransactions(TransactionFilters(
+        startDate: DateTime(now.year, now.month, now.day),
+        endDate: DateTime(now.year, now.month, now.day),
+      ));
+
+      // Check if any are manual (confirmed, no auto-generated tags)
+      final hasManualToday = todayTxns.any((t) {
+        if (!t.isConfirmed) return false;
+        final tags = t.tags ?? [];
+        return !tags.any((tag) => _autoTags.contains(tag.toLowerCase()));
+      });
+
+      // If user already logged manual transactions today, skip
+      if (hasManualToday) return;
+
+      // Schedule notification at 7:00 PM Manila time today
+      final target = DateTime(now.year, now.month, now.day, 19, 0);
+
+      // Only schedule if 7 PM hasn't passed yet
+      if (target.isAfter(now)) {
+        final notifId = 'daily-log-$todayStr'.hashCode;
+        await NotificationService.instance.scheduleNotification(
+          id: notifId,
+          title: 'Log Your Expenses',
+          body: "Don't forget to log your expenses! Track your spending to stay on top of your finances.",
+          scheduledDate: target,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('AutomationService: daily log reminder failed: $e');
     }
   }
 

@@ -38,3 +38,15 @@ final transactionsCountProvider = FutureProvider<int>((ref) async {
 final transactionsSummaryProvider = FutureProvider<TransactionsSummary>((ref) async {
   return ref.read(transactionRepositoryProvider).getTransactionsSummary();
 });
+
+/// All confirmed transactions for the current month (no pagination).
+/// Used by dashboard charts and insights instead of the paginated transactionsProvider.
+final currentMonthTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  return ref.read(transactionRepositoryProvider).getCurrentMonthTransactions();
+});
+
+/// All confirmed transactions for the last 6 months (no pagination).
+/// Used by monthly trend and compare views.
+final last6MonthsTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  return ref.read(transactionRepositoryProvider).getTransactionsForLastMonths(6);
+});

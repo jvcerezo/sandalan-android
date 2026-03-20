@@ -496,7 +496,7 @@ class _NotificationsSection extends StatefulWidget {
 }
 
 class _NotificationsSectionState extends State<_NotificationsSection> {
-  bool _push = true, _morning = true;
+  bool _push = true, _morning = true, _dailyLog = true;
   bool _loaded = false;
 
   @override
@@ -510,6 +510,7 @@ class _NotificationsSectionState extends State<_NotificationsSection> {
     setState(() {
       _push = prefs.getBool(AutomationKeys.pushEnabled) ?? true;
       _morning = prefs.getBool(AutomationKeys.morningSummary) ?? true;
+      _dailyLog = prefs.getBool(AutomationKeys.dailyLogReminder) ?? true;
       _loaded = true;
     });
   }
@@ -535,6 +536,22 @@ class _NotificationsSectionState extends State<_NotificationsSection> {
     await prefs.setBool(AutomationKeys.morningSummary, value);
   }
 
+  Future<void> _onDailyLogChanged(bool value) async {
+    setState(() => _dailyLog = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AutomationKeys.dailyLogReminder, value);
+
+    if (!value) {
+      // Cancel the daily log notification
+      final now = DateTime.now();
+      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      await NotificationService.instance.cancelNotification('daily-log-$todayStr'.hashCode);
+    } else {
+      // Re-schedule
+      await AutomationService.runOnAppStart();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
@@ -557,6 +574,9 @@ class _NotificationsSectionState extends State<_NotificationsSection> {
         _ToggleRow(title: 'Morning summary',
             sub: 'Get a daily summary of what\'s due today at 9:00 AM',
             value: _morning, onChanged: _onMorningChanged),
+        _ToggleRow(title: 'Daily log reminder',
+            sub: 'Remind you at 7:00 PM to log your expenses if you haven\'t logged any today',
+            value: _dailyLog, onChanged: _onDailyLogChanged),
       ])),
     ]);
   }

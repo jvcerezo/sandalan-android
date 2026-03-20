@@ -32,6 +32,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     HapticFeedback.mediumImpact();
     ref.invalidate(transactionsSummaryProvider);
     ref.invalidate(recentTransactionsProvider);
+    ref.invalidate(currentMonthTransactionsProvider);
+    ref.invalidate(last6MonthsTransactionsProvider);
     ref.invalidate(goalsSummaryProvider);
     ref.invalidate(accountsProvider);
     ref.invalidate(budgetsProvider);
@@ -62,99 +64,160 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _SectionLabel('OVERVIEW'),
           const SizedBox(height: 8),
 
-          // Total Balance & Net Worth
-          Row(children: [
-            Expanded(
-              child: _OverviewCard(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('TOTAL BALANCE',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                            letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                    Icon(LucideIcons.landmark, size: 18, color: colorScheme.onSurfaceVariant),
-                  ]),
-                  const SizedBox(height: 12),
-                  AnimatedCurrency(value: totalBalance,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ]),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Builder(builder: (_) {
-                // Net worth = total assets (accounts) - total liabilities (debts)
-                final debtSummary = ref.watch(debtSummaryProvider);
-                final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
-                final netWorth = totalBalance - totalDebt;
-                return _OverviewCard(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('NET WORTH',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                              letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                      Icon(netWorth >= 0 ? LucideIcons.trendingUp : LucideIcons.trendingDown,
-                          size: 18, color: netWorth >= 0 ? AppColors.income : AppColors.expense),
-                    ]),
-                    const SizedBox(height: 12),
-                    AnimatedCurrency(value: netWorth,
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,
-                            color: netWorth >= 0 ? AppColors.income : AppColors.expense)),
-                  ]),
-                );
-              }),
-            ),
-          ]),
-          const SizedBox(height: 12),
+          // ── Section 1: Hero Card — Net Worth + monthly summary ──
+          Builder(builder: (_) {
+            final debtSummary = ref.watch(debtSummaryProvider);
+            final goalsSummary = ref.watch(goalsSummaryProvider);
+            final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
+            final totalGoalSavings = goalsSummary.valueOrNull?.totalSaved ?? 0.0;
+            final netWorth = totalBalance + totalGoalSavings - totalDebt;
 
-          // Income / Expenses
-          summary.when(
-            data: (s) => Row(children: [
-              Expanded(child: _OverviewCard(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('INCOME', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                    Icon(LucideIcons.trendingUp, size: 16, color: AppColors.income),
-                  ]),
-                  const SizedBox(height: 8),
-                  AnimatedCurrency(value: s.income,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.income)),
-                ]),
-              )),
+            return Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                border: Border.all(color: colorScheme.surfaceContainerHighest),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(children: [
+                // Accent border on the left
+                Container(
+                  width: 4,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(14),
+                      bottomLeft: Radius.circular(14),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 16, 16, 16),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('NET WORTH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                      const SizedBox(height: 6),
+                      AnimatedCurrency(value: netWorth,
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
+                              color: colorScheme.primary)),
+                      const SizedBox(height: 12),
+                      summary.when(
+                        data: (s) {
+                          final saved = s.income - s.expenses;
+                          return Row(children: [
+                            Icon(LucideIcons.trendingUp, size: 13, color: AppColors.income),
+                            const SizedBox(width: 3),
+                            Text(formatCurrency(s.income),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
+                            const SizedBox(width: 12),
+                            Icon(LucideIcons.trendingDown, size: 13, color: AppColors.expense),
+                            const SizedBox(width: 3),
+                            Text(formatCurrency(s.expenses),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.expense)),
+                            const SizedBox(width: 12),
+                            Icon(LucideIcons.piggyBank, size: 13, color: saved >= 0 ? AppColors.income : AppColors.expense),
+                            const SizedBox(width: 3),
+                            Text(formatCurrency(saved.abs()),
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                                    color: saved >= 0 ? AppColors.income : AppColors.expense)),
+                          ]);
+                        },
+                        loading: () => const ShimmerLoading(height: 16),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ]),
+                  ),
+                ),
+              ]),
+            );
+          }),
+          const SizedBox(height: 10),
+
+          // ── Section 2: Quick Stats Row — Accounts, Goals, Debts ──
+          Builder(builder: (_) {
+            final accounts = ref.watch(accountsProvider);
+            final goalsSummary = ref.watch(goalsSummaryProvider);
+            final debtSummary = ref.watch(debtSummaryProvider);
+
+            final accountCount = accounts.valueOrNull?.length ?? 0;
+            final goalSaved = goalsSummary.valueOrNull?.totalSaved ?? 0.0;
+            final activeGoals = goalsSummary.valueOrNull?.active ?? 0;
+            final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
+            final activeDebts = debtSummary.valueOrNull?.activeCount ?? 0;
+
+            return Row(children: [
+              _QuickStat(icon: LucideIcons.landmark,
+                  value: formatCurrency(totalBalance),
+                  subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
               const SizedBox(width: 8),
-              Expanded(child: _OverviewCard(
+              _QuickStat(icon: LucideIcons.target,
+                  value: formatCurrency(goalSaved),
+                  subtitle: '$activeGoals active'),
+              const SizedBox(width: 8),
+              _QuickStat(icon: LucideIcons.creditCard,
+                  value: formatCurrency(totalDebt),
+                  subtitle: '$activeDebts active'),
+            ]);
+          }),
+          const SizedBox(height: 10),
+
+          // ── Section 3: This Month Bar — savings vs expenses ──
+          summary.when(
+            data: (s) {
+              final income = s.income;
+              final expenses = s.expenses;
+              final saved = income - expenses;
+              final savingsRatio = income > 0 ? (saved / income).clamp(0.0, 1.0) : 0.0;
+              final expenseRatio = income > 0 ? (expenses / income).clamp(0.0, 1.0) : 0.0;
+              final pct = (savingsRatio * 100).toInt();
+
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  border: Border.all(color: colorScheme.surfaceContainerHighest),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('EXPENSES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                    Icon(LucideIcons.trendingDown, size: 16, color: colorScheme.onSurfaceVariant),
-                  ]),
+                  // Stacked bar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: SizedBox(
+                      height: 10,
+                      child: Row(children: [
+                        if (expenseRatio > 0)
+                          Expanded(
+                            flex: (expenseRatio * 100).round().clamp(1, 100),
+                            child: Container(color: AppColors.expense),
+                          ),
+                        if (savingsRatio > 0)
+                          Expanded(
+                            flex: (savingsRatio * 100).round().clamp(1, 100),
+                            child: Container(color: AppColors.income),
+                          ),
+                        if (income == 0)
+                          Expanded(child: Container(color: colorScheme.surfaceContainerHighest)),
+                      ]),
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  AnimatedCurrency(value: s.expenses,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    income > 0
+                        ? (saved >= 0
+                            ? 'You saved $pct% of your income this month'
+                            : 'You\'ve spent ${formatCurrency(expenses)} of ${formatCurrency(income)} income')
+                        : 'No income recorded this month',
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  ),
                 ]),
-              )),
-            ]),
-            loading: () => const ShimmerStatRow(count: 2),
+              );
+            },
+            loading: () => const ShimmerCard(height: 50),
             error: (_, __) => const SizedBox.shrink(),
           ),
-          const SizedBox(height: 12),
-
-          // Accounts / Goals / Budgets row
-          Row(children: [
-            _MiniStat(icon: LucideIcons.landmark, label: 'ACCOUNTS',
-                value: formatCurrency(totalBalance)),
-            const SizedBox(width: 6),
-            _MiniStat(icon: LucideIcons.target, label: 'GOALS',
-                value: ref.watch(goalsSummaryProvider).valueOrNull != null
-                    ? formatCurrency(ref.watch(goalsSummaryProvider).value!.totalSaved)
-                    : '₱0.00'),
-            const SizedBox(width: 6),
-            _MiniStat(icon: LucideIcons.coins, label: 'BUDGETS',
-                value: ref.watch(budgetsProvider).valueOrNull != null
-                    ? formatCurrency(ref.watch(budgetsProvider).value!.fold(0.0, (s, b) => s + b.amount))
-                    : '₱0.00'),
-          ]),
           const SizedBox(height: 20),
 
           // ─── DASHBOARD SECTIONS ──────────────────────────────────
@@ -237,7 +300,8 @@ class _TrendsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final transactions = ref.watch(transactionsProvider);
+    final currentMonthTxns = ref.watch(currentMonthTransactionsProvider);
+    final last6MonthsTxns = ref.watch(last6MonthsTransactionsProvider);
 
     return Column(children: [
       _SectionLabel('TREND VIEWS'),
@@ -278,8 +342,8 @@ class _TrendsTab extends StatelessWidget {
       const SizedBox(height: 12),
 
       // View content based on selected trend view
-      if (trendView == 0) _buildSpendingView(context, transactions),
-      if (trendView == 1) _buildMonthlyView(context, transactions),
+      if (trendView == 0) _buildSpendingView(context, currentMonthTxns),
+      if (trendView == 1) _buildMonthlyView(context, last6MonthsTxns),
       if (trendView == 2) _buildNetWorthView(context),
       if (trendView == 3) _buildCompareView(context),
     ]);
@@ -295,7 +359,7 @@ class _TrendsTab extends StatelessWidget {
     return _OverviewCard(
       child: transactions.when(
         data: (txns) {
-          final expenses = txns.where((t) => t.amount < 0 && t.category.toLowerCase() != 'transfer').toList();
+          final expenses = txns.where((t) => t.amount < 0 && t.category.toLowerCase() != 'transfer' && t.category.toLowerCase() != 'goal funding').toList();
           if (expenses.isEmpty) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -387,7 +451,8 @@ class _TrendsTab extends StatelessWidget {
           // Group transactions by month
           final monthlyData = <String, ({double income, double expenses})>{};
           for (final t in txns) {
-            if (t.category.toLowerCase() == 'transfer') continue;
+            final cat = t.category.toLowerCase();
+            if (cat == 'transfer' || cat == 'goal funding') continue;
             final month = t.date.substring(0, 7);
             final existing = monthlyData[month] ?? (income: 0.0, expenses: 0.0);
             monthlyData[month] = t.amount > 0
@@ -608,7 +673,7 @@ class _TrendsTab extends StatelessWidget {
   }
 
   Widget _buildNetWorthView(BuildContext context) {
-    final transactions = ref.watch(transactionsProvider);
+    final transactions = ref.watch(last6MonthsTransactionsProvider);
     final totalBalance = ref.watch(totalBalanceProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -787,7 +852,7 @@ class _TrendsTab extends StatelessWidget {
 
   Widget _buildCompareView(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final transactions = ref.watch(transactionsProvider);
+    final transactions = ref.watch(last6MonthsTransactionsProvider);
 
     return _OverviewCard(
       child: transactions.when(
@@ -801,6 +866,8 @@ class _TrendsTab extends StatelessWidget {
           final lastMonthTotals = <String, double>{};
           for (final t in txns) {
             if (t.amount >= 0) continue;
+            final cat = t.category.toLowerCase();
+            if (cat == 'transfer' || cat == 'goal funding') continue;
             final month = t.date.substring(0, 7);
             if (month == thisMonth) {
               thisMonthTotals[t.category] = (thisMonthTotals[t.category] ?? 0) + t.amount.abs();
@@ -894,7 +961,7 @@ class _PlanningTab extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final budgets = ref.watch(budgetsProvider);
     final goals = ref.watch(goalsProvider);
-    final transactions = ref.watch(transactionsProvider);
+    final transactions = ref.watch(currentMonthTransactionsProvider);
 
     return Column(children: [
       // Budget Status with Progress Bars
@@ -1033,15 +1100,31 @@ class _HealthTab extends StatelessWidget {
     final totalBalance = ref.watch(totalBalanceProvider);
     final billsSummary = ref.watch(billsSummaryProvider);
     final debtSummary = ref.watch(debtSummaryProvider);
+    final insuranceSummary = ref.watch(insuranceSummaryProvider);
     final budgets = ref.watch(budgetsProvider);
-    final transactions = ref.watch(transactionsProvider);
+    final transactions = ref.watch(last6MonthsTransactionsProvider);
 
     return summary.when(
       data: (s) {
         final savingsRate = s.income > 0 ? ((s.income - s.expenses) / s.income * 100) : 0.0;
-        final monthlyObligations = (billsSummary.valueOrNull?.monthlyTotal ?? 0) +
-            (debtSummary.valueOrNull?.totalMinMonthly ?? 0);
-        final safeToSpend = s.income - s.expenses;
+        final monthlyBills = billsSummary.valueOrNull?.monthlyTotal ?? 0.0;
+        final monthlyDebtMin = debtSummary.valueOrNull?.totalMinMonthly ?? 0.0;
+        final monthlyInsurance = (insuranceSummary.valueOrNull?.annualPremium ?? 0.0) / 12;
+        final monthlyObligations = monthlyBills + monthlyDebtMin + monthlyInsurance;
+
+        // Real budget limits total
+        final budgetList_ = budgets.valueOrNull ?? [];
+        final budgetLimitsTotal = budgetList_.fold<double>(0.0, (sum, b) => sum + b.amount);
+
+        // Real goal contributions this month
+        final txnList_ = transactions.valueOrNull ?? [];
+        final now_ = DateTime.now();
+        final thisMonth_ = '${now_.year}-${now_.month.toString().padLeft(2, '0')}';
+        final goalContributions = txnList_
+            .where((t) => t.category.toLowerCase() == 'goal funding' && t.amount < 0 && t.date.substring(0, 7) == thisMonth_)
+            .fold<double>(0.0, (sum, t) => sum + t.amount.abs());
+
+        final safeToSpend = s.income - budgetLimitsTotal - goalContributions - monthlyObligations;
         final emergencyMonths = s.expenses > 0 ? totalBalance / (s.expenses > 0 ? s.expenses : 1) : 0.0;
 
         // --- Compute Real Financial Health Score ---
@@ -1196,9 +1279,9 @@ class _HealthTab extends StatelessWidget {
               _BreakdownRow(icon: LucideIcons.landmark, label: 'Monthly Income',
                   value: '+ ${formatCurrency(s.income)}', color: AppColors.income),
               _BreakdownRow(icon: LucideIcons.trendingDown, label: 'Budget Limits',
-                  value: '- ${formatCurrency(0)}', color: colorScheme.onSurfaceVariant),
+                  value: '- ${formatCurrency(budgetLimitsTotal)}', color: colorScheme.onSurfaceVariant),
               _BreakdownRow(icon: LucideIcons.target, label: 'Goal Contributions',
-                  value: '- ${formatCurrency(0)}', color: colorScheme.onSurfaceVariant),
+                  value: '- ${formatCurrency(goalContributions)}', color: colorScheme.onSurfaceVariant),
               _BreakdownRow(icon: LucideIcons.receipt, label: 'Bills, Debts & More',
                   value: '- ${formatCurrency(monthlyObligations)}', color: colorScheme.onSurfaceVariant),
             ]),
@@ -1548,6 +1631,36 @@ class _MiniStat extends StatelessWidget {
           ]),
           const SizedBox(height: 4),
           Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+        ]),
+      ),
+    );
+  }
+}
+
+class _QuickStat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String subtitle;
+  const _QuickStat({required this.icon, required this.value, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border.all(color: colorScheme.surfaceContainerHighest),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 16, color: colorScheme.primary),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(subtitle, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
         ]),
       ),
     );

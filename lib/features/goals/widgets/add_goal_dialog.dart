@@ -16,14 +16,18 @@ class _ThousandsSeparatorFormatter extends TextInputFormatter {
 
     // Split by decimal
     final parts = text.split('.');
-    final intPart = parts[0];
-    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+    final stripped = int.tryParse(parts[0])?.toString() ?? parts[0];
+    String decPart = '';
+    if (parts.length > 1) {
+      final dec = parts[1].length > 2 ? parts[1].substring(0, 2) : parts[1];
+      decPart = '.$dec';
+    }
 
     // Add commas
     final buffer = StringBuffer();
-    for (int i = 0; i < intPart.length; i++) {
-      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(intPart[i]);
+    for (int i = 0; i < stripped.length; i++) {
+      if (i > 0 && (stripped.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(stripped[i]);
     }
 
     final formatted = '$buffer$decPart';
@@ -107,6 +111,12 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
     final name = InputSanitizer.sanitize(_nameCtl.text);
     final target = double.tryParse(_targetCtl.text.replaceAll(',', ''));
     if (name.isEmpty || target == null || target <= 0) return;
+    if (target > 999999999) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Amount must be less than \u20B1999,999,999')),
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       final saved = double.tryParse(_savedCtl.text.replaceAll(',', '')) ?? 0;
@@ -200,8 +210,10 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
               borderRadius: BorderRadius.circular(10)),
             child: TextField(controller: _nameCtl,
+                maxLength: 100,
                 decoration: InputDecoration(isDense: true, hintText: 'e.g., Emergency Fund',
                     hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                    counterText: '',
                     border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 style: const TextStyle(fontSize: 14)),
           ),

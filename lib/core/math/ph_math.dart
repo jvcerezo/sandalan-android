@@ -117,8 +117,8 @@ SSSContribution calculateSSS(
       employmentType == EmploymentType.ofw;
 
   final employee =
-      isSelfPay ? (msc * SSSRate.total).roundToDouble() : (msc * SSSRate.employee).roundToDouble();
-  final employer = isSelfPay ? 0.0 : (msc * SSSRate.employer).roundToDouble();
+      isSelfPay ? _round2(msc * SSSRate.total) : _round2(msc * SSSRate.employee);
+  final employer = isSelfPay ? 0.0 : _round2(msc * SSSRate.employer);
 
   // EC premium: ₱10 for MSC ≤ ₱14,500, ₱30 above (employer only)
   final ec = employmentType == EmploymentType.employed

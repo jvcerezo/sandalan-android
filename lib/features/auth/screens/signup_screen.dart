@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../data/local/app_database.dart';
+import '../../../core/utils/email_validator.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../providers/auth_provider.dart';
 
@@ -108,6 +109,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
       setState(() => _error = 'Please fill in all fields.');
+      return;
+    }
+    final emailError = EmailValidator.validate(email);
+    if (emailError != null) {
+      setState(() => _error = emailError);
       return;
     }
     if (password != confirmPassword) {
