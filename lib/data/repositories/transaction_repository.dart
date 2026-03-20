@@ -108,28 +108,53 @@ class TransactionRepository {
     return data.length;
   }
 
-  /// Get transaction summary (balance, income, expenses).
+  /// Get transaction summary matching web's useTransactionsSummary.
+  /// Balance = accountsTotal + goalsSaved + unlinkedTxBalance
+  /// Income = non-transfer positive transactions
+  /// Expenses = non-transfer negative transactions + paid contributions
   Future<TransactionsSummary> getTransactionsSummary() async {
-    final data = await _client
-        .from('transactions')
-        .select('amount')
-        .eq('user_id', _userId);
+    // Fetch all sources in parallel
+    final results = await Future.wait([
+      _client.from('transactions').select('amount, account_id, category').eq('user_id', _userId),
+      _client.from('accounts').select('balance').eq('user_id', _userId),
+      _client.from('goals').select('current_amount').eq('user_id', _userId),
+      _client.from('contributions').select('employee_share').eq('user_id', _userId).eq('is_paid', true),
+    ]);
 
-    double income = 0;
-    double expenses = 0;
-    for (final row in data) {
-      final amount = (row['amount'] as num).toDouble();
-      if (amount > 0) {
-        income += amount;
-      } else {
-        expenses += amount.abs();
-      }
-    }
+    final transactions = results[0] as List<dynamic>;
+    final accounts = results[1] as List<dynamic>;
+    final goals = results[2] as List<dynamic>;
+    final paidContribs = results[3] as List<dynamic>;
+
+    // Exclude transfers from income/expense — they move money between accounts
+    final nonTransfer = transactions.where((t) => (t['category'] as String).toLowerCase() != 'transfer').toList();
+
+    final income = nonTransfer
+        .where((t) => (t['amount'] as num) > 0)
+        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble());
+
+    final contribExpenses = paidContribs
+        .fold<double>(0, (sum, c) => sum + (c['employee_share'] as num).toDouble());
+
+    final expenses = nonTransfer
+        .where((t) => (t['amount'] as num) < 0)
+        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble().abs()) + contribExpenses;
+
+    // Balance = accounts + goals + unlinked transactions
+    final accountsTotal = accounts
+        .fold<double>(0, (sum, a) => sum + (a['balance'] as num).toDouble());
+    final unlinkedBalance = transactions
+        .where((t) => t['account_id'] == null)
+        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble());
+    final goalsSaved = goals
+        .fold<double>(0, (sum, g) => sum + (g['current_amount'] as num).toDouble());
+
+    final balance = ((accountsTotal + goalsSaved + unlinkedBalance) * 100).roundToDouble() / 100;
 
     return TransactionsSummary(
-      balance: income - expenses,
-      income: income,
-      expenses: expenses,
+      balance: balance,
+      income: (income * 100).roundToDouble() / 100,
+      expenses: (expenses * 100).roundToDouble() / 100,
     );
   }
 
