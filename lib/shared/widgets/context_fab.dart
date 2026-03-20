@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
+import '../../features/accounts/widgets/add_account_dialog.dart';
+import '../../features/budgets/widgets/add_budget_dialog.dart';
+import '../../features/goals/widgets/add_goal_dialog.dart';
 
 class ContextFAB extends StatefulWidget {
   final String currentPath;
@@ -53,14 +56,14 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
     }
   }
 
-  void _openAddTransaction(BuildContext context, {required bool isIncome}) {
+  void _openSheet(BuildContext context, Widget sheet) {
     _close();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AddTransactionDialog(isIncome: isIncome),
+      builder: (_) => sheet,
     );
   }
 
@@ -69,28 +72,53 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
     if (!_shouldShow) return const SizedBox.shrink();
 
     final cs = Theme.of(context).colorScheme;
+    final p = widget.currentPath;
 
-    // For transaction pages: show Add Expense / Add Income
+    // ─── Single-action FABs (Accounts, Budgets, Goals) ─────────
+    if (p.startsWith('/accounts')) {
+      return FloatingActionButton(
+        onPressed: () => _openSheet(context, const AddAccountDialog()),
+        backgroundColor: cs.primary, foregroundColor: cs.onPrimary,
+        child: const Icon(LucideIcons.plus, size: 24),
+      );
+    }
+
+    if (p.startsWith('/budgets')) {
+      return FloatingActionButton(
+        onPressed: () => _openSheet(context, const AddBudgetDialog()),
+        backgroundColor: cs.primary, foregroundColor: cs.onPrimary,
+        child: const Icon(LucideIcons.plus, size: 24),
+      );
+    }
+
+    if (p.startsWith('/goals')) {
+      return FloatingActionButton(
+        onPressed: () => _openSheet(context, const AddGoalDialog()),
+        backgroundColor: cs.primary, foregroundColor: cs.onPrimary,
+        child: const Icon(LucideIcons.plus, size: 24),
+      );
+    }
+
+    // ─── Multi-action FAB (Home, Dashboard, Transactions) ──────
     if (_isTransactionPage) {
       return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
         if (_isOpen) ...[
           _FabMenuItem(
             label: 'Add Expense',
             icon: LucideIcons.trendingDown,
-            onTap: () => _openAddTransaction(context, isIncome: false),
+            onTap: () => _openSheet(context, const AddTransactionDialog(isIncome: false)),
           ),
           const SizedBox(height: 8),
           _FabMenuItem(
             label: 'Add Income',
             icon: LucideIcons.trendingUp,
-            onTap: () => _openAddTransaction(context, isIncome: true),
+            onTap: () => _openSheet(context, const AddTransactionDialog(isIncome: true)),
           ),
           const SizedBox(height: 8),
         ],
         FloatingActionButton(
           onPressed: _toggle,
-          backgroundColor: cs.primary,
-          foregroundColor: cs.onPrimary,
+          backgroundColor: cs.primary, foregroundColor: cs.onPrimary,
           child: RotationTransition(
             turns: _rotationAnim,
             child: Icon(_isOpen ? LucideIcons.x : LucideIcons.plus, size: 24),
@@ -99,16 +127,8 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
       ]);
     }
 
-    // For other pages: single action FAB
-    return FloatingActionButton(
-      onPressed: () {
-        HapticFeedback.lightImpact();
-        // Goals, budgets, accounts get their own add dialogs
-      },
-      backgroundColor: cs.primary,
-      foregroundColor: cs.onPrimary,
-      child: const Icon(LucideIcons.plus, size: 24),
-    );
+    // Default: hidden
+    return const SizedBox.shrink();
   }
 }
 
