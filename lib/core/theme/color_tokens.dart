@@ -40,4 +40,9 @@ class AppColors {
   static const toolEmerald = Color(0xFF10B981);
   static const toolPink = Color(0xFFEC4899);
   static const toolPurple = Color(0xFFA855F7);
+
+  // Contribution type colors (matching web)
+  static const sss = Color(0xFF3B82F6);       // blue
+  static const philhealth = Color(0xFF22C55E); // green
+  static const pagibig = Color(0xFFF97316);    // orange
 }
