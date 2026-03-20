@@ -8,6 +8,7 @@ import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../accounts/providers/account_providers.dart';
+import '../../accounts/widgets/add_account_dialog.dart';
 import '../providers/transaction_providers.dart';
 
 // Formats numbers with thousand separators: 10000 → 10,000
@@ -349,6 +350,56 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
+
+            // No accounts — guide user to create one first
+            if (accounts.isEmpty) ...[
+              const SizedBox(height: 32),
+              Center(child: Icon(LucideIcons.wallet, size: 48, color: cs.onSurfaceVariant.withValues(alpha: 0.3))),
+              const SizedBox(height: 16),
+              Text(
+                _isIncome ? 'Create an account to add income' : 'Create an account to add expenses',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'You need at least one account (e.g., Cash, GCash, BDO) before you can track transactions.',
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () async {
+                  // Close this dialog, open Add Account, then re-open this dialog
+                  Navigator.pop(context);
+                  final created = await showModalBottomSheet<bool>(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const AddAccountDialog(),
+                  );
+                  if (created == true && context.mounted) {
+                    // Re-open transaction dialog after account is created
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => AddTransactionDialog(
+                        isIncome: _isIncome,
+                        defaultAccountId: widget.defaultAccountId,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(LucideIcons.plus, size: 16),
+                label: const Text('Create Account'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ] else ...[
 
             // Header: "Add Expense" / "Add Income" + Split + Repeat toggle
             Row(children: [
@@ -864,6 +915,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                               ? 'Add Split Expense'
                               : 'Add ${_isIncome ? 'Income' : 'Expense'}'),
             ),
+            ], // end else (has accounts)
           ],
         ),
       ),
