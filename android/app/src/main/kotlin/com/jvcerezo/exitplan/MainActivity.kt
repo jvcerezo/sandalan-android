@@ -1,4 +1,4 @@
-package com.jvcerezo.sandalan
+package com.jvcerezo.exitplan
 
 import io.flutter.embedding.android.FlutterActivity
 

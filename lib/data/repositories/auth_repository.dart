@@ -44,7 +44,7 @@ class AuthRepository {
   Future<bool> signInWithGoogle() async {
     final response = await _client.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: 'com.jvcerezo.sandalan://login-callback/',
+      redirectTo: 'com.jvcerezo.exitplan://login-callback/',
     );
     return response;
   }
