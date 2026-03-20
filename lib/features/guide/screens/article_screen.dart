@@ -15,17 +15,33 @@ class ArticleScreen extends StatefulWidget {
 
 class _ArticleScreenState extends State<ArticleScreen> {
   bool _isRead = false;
+  double _scrollProgress = 0;
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadReadStatus();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final max = _scrollController.position.maxScrollExtent;
+    if (max <= 0) return;
+    setState(() => _scrollProgress = (_scrollController.offset / max).clamp(0, 1));
   }
 
   Future<void> _loadReadStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final readList = prefs.getStringList('guides_read') ?? [];
     setState(() => _isRead = readList.contains(widget.guideSlug));
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _toggleRead() async {
@@ -49,8 +65,17 @@ class _ArticleScreenState extends State<ArticleScreen> {
     final stage = kLifeStages.firstWhere((s) => s.slug == widget.stageSlug);
     final guide = stage.guides.firstWhere((g) => g.slug == widget.guideSlug);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+    return Column(children: [
+      // Reading progress bar
+      LinearProgressIndicator(
+        value: _scrollProgress,
+        minHeight: 3,
+        backgroundColor: Colors.transparent,
+        color: stage.color,
+      ),
+      Expanded(child: ListView(
+        controller: _scrollController,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
       children: [
         // ← Back
         GestureDetector(
@@ -158,6 +183,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
           ),
         ),
       ],
-    );
+    )),
+    ]);
   }
 }

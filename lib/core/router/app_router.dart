@@ -7,6 +7,7 @@ import '../../features/home/screens/home_screen.dart';
 import '../../features/guide/screens/guide_screen.dart';
 import '../../features/guide/screens/stage_detail_screen.dart';
 import '../../features/guide/screens/article_screen.dart';
+import '../../features/guide/screens/checklist_detail_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/transactions/screens/transactions_screen.dart';
 import '../../features/accounts/screens/accounts_screen.dart';
@@ -91,6 +92,15 @@ final appRouter = GoRouter(
           path: '/guide/:stageSlug',
           pageBuilder: (context, state) => NoTransitionPage(
             child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
+          ),
+        ),
+        GoRoute(
+          path: '/guide/:stageSlug/checklist/:itemId',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: ChecklistDetailScreen(
+              stageSlug: state.pathParameters['stageSlug']!,
+              itemId: state.pathParameters['itemId']!,
+            ),
           ),
         ),
         GoRoute(

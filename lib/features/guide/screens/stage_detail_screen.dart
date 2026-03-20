@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -139,7 +138,10 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
             isDone: _completedItems.contains(item.id),
             isSkipped: _skippedItems.contains(item.id),
             color: stage.color,
-            onToggle: () => _toggleItem(item.id),
+            onTap: () async {
+              await context.push('/guide/${widget.stageSlug}/checklist/${item.id}');
+              _loadProgress(); // Reload after returning
+            },
           )),
         ],
       ],
@@ -188,18 +190,15 @@ class _ChecklistRow extends StatelessWidget {
   final bool isDone;
   final bool isSkipped;
   final Color color;
-  final VoidCallback onToggle;
+  final VoidCallback onTap;
   const _ChecklistRow({required this.item, required this.isDone, required this.isSkipped,
-      required this.color, required this.onToggle});
+      required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onToggle();
-      },
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -233,11 +232,13 @@ class _ChecklistRow extends StatelessWidget {
           if (item.priority == 'high')
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              margin: const EdgeInsets.only(right: 4),
               decoration: BoxDecoration(
                 color: Colors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(4)),
               child: const Text('!', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.red)),
             ),
+          Icon(LucideIcons.chevronRight, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
         ]),
       ),
     );
