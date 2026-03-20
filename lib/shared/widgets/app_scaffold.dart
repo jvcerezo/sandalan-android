@@ -11,6 +11,8 @@ import 'brand_mark.dart';
 import 'nav_drawer.dart';
 import 'context_fab.dart';
 
+final _scaffoldKey = GlobalKey<ScaffoldState>();
+
 class AppScaffold extends StatelessWidget {
   final Widget child;
 
@@ -22,6 +24,7 @@ class AppScaffold extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: const NavDrawer(),
       body: Column(
         children: [
@@ -45,7 +48,7 @@ class AppScaffold extends StatelessWidget {
                     IconButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        Scaffold.of(context).openDrawer();
+                        _scaffoldKey.currentState?.openDrawer();
                       },
                       icon: const Icon(LucideIcons.menu, size: 22),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
