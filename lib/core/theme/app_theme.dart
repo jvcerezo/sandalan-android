@@ -47,22 +47,23 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: false,
+        filled: true,
+        fillColor: const Color(0xFFF5F7F6),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color(0xFFD1D9D4)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color(0xFF1A2E23).withValues(alpha: 0.08)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: const Color(0xFFD1D9D4)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: const Color(0xFF1A2E23).withValues(alpha: 0.08)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: _primaryColor, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: _primaryColor, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(color: const Color(0xFF1A2E23).withValues(alpha: 0.4)),
+        hintStyle: TextStyle(fontSize: 14, color: const Color(0xFF1A2E23).withValues(alpha: 0.35)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -180,22 +181,22 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.05),
+        fillColor: Colors.white.withValues(alpha: 0.04),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: darkPrimary, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: darkPrimary, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(color: mutedFg),
+        hintStyle: TextStyle(fontSize: 14, color: mutedFg),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
