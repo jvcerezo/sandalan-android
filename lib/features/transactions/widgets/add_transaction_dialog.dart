@@ -3,241 +3,412 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/account.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/transaction_providers.dart';
 
 class AddTransactionDialog extends ConsumerStatefulWidget {
+  final bool isIncome;
   final String? defaultAccountId;
 
-  const AddTransactionDialog({super.key, this.defaultAccountId});
+  const AddTransactionDialog({super.key, this.isIncome = false, this.defaultAccountId});
 
   @override
   ConsumerState<AddTransactionDialog> createState() => _AddTransactionDialogState();
 }
 
 class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
-  bool _isIncome = false;
+  late bool _isIncome;
   final _amountController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  String _category = 'Food';
-  String? _accountId;
+  final _noteController = TextEditingController();
+  final _tagsController = TextEditingController();
+  String? _selectedAccountId;
+  String _category = '';
   DateTime _date = DateTime.now();
+  bool _showRepeat = false;
+  int _repeatInterval = 1;
+  String _repeatFrequency = 'monthly';
   bool _saving = false;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _accountId = widget.defaultAccountId;
-  }
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
+    _isIncome = widget.isIncome;
+    _selectedAccountId = widget.defaultAccountId;
+    _category = _categories.first;
   }
 
   List<String> get _categories => _isIncome ? kIncomeCategories : kExpenseCategories;
 
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    _tagsController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleSave() async {
     final amountText = _amountController.text.replaceAll(',', '');
     final amount = double.tryParse(amountText);
-    if (amount == null || amount <= 0) {
-      setState(() => _error = 'Enter a valid amount.');
-      return;
-    }
+    if (amount == null || amount <= 0) return;
 
-    setState(() { _saving = true; _error = null; });
+    setState(() => _saving = true);
 
     try {
       final repo = ref.read(transactionRepositoryProvider);
+      final tags = _tagsController.text.trim().isEmpty
+          ? null
+          : _tagsController.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+
       await repo.createTransaction(
         amount: _isIncome ? amount : -amount,
         category: _category,
-        description: _descriptionController.text.trim(),
+        description: _noteController.text.trim(),
         date: _date,
-        accountId: _accountId,
+        accountId: _selectedAccountId,
+        tags: tags,
       );
-      if (mounted) Navigator.of(context).pop();
+
+      if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() {
-        _saving = false;
-        _error = 'Failed to save transaction.';
-      });
+      setState(() => _saving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+    final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20, right: 20, top: 20,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      expand: false,
+      builder: (context, scrollController) => Container(
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
-            // Header
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('Add Transaction',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(LucideIcons.x, size: 20),
+            // Drag handle
+            Center(child: Container(
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: cs.outline.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2)),
+            )),
+
+            // Header: "Add Expense" / "Add Income" + Split + Repeat toggle
+            Row(children: [
+              Text(_isIncome ? 'Add Income' : 'Add Expense',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              if (!_isIncome) ...[
+                GestureDetector(
+                  onTap: () {}, // TODO: Split
+                  child: Row(children: [
+                    Icon(LucideIcons.gitBranch, size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('Split', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ]),
+                ),
+                const SizedBox(width: 12),
+              ],
+              GestureDetector(
+                onTap: () => setState(() => _showRepeat = !_showRepeat),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _showRepeat ? cs.primary : Colors.transparent,
+                    border: Border.all(color: _showRepeat ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(LucideIcons.repeat, size: 12,
+                        color: _showRepeat ? cs.onPrimary : cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('Repeat', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                        color: _showRepeat ? cs.onPrimary : cs.onSurfaceVariant)),
+                  ]),
+                ),
               ),
             ]),
             const SizedBox(height: 12),
 
-            // Type toggle
-            Row(children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() {
-                    _isIncome = false;
-                    _category = kExpenseCategories.first;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: !_isIncome ? AppColors.expense.withValues(alpha: 0.1) : Colors.transparent,
-                      border: Border.all(
-                        color: !_isIncome ? AppColors.expense : colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(child: Text('Expense',
-                        style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600,
-                          color: !_isIncome ? AppColors.expense : colorScheme.onSurfaceVariant,
-                        ))),
-                  ),
+            // Account selector
+            Text('Account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 6),
+            // Account dropdown
+            PopupMenuButton<String>(
+              onSelected: (id) => setState(() => _selectedAccountId = id),
+              itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
+                value: a.id,
+                child: Row(children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Text(a.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 6),
+                      Text(a.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                    ]),
+                  ])),
+                  if (a.id == _selectedAccountId)
+                    Icon(Icons.check, size: 16, color: cs.primary),
+                ]),
+              )).toList(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(selectedAccount?.name ?? 'Select account',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const SizedBox(width: 4),
+                  if (selectedAccount != null)
+                    Text(selectedAccount.currency,
+                        style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                  const SizedBox(width: 4),
+                  Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
+                ]),
               ),
-              const SizedBox(width: 8),
+            ),
+
+            // Selected account balance
+            if (selectedAccount != null) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(selectedAccount.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(selectedAccount.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                  ]),
+                  Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.income)),
+                ]),
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Amount input
+            Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              Text('₱', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 4),
               Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() {
-                    _isIncome = true;
-                    _category = kIncomeCategories.first;
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _isIncome ? AppColors.income.withValues(alpha: 0.1) : Colors.transparent,
-                      border: Border.all(
-                        color: _isIncome ? AppColors.income : colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(child: Text('Income',
-                        style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600,
-                          color: _isIncome ? AppColors.income : colorScheme.onSurfaceVariant,
-                        ))),
+                child: TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                  autofocus: true,
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
+                  decoration: InputDecoration(
+                    hintText: '0.00',
+                    hintStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
                   ),
                 ),
               ),
             ]),
-            const SizedBox(height: 16),
-
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(_error!, style: TextStyle(fontSize: 12, color: colorScheme.error)),
-              ),
-
-            // Amount
-            TextField(
-              controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
-              autofocus: true,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
-                prefixText: '₱ ',
-                prefixStyle: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                hintText: '0.00',
-                border: InputBorder.none,
-              ),
-            ),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            // Description
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description (optional)'),
-            ),
             const SizedBox(height: 12),
 
             // Category
-            DropdownButtonFormField<String>(
-              value: _categories.contains(_category) ? _category : _categories.first,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => setState(() => _category = v ?? _categories.first),
-            ),
-            const SizedBox(height: 12),
+            Text('Category', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 8),
+            Wrap(spacing: 6, runSpacing: 6, children: _categories.map((c) {
+              final selected = _category == c;
+              return GestureDetector(
+                onTap: () => setState(() => _category = c),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
+                    border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(_categoryIcon(c), size: 12,
+                        color: selected ? cs.primary : cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                        color: selected ? cs.primary : cs.onSurfaceVariant)),
+                  ]),
+                ),
+              );
+            }).toList()),
+            const SizedBox(height: 14),
 
-            // Account
-            if (accounts.isNotEmpty)
-              DropdownButtonFormField<String?>(
-                value: _accountId,
-                decoration: const InputDecoration(labelText: 'Account'),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('No account')),
-                  ...accounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))),
-                ],
-                onChanged: (v) => setState(() => _accountId = v),
+            // Note + Date row
+            Row(children: [
+              Expanded(child: TextField(
+                controller: _noteController,
+                decoration: InputDecoration(
+                  hintText: 'Add a note...',
+                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  border: InputBorder.none, contentPadding: EdgeInsets.zero,
+                ),
+                style: const TextStyle(fontSize: 13),
+              )),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context, initialDate: _date,
+                    firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (picked != null) setState(() => _date = picked);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(children: [
+                    Text('${_date.month.toString().padLeft(2, '0')}/${_date.day.toString().padLeft(2, '0')}/${_date.year}',
+                        style: const TextStyle(fontSize: 12)),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
+                  ]),
+                ),
               ),
-            const SizedBox(height: 12),
+            ]),
+            Divider(color: cs.outline.withValues(alpha: 0.10)),
 
-            // Date
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(LucideIcons.calendar, size: 20),
-              title: Text(formatDateDisplay(_date)),
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: _date,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (picked != null) setState(() => _date = picked);
-              },
+            // Tags
+            TextField(
+              controller: _tagsController,
+              decoration: InputDecoration(
+                hintText: 'Add tags...',
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                border: InputBorder.none, contentPadding: EdgeInsets.zero,
+              ),
+              style: const TextStyle(fontSize: 13),
             ),
-            const SizedBox(height: 16),
+            Divider(color: cs.outline.withValues(alpha: 0.10)),
+            const SizedBox(height: 8),
 
-            // Save
+            // Repeat settings (expandable)
+            if (_showRepeat) ...[
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.04),
+                  border: Border.all(color: cs.primary.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Icon(LucideIcons.repeat, size: 14, color: cs.primary),
+                    const SizedBox(width: 6),
+                    Text('Repeat settings', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.primary)),
+                  ]),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    SizedBox(width: 50, child: TextField(
+                      decoration: const InputDecoration(isDense: true),
+                      keyboardType: TextInputType.number,
+                      controller: TextEditingController(text: '$_repeatInterval'),
+                      onChanged: (v) => _repeatInterval = int.tryParse(v) ?? 1,
+                    )),
+                    const SizedBox(width: 8),
+                    Expanded(child: DropdownButtonFormField<String>(
+                      value: _repeatFrequency, isDense: true,
+                      items: ['daily', 'weekly', 'monthly'].map((f) =>
+                          DropdownMenuItem(value: f, child: Text('${f[0].toUpperCase()}${f.substring(1)}(s)'))).toList(),
+                      onChanged: (v) => setState(() => _repeatFrequency = v ?? 'monthly'),
+                    )),
+                  ]),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Time (optional)', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                          borderRadius: BorderRadius.circular(8)),
+                        child: Row(children: [
+                          Text('--:-- --', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                          const Spacer(),
+                          Icon(LucideIcons.clock, size: 14, color: cs.onSurfaceVariant),
+                        ]),
+                      ),
+                    ])),
+                    const SizedBox(width: 8),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('End date (optional)', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                          borderRadius: BorderRadius.circular(8)),
+                        child: Row(children: [
+                          Text('mm/dd/yyyy', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                          const Spacer(),
+                          Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
+                        ]),
+                      ),
+                    ])),
+                  ]),
+                ]),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Submit button
             FilledButton(
               onPressed: _saving ? null : _handleSave,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: _isIncome ? AppColors.income : AppColors.expense,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: _saving
                   ? const SizedBox(height: 18, width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(_isIncome ? 'Add Income' : 'Add Expense'),
+                  : Text(_showRepeat
+                      ? 'Set Recurring ${_isIncome ? 'Income' : 'Expense'}'
+                      : 'Add ${_isIncome ? 'Income' : 'Expense'}'),
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 
-  String formatDateDisplay(DateTime date) {
-    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  IconData _categoryIcon(String category) {
+    switch (category) {
+      case 'Food': return LucideIcons.utensils;
+      case 'Housing': return LucideIcons.home;
+      case 'Transportation': return LucideIcons.car;
+      case 'Entertainment': return LucideIcons.film;
+      case 'Healthcare': return LucideIcons.heart;
+      case 'Education': return LucideIcons.graduationCap;
+      case 'Family Support': return LucideIcons.moreHorizontal;
+      case 'Salary': return LucideIcons.banknote;
+      case 'Freelance': return LucideIcons.briefcase;
+      case 'Investment': return LucideIcons.trendingUp;
+      default: return LucideIcons.moreHorizontal;
+    }
   }
 }
