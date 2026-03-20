@@ -35,7 +35,7 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolOrange,
             title: 'BIR Tax Tracker',
             subtitle: 'Income tax & filing',
-            onTap: () {},
+            onTap: () => context.go('/tools/taxes'),
           ),
           _ToolItem(
             icon: LucideIcons.gift,

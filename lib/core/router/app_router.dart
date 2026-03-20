@@ -12,6 +12,7 @@ import '../../features/budgets/screens/budgets_screen.dart';
 import '../../features/goals/screens/goals_screen.dart';
 import '../../features/tools/screens/tools_hub_screen.dart';
 import '../../features/tools/screens/contributions_screen.dart';
+import '../../features/tools/screens/tax_tracker_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
@@ -116,6 +117,12 @@ final appRouter = GoRouter(
           path: '/tools/contributions',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: ContributionsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/tools/taxes',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: TaxTrackerScreen(),
           ),
         ),
         GoRoute(
