@@ -145,18 +145,7 @@ class NavDrawer extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
-                              child: Text(
-                                fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
+                            _buildAvatar(profile.valueOrNull?.avatarUrl, fullName, colorScheme),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
@@ -242,6 +231,25 @@ class NavDrawer extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String? avatarUrl, String fullName, ColorScheme colorScheme) {
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundImage: NetworkImage(avatarUrl),
+        onBackgroundImageError: (_, __) {},
+        backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
+      );
+    }
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
+      child: Text(
+        fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary),
       ),
     );
   }
