@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -9,6 +8,7 @@ import '../../../shared/widgets/animated_counter.dart';
 // ─── Stage Data ────────────────────────────────────────────────────────────────
 
 class _StageData {
+  final String id;
   final String title;
   final String subtitle;
   final String progress;
@@ -16,6 +16,7 @@ class _StageData {
   final Color color;
 
   const _StageData({
+    required this.id,
     required this.title,
     required this.subtitle,
     required this.progress,
@@ -25,34 +26,19 @@ class _StageData {
 }
 
 const _stages = [
-  _StageData(title: 'Unang Hakbang', subtitle: 'First Steps',
+  _StageData(id: 'unang-hakbang', title: 'Unang Hakbang', subtitle: 'First Steps',
       progress: '0/12', icon: LucideIcons.graduationCap, color: StageColors.blue),
-  _StageData(title: 'Pundasyon', subtitle: 'Building Foundation',
+  _StageData(id: 'pundasyon', title: 'Pundasyon', subtitle: 'Building the Foundation',
       progress: '0/11', icon: LucideIcons.toyBrick, color: StageColors.emerald),
-  _StageData(title: 'Tahanan', subtitle: 'Establishing Home',
+  _StageData(id: 'tahanan', title: 'Tahanan', subtitle: 'Establishing a Home',
       progress: '0/5', icon: LucideIcons.home, color: StageColors.violet),
-  _StageData(title: 'Tugatog', subtitle: 'Career Peak',
+  _StageData(id: 'tugatog', title: 'Tugatog', subtitle: 'Career Peak',
       progress: '0/10', icon: LucideIcons.mountain, color: StageColors.amber),
-  _StageData(title: 'Paghahanda', subtitle: 'Pre-Retirement',
+  _StageData(id: 'paghahanda', title: 'Paghahanda', subtitle: 'Pre-Retirement',
       progress: '0/10', icon: LucideIcons.clock, color: StageColors.rose),
-  _StageData(title: 'Gintong Taon', subtitle: 'Golden Years',
+  _StageData(id: 'gintong-taon', title: 'Gintong Taon', subtitle: 'Golden Years',
       progress: '0/10', icon: LucideIcons.gem, color: StageColors.yellow),
 ];
-
-// Winding path node positions (x as fraction of width, y as absolute)
-// Zigzags left-center-right like PvZ2
-const _nodePositions = [
-  Offset(0.25, 0),    // left
-  Offset(0.72, 1),    // right
-  Offset(0.22, 2),    // left
-  Offset(0.70, 3),    // right
-  Offset(0.28, 4),    // left
-  Offset(0.65, 5),    // right
-];
-
-const double _segmentHeight = 200; // vertical space per stage
-const double _nodeRadius = 36;
-const double _topPadding = 30;
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
@@ -76,7 +62,8 @@ class GuideScreen extends StatelessWidget {
               const SizedBox(height: 2),
               Text('Level up through every stage of Filipino adult life.',
                   style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+
               // Overall progress
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -85,230 +72,228 @@ class GuideScreen extends StatelessWidget {
                   border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Overall Progress',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                        SizedBox(height: 2),
-                        Text('0/58 completed',
-                            style: TextStyle(fontSize: 12)),
-                      ],
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Overall Progress',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text('0/58 completed',
+                              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    width: 100,
-                    child: AnimatedProgressBar(value: 0, minHeight: 6, color: colorScheme.primary),
-                  ),
-                ]),
+                    SizedBox(
+                      width: 120,
+                      child: AnimatedProgressBar(
+                        value: 0,
+                        minHeight: 6,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
 
-        // Journey map
+        // Journey map with Philippine backdrop
         Expanded(
-          child: _JourneyMapView(),
+          child: _JourneyMap(),
         ),
       ],
     );
   }
 }
 
-// ─── Journey Map View ──────────────────────────────────────────────────────────
+// ─── Journey Map ───────────────────────────────────────────────────────────────
 
-class _JourneyMapView extends StatelessWidget {
+class _JourneyMap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final totalHeight = _topPadding + (_stages.length) * _segmentHeight + 60;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: SizedBox(
-        width: screenWidth,
-        height: totalHeight,
-        child: CustomPaint(
-          painter: _MapBackgroundPainter(isDark: isDark, screenWidth: screenWidth),
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
           child: CustomPaint(
-            painter: _PathPainter(isDark: isDark, screenWidth: screenWidth),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                for (int i = 0; i < _stages.length; i++)
-                  _buildNode(context, i),
-              ],
+            painter: _ArchipelagoPainter(
+              isDark: isDark,
+              primaryColor: colorScheme.primary,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+              child: Column(
+                children: [
+                  for (int i = 0; i < _stages.length; i++) ...[
+                    _JourneyNode(stage: _stages[i], index: i),
+                    if (i < _stages.length - 1)
+                      _DashedConnector(
+                        fromColor: _stages[i].color,
+                        toColor: _stages[i + 1].color,
+                        goRight: i.isEven,
+                      ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildNode(BuildContext context, int index) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final pos = _nodePositions[index];
-    final cx = pos.dx * screenWidth;
-    final cy = _topPadding + pos.dy * _segmentHeight + _segmentHeight * 0.5;
-    final stage = _stages[index];
-    final isLeft = pos.dx < 0.5;
-
-    return Positioned(
-      left: cx - _nodeRadius,
-      top: cy - _nodeRadius,
-      child: _StageNode(stage: stage, index: index, isLeft: isLeft),
+      ],
     );
   }
 }
 
-// ─── Stage Node ────────────────────────────────────────────────────────────────
+// ─── Journey Node (Circle icon + label) ────────────────────────────────────────
 
-class _StageNode extends StatelessWidget {
+class _JourneyNode extends StatelessWidget {
   final _StageData stage;
   final int index;
-  final bool isLeft;
 
-  const _StageNode({required this.stage, required this.index, required this.isLeft});
+  const _JourneyNode({required this.stage, required this.index});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isLeft = index.isEven;
 
-    return GestureDetector(
-      onTap: () => HapticFeedback.lightImpact(),
-      child: SizedBox(
-        width: _nodeRadius * 2,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Glowing circle
-            Container(
-              width: _nodeRadius * 2,
-              height: _nodeRadius * 2,
-              decoration: BoxDecoration(
-                color: stage.color,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: stage.color.withValues(alpha: 0.45),
-                    blurRadius: 20,
-                    spreadRadius: 2,
+    return Row(
+      mainAxisAlignment: isLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
+      children: [
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            // TODO: Navigate to stage detail
+          },
+          child: SizedBox(
+            width: 160,
+            child: Column(
+              children: [
+                // Circle icon
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: stage.color,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: stage.color.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(stage.icon, size: 28, color: Colors.white),
+                  child: Icon(stage.icon, size: 30, color: Colors.white),
+                ),
+                const SizedBox(height: 10),
+                // Title
+                Text(stage.title,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    textAlign: TextAlign.center),
+                // Subtitle
+                Text(stage.subtitle,
+                    style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                    textAlign: TextAlign.center),
+                // Progress
+                Text(stage.progress,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: stage.color)),
+              ],
             ),
-            const SizedBox(height: 6),
-            // Title
-            Text(stage.title,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, height: 1.1),
-                textAlign: TextAlign.center),
-            // Subtitle
-            Text(stage.subtitle,
-                style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant, height: 1.2),
-                textAlign: TextAlign.center),
-            // Progress
-            Text(stage.progress,
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: stage.color)),
-          ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Dashed Curved Connector ───────────────────────────────────────────────────
+
+class _DashedConnector extends StatelessWidget {
+  final Color fromColor;
+  final Color toColor;
+  final bool goRight;
+
+  const _DashedConnector({
+    required this.fromColor,
+    required this.toColor,
+    required this.goRight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 60,
+      child: CustomPaint(
+        size: Size(MediaQuery.of(context).size.width - 40, 60),
+        painter: _DashedCurvePainter(
+          fromColor: fromColor,
+          toColor: toColor,
+          goRight: goRight,
         ),
       ),
     );
   }
 }
 
-// ─── Winding Path Painter ──────────────────────────────────────────────────────
+class _DashedCurvePainter extends CustomPainter {
+  final Color fromColor;
+  final Color toColor;
+  final bool goRight;
 
-class _PathPainter extends CustomPainter {
-  final bool isDark;
-  final double screenWidth;
-
-  _PathPainter({required this.isDark, required this.screenWidth});
+  _DashedCurvePainter({
+    required this.fromColor,
+    required this.toColor,
+    required this.goRight,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Build the winding path through all nodes
-    final points = <Offset>[];
-    for (int i = 0; i < _nodePositions.length; i++) {
-      final pos = _nodePositions[i];
-      points.add(Offset(
-        pos.dx * screenWidth,
-        _topPadding + pos.dy * _segmentHeight + _segmentHeight * 0.5,
-      ));
-    }
-
-    if (points.length < 2) return;
-
-    // Road background (thick)
-    final roadPaint = Paint()
-      ..color = (isDark ? Colors.white : const Color(0xFF8B7355)).withValues(alpha: isDark ? 0.08 : 0.12)
-      ..strokeWidth = 28
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final roadPath = _buildSmoothPath(points);
-    canvas.drawPath(roadPath, roadPaint);
-
-    // Road center line (dashed, lighter)
-    final dashPaint = Paint()
-      ..color = (isDark ? Colors.white : const Color(0xFFA0926E)).withValues(alpha: isDark ? 0.06 : 0.08)
-      ..strokeWidth = 3
+    final paint = Paint()
+      ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    _drawDashedPath(canvas, roadPath, dashPaint, 12, 10);
+    // Start from center of left/right node, curve to opposite side
+    final startX = goRight ? 80.0 : size.width - 80;
+    final endX = goRight ? size.width - 80 : 80.0;
 
-    // Road border dots (small stones along the path)
-    final stonePaint = Paint()
-      ..color = (isDark ? Colors.white : const Color(0xFF6B5B3E)).withValues(alpha: isDark ? 0.04 : 0.06);
-
-    final metrics = roadPath.computeMetrics().first;
-    final rng = math.Random(42);
-    for (double d = 0; d < metrics.length; d += 18) {
-      final tangent = metrics.getTangentForOffset(d);
-      if (tangent == null) continue;
-      final normal = Offset(-tangent.vector.dy, tangent.vector.dx);
-      // Left side stone
-      final leftPos = tangent.position + normal * (14 + rng.nextDouble() * 4);
-      canvas.drawCircle(leftPos, 1.5 + rng.nextDouble(), stonePaint);
-      // Right side stone
-      final rightPos = tangent.position - normal * (14 + rng.nextDouble() * 4);
-      canvas.drawCircle(rightPos, 1.5 + rng.nextDouble(), stonePaint);
-    }
-  }
-
-  Path _buildSmoothPath(List<Offset> points) {
     final path = Path();
-    path.moveTo(points[0].dx, points[0].dy);
+    path.moveTo(startX, 0);
+    path.cubicTo(
+      startX, size.height * 0.5,
+      endX, size.height * 0.5,
+      endX, size.height,
+    );
 
-    for (int i = 0; i < points.length - 1; i++) {
-      final p0 = points[i];
-      final p1 = points[i + 1];
-      final midY = (p0.dy + p1.dy) / 2;
+    // Draw dashed with gradient
+    final metrics = path.computeMetrics().first;
+    final totalLength = metrics.length;
+    const dashLength = 8.0;
+    const gapLength = 6.0;
 
-      path.cubicTo(
-        p0.dx, midY,
-        p1.dx, midY,
-        p1.dx, p1.dy,
-      );
-    }
-    return path;
-  }
+    double distance = 0;
+    while (distance < totalLength) {
+      final start = distance;
+      final end = math.min(distance + dashLength, totalLength);
+      final t = distance / totalLength;
 
-  void _drawDashedPath(Canvas canvas, Path path, Paint paint, double dashLen, double gapLen) {
-    for (final metric in path.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final end = math.min(distance + dashLen, metric.length);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += dashLen + gapLen;
-      }
+      paint.color = Color.lerp(
+        fromColor.withValues(alpha: 0.5),
+        toColor.withValues(alpha: 0.5),
+        t,
+      )!;
+
+      final extractedPath = metrics.extractPath(start, end);
+      canvas.drawPath(extractedPath, paint);
+
+      distance += dashLength + gapLength;
     }
   }
 
@@ -316,221 +301,142 @@ class _PathPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// ─── Background Scenery Painter (Philippine elements) ──────────────────────────
+// ─── Philippine Archipelago Background Painter ─────────────────────────────────
 
-class _MapBackgroundPainter extends CustomPainter {
+class _ArchipelagoPainter extends CustomPainter {
   final bool isDark;
-  final double screenWidth;
+  final Color primaryColor;
 
-  _MapBackgroundPainter({required this.isDark, required this.screenWidth});
+  _ArchipelagoPainter({required this.isDark, required this.primaryColor});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rng = math.Random(7001);
-    final baseOpacity = isDark ? 0.06 : 0.05;
+    final paint = Paint()..style = PaintingStyle.fill;
+    final opacity = isDark ? 0.04 : 0.035;
 
-    // ─── Rolling hills / rice terraces ─────────────────────────
-    _drawTerraces(canvas, size, baseOpacity, rng);
+    // Luzon (top-left, large)
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.18, cy: size.height * 0.08,
+      points: _luzonShape, scale: size.width * 0.35, color: primaryColor, opacity: opacity);
 
-    // ─── Coconut trees scattered ───────────────────────────────
-    _drawCoconutTrees(canvas, size, baseOpacity);
+    // Mindoro (mid-left)
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.12, cy: size.height * 0.28,
+      points: _smallIslandShape, scale: size.width * 0.12, color: StageColors.emerald, opacity: opacity);
 
-    // ─── Bahay kubo silhouettes ────────────────────────────────
-    _drawBahayKubo(canvas, size, baseOpacity, size.width * 0.08, size.height * 0.12);
-    _drawBahayKubo(canvas, size, baseOpacity, size.width * 0.88, size.height * 0.48);
-    _drawBahayKubo(canvas, size, baseOpacity * 0.7, size.width * 0.14, size.height * 0.72);
+    // Visayas cluster (center)
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.55, cy: size.height * 0.38,
+      points: _visayasShape1, scale: size.width * 0.18, color: StageColors.violet, opacity: opacity);
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.75, cy: size.height * 0.42,
+      points: _visayasShape2, scale: size.width * 0.14, color: StageColors.violet, opacity: opacity * 0.7);
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.40, cy: size.height * 0.45,
+      points: _smallIslandShape, scale: size.width * 0.09, color: StageColors.amber, opacity: opacity * 0.6);
 
-    // ─── Jeepney silhouette ────────────────────────────────────
-    _drawJeepney(canvas, size, baseOpacity, size.width * 0.82, size.height * 0.22);
+    // Mindanao (bottom-right, large)
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.72, cy: size.height * 0.68,
+      points: _mindanaoShape, scale: size.width * 0.32, color: StageColors.rose, opacity: opacity);
 
-    // ─── Waves / water at bottom ───────────────────────────────
-    _drawWaves(canvas, size, baseOpacity);
+    // Palawan (left side, elongated)
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.05, cy: size.height * 0.50,
+      points: _palawanShape, scale: size.width * 0.08, color: StageColors.amber, opacity: opacity);
 
-    // ─── Mountain peaks ────────────────────────────────────────
-    _drawMountain(canvas, size, baseOpacity * 0.6, size.width * 0.90, size.height * 0.58, 60);
-    _drawMountain(canvas, size, baseOpacity * 0.5, size.width * 0.05, size.height * 0.42, 45);
+    // Scattered small islands
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.88, cy: size.height * 0.18,
+      points: _smallIslandShape, scale: size.width * 0.06, color: primaryColor, opacity: opacity * 0.5);
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.30, cy: size.height * 0.62,
+      points: _smallIslandShape, scale: size.width * 0.07, color: StageColors.yellow, opacity: opacity * 0.5);
+    _drawIsland(canvas, size, paint,
+      cx: size.width * 0.85, cy: size.height * 0.88,
+      points: _smallIslandShape, scale: size.width * 0.05, color: StageColors.yellow, opacity: opacity * 0.4);
 
-    // ─── Stars / fireflies (dark mode) ─────────────────────────
-    if (isDark) {
-      final starPaint = Paint()..color = Colors.white.withValues(alpha: 0.08);
-      for (int i = 0; i < 25; i++) {
-        canvas.drawCircle(
-          Offset(rng.nextDouble() * size.width, rng.nextDouble() * size.height),
-          rng.nextDouble() * 1.5 + 0.5,
-          starPaint,
-        );
-      }
-    }
-  }
-
-  void _drawTerraces(Canvas canvas, Size size, double opacity, math.Random rng) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = StageColors.emerald.withValues(alpha: opacity * 0.5);
-
-    // Several stacked curves representing rice terraces
-    for (int row = 0; row < 4; row++) {
-      final y = size.height * (0.15 + row * 0.22);
-      final path = Path();
-      path.moveTo(0, y);
-
-      for (double x = 0; x <= size.width; x += size.width / 6) {
-        path.lineTo(x, y + math.sin(x / 50 + row * 1.5) * 12 + rng.nextDouble() * 6);
-      }
-      path.lineTo(size.width, y + 20);
-      path.lineTo(0, y + 20);
-      path.close();
-
-      paint.color = StageColors.emerald.withValues(alpha: opacity * (0.25 + row * 0.08));
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  void _drawCoconutTrees(Canvas canvas, Size size, double opacity) {
-    final positions = [
-      Offset(size.width * 0.92, size.height * 0.08),
-      Offset(size.width * 0.05, size.height * 0.30),
-      Offset(size.width * 0.95, size.height * 0.65),
-      Offset(size.width * 0.10, size.height * 0.88),
-      Offset(size.width * 0.85, size.height * 0.85),
-    ];
-
-    for (final pos in positions) {
-      _drawPalmTree(canvas, pos, opacity);
-    }
-  }
-
-  void _drawPalmTree(Canvas canvas, Offset base, double opacity) {
-    // Trunk
-    final trunkPaint = Paint()
-      ..color = const Color(0xFF8B6914).withValues(alpha: opacity * 0.6)
-      ..strokeWidth = 2.5
+    // Water ripple circles (subtle)
+    final ripplePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 0.8
+      ..color = primaryColor.withValues(alpha: isDark ? 0.03 : 0.025);
 
-    final trunkPath = Path();
-    trunkPath.moveTo(base.dx, base.dy);
-    trunkPath.quadraticBezierTo(
-      base.dx - 3, base.dy - 22,
-      base.dx + 2, base.dy - 40,
-    );
-    canvas.drawPath(trunkPath, trunkPaint);
-
-    // Fronds
-    final frondPaint = Paint()
-      ..color = StageColors.emerald.withValues(alpha: opacity * 0.7)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final top = Offset(base.dx + 2, base.dy - 40);
-    for (final angle in [-0.8, -0.3, 0.2, 0.7, 1.2]) {
-      final endX = top.dx + math.cos(angle) * 18;
-      final endY = top.dy + math.sin(angle) * 14 - 5;
-      final path = Path();
-      path.moveTo(top.dx, top.dy);
-      path.quadraticBezierTo(
-        top.dx + math.cos(angle) * 10,
-        top.dy - 8,
-        endX, endY,
+    for (final pos in _ripplePositions) {
+      canvas.drawCircle(
+        Offset(size.width * pos.dx, size.height * pos.dy),
+        size.width * 0.04,
+        ripplePaint,
       );
-      canvas.drawPath(path, frondPaint);
     }
   }
 
-  void _drawBahayKubo(Canvas canvas, Size size, double opacity, double cx, double cy) {
-    final paint = Paint()
-      ..color = const Color(0xFF8B6914).withValues(alpha: opacity * 0.5)
-      ..style = PaintingStyle.fill;
-
-    final w = 24.0;
-    final h = 16.0;
-
-    // Stilts
-    final stiltPaint = Paint()
-      ..color = const Color(0xFF8B6914).withValues(alpha: opacity * 0.4)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(cx - w * 0.3, cy), Offset(cx - w * 0.3, cy + h * 0.5), stiltPaint);
-    canvas.drawLine(Offset(cx + w * 0.3, cy), Offset(cx + w * 0.3, cy + h * 0.5), stiltPaint);
-
-    // Body
-    canvas.drawRect(Rect.fromCenter(center: Offset(cx, cy - h * 0.1), width: w * 0.7, height: h * 0.5), paint);
-
-    // Roof (triangle)
-    final roofPath = Path();
-    roofPath.moveTo(cx, cy - h * 0.6);
-    roofPath.lineTo(cx - w * 0.55, cy - h * 0.1);
-    roofPath.lineTo(cx + w * 0.55, cy - h * 0.1);
-    roofPath.close();
-
-    paint.color = StageColors.amber.withValues(alpha: opacity * 0.45);
-    canvas.drawPath(roofPath, paint);
-  }
-
-  void _drawJeepney(Canvas canvas, Size size, double opacity, double cx, double cy) {
-    final paint = Paint()
-      ..color = StageColors.blue.withValues(alpha: opacity * 0.4)
-      ..style = PaintingStyle.fill;
-
-    // Body
-    final bodyRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: Offset(cx, cy), width: 32, height: 14),
-      const Radius.circular(3),
-    );
-    canvas.drawRRect(bodyRect, paint);
-
-    // Roof rack
-    canvas.drawRect(
-      Rect.fromLTWH(cx - 14, cy - 10, 28, 3),
-      Paint()..color = StageColors.amber.withValues(alpha: opacity * 0.3),
-    );
-
-    // Wheels
-    final wheelPaint = Paint()
-      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: opacity * 0.4);
-    canvas.drawCircle(Offset(cx - 9, cy + 7), 3, wheelPaint);
-    canvas.drawCircle(Offset(cx + 9, cy + 7), 3, wheelPaint);
-  }
-
-  void _drawMountain(Canvas canvas, Size size, double opacity, double cx, double cy, double h) {
-    final paint = Paint()
-      ..color = StageColors.emerald.withValues(alpha: opacity)
-      ..style = PaintingStyle.fill;
-
+  void _drawIsland(Canvas canvas, Size size, Paint paint, {
+    required double cx, required double cy,
+    required List<Offset> points, required double scale,
+    required Color color, required double opacity,
+  }) {
+    paint.color = color.withValues(alpha: opacity);
     final path = Path();
-    path.moveTo(cx, cy - h);
-    path.lineTo(cx + h * 0.7, cy);
-    path.lineTo(cx - h * 0.7, cy);
+    if (points.isEmpty) return;
+
+    path.moveTo(cx + points[0].dx * scale, cy + points[0].dy * scale);
+    for (int i = 1; i < points.length; i++) {
+      final prev = points[i - 1];
+      final curr = points[i];
+      final midX = (prev.dx + curr.dx) / 2;
+      final midY = (prev.dy + curr.dy) / 2;
+      path.quadraticBezierTo(
+        cx + prev.dx * scale, cy + prev.dy * scale,
+        cx + midX * scale, cy + midY * scale,
+      );
+    }
     path.close();
     canvas.drawPath(path, paint);
-
-    // Snow cap
-    final snowPath = Path();
-    snowPath.moveTo(cx, cy - h);
-    snowPath.lineTo(cx + h * 0.15, cy - h * 0.75);
-    snowPath.lineTo(cx - h * 0.15, cy - h * 0.75);
-    snowPath.close();
-    canvas.drawPath(snowPath, Paint()..color = Colors.white.withValues(alpha: opacity * 0.5));
   }
 
-  void _drawWaves(Canvas canvas, Size size, double opacity) {
-    final paint = Paint()
-      ..color = StageColors.blue.withValues(alpha: opacity * 0.25)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+  // Simplified island shapes as relative points
+  static const _luzonShape = [
+    Offset(0.0, -0.4), Offset(0.15, -0.5), Offset(0.3, -0.35),
+    Offset(0.4, -0.1), Offset(0.35, 0.1), Offset(0.5, 0.25),
+    Offset(0.4, 0.4), Offset(0.2, 0.5), Offset(0.0, 0.35),
+    Offset(-0.15, 0.2), Offset(-0.3, 0.0), Offset(-0.2, -0.2),
+  ];
 
-    for (int row = 0; row < 3; row++) {
-      final y = size.height - 30 + row * 12.0;
-      final path = Path();
-      path.moveTo(0, y);
-      for (double x = 0; x < size.width; x += 30) {
-        path.quadraticBezierTo(x + 7.5, y - 5, x + 15, y);
-        path.quadraticBezierTo(x + 22.5, y + 5, x + 30, y);
-      }
-      canvas.drawPath(path, paint);
-    }
-  }
+  static const _mindanaoShape = [
+    Offset(0.0, -0.3), Offset(0.25, -0.35), Offset(0.4, -0.15),
+    Offset(0.45, 0.1), Offset(0.3, 0.3), Offset(0.1, 0.35),
+    Offset(-0.15, 0.3), Offset(-0.35, 0.15), Offset(-0.4, -0.05),
+    Offset(-0.3, -0.25),
+  ];
+
+  static const _visayasShape1 = [
+    Offset(0.0, -0.25), Offset(0.3, -0.2), Offset(0.4, 0.0),
+    Offset(0.3, 0.2), Offset(0.0, 0.25), Offset(-0.3, 0.15),
+    Offset(-0.35, -0.05), Offset(-0.2, -0.2),
+  ];
+
+  static const _visayasShape2 = [
+    Offset(0.0, -0.2), Offset(0.25, -0.15), Offset(0.3, 0.05),
+    Offset(0.15, 0.2), Offset(-0.1, 0.2), Offset(-0.25, 0.05),
+    Offset(-0.2, -0.15),
+  ];
+
+  static const _palawanShape = [
+    Offset(0.0, -0.8), Offset(0.15, -0.5), Offset(0.1, -0.1),
+    Offset(0.15, 0.3), Offset(0.05, 0.7), Offset(-0.1, 0.8),
+    Offset(-0.15, 0.4), Offset(-0.1, 0.0), Offset(-0.15, -0.4),
+  ];
+
+  static const _smallIslandShape = [
+    Offset(0.0, -0.3), Offset(0.25, -0.15), Offset(0.3, 0.1),
+    Offset(0.1, 0.3), Offset(-0.2, 0.2), Offset(-0.3, -0.05),
+  ];
+
+  static const _ripplePositions = [
+    Offset(0.45, 0.15), Offset(0.20, 0.40), Offset(0.65, 0.55),
+    Offset(0.15, 0.72), Offset(0.50, 0.80), Offset(0.80, 0.30),
+  ];
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
