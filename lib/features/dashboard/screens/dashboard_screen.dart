@@ -186,6 +186,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           if (_selectedTab == 1) _PlanningTab(ref: ref),
           if (_selectedTab == 2) _HealthTab(ref: ref),
           if (_selectedTab == 3) _InsightsTab(ref: ref),
+
+          // Bottom padding so FAB doesn't cover content
+          const SizedBox(height: 80),
         ],
       ),
     );
@@ -435,7 +438,7 @@ class _TrendsTab extends StatelessWidget {
                 const Expanded(flex: 3, child: Text('CATEGORY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5))),
                 Expanded(flex: 2, child: Text('THIS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5), textAlign: TextAlign.right)),
                 Expanded(flex: 2, child: Text('LAST', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5), textAlign: TextAlign.right)),
-                const Expanded(flex: 1, child: Text('Δ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600), textAlign: TextAlign.right)),
+                const Expanded(flex: 2, child: Text('Δ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600), textAlign: TextAlign.right)),
               ]),
             ),
             if (allCategories.isEmpty)
@@ -458,7 +461,7 @@ class _TrendsTab extends StatelessWidget {
                     Expanded(flex: 2, child: Text(formatCurrency(thisVal), style: const TextStyle(fontSize: 12), textAlign: TextAlign.right)),
                     Expanded(flex: 2, child: Text(formatCurrency(lastVal),
                         style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant), textAlign: TextAlign.right)),
-                    Expanded(flex: 1, child: Text(
+                    Expanded(flex: 2, child: Text(
                         '${delta > 0 ? '↑' : delta < 0 ? '↓' : '—'} ${delta.abs().toStringAsFixed(0)}%',
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: deltaColor),
                         textAlign: TextAlign.right)),
@@ -1071,7 +1074,7 @@ class _BarChartPainter extends CustomPainter {
 
     final leftPad = 45.0;
     final bottomPad = 24.0;
-    final chartW = size.width - leftPad - 8;
+    final chartW = size.width - leftPad - 20;
     final chartH = size.height - bottomPad - 8;
     final barGroupWidth = chartW / months.length;
     final barWidth = barGroupWidth * 0.25;
@@ -1082,7 +1085,7 @@ class _BarChartPainter extends CustomPainter {
     // Y-axis grid lines + labels
     for (int i = 0; i <= 4; i++) {
       final y = 8 + chartH * (1 - i / 4);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 8, y), Paint()..color = gridColor);
+      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 20, y), Paint()..color = gridColor);
       final val = (maxValue * i / 4);
       final label = val >= 1000 ? '${(val / 1000).toStringAsFixed(0)}K' : val.toStringAsFixed(0);
       final tp = TextPainter(text: TextSpan(text: label, style: labelStyle), textDirection: TextDirection.ltr)..layout();
@@ -1097,7 +1100,7 @@ class _BarChartPainter extends CustomPainter {
       final expH = (expenses[i] / maxValue) * chartH;
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTWH(cx - barWidth - 1, 8 + chartH - expH, barWidth, expH), const Radius.circular(2)),
-        Paint()..color = Colors.grey.shade400,
+        Paint()..color = isDark ? Colors.grey.shade600 : Colors.grey.shade300,
       );
 
       // Income bar (green)
@@ -1152,7 +1155,7 @@ class _LineChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final leftPad = 50.0;
     final bottomPad = 24.0;
-    final chartW = size.width - leftPad - 8;
+    final chartW = size.width - leftPad - 20;
     final chartH = size.height - bottomPad - 8;
 
     final gridColor = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06);
@@ -1161,7 +1164,7 @@ class _LineChartPainter extends CustomPainter {
     // Y-axis
     for (int i = 0; i <= 4; i++) {
       final y = 8 + chartH * (1 - i / 4);
-      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 8, y), Paint()..color = gridColor);
+      canvas.drawLine(Offset(leftPad, y), Offset(size.width - 20, y), Paint()..color = gridColor);
       final val = value * i / 4;
       final label = val >= 1000 ? '₱${(val / 1000).toStringAsFixed(0)}K' : '₱${val.toStringAsFixed(0)}';
       final tp = TextPainter(text: TextSpan(text: label, style: labelStyle), textDirection: TextDirection.ltr)..layout();
@@ -1169,7 +1172,7 @@ class _LineChartPainter extends CustomPainter {
     }
 
     // Simulated growth line (flat then sharp rise to current value)
-    final months = ['May \'25', 'Aug \'25', 'Nov \'25', 'Jan', 'Mar'];
+    final months = ["May '25", "Aug '25", "Nov '25", 'Jan', 'Mar'];
     final values = [0.0, 0.0, 0.0, value * 0.3, value];
 
     final linePaint = Paint()..color = color..strokeWidth = 2.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;

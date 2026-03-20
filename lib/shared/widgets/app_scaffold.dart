@@ -80,7 +80,11 @@ class AppScaffold extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-      floatingActionButton: ContextFAB(currentPath: location),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: ContextFAB(currentPath: location),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
