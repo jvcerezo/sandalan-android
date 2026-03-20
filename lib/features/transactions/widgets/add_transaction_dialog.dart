@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../data/models/transaction.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/transaction_providers.dart';
 
@@ -38,8 +39,9 @@ class _ThousandsSeparatorFormatter extends TextInputFormatter {
 class AddTransactionDialog extends ConsumerStatefulWidget {
   final bool isIncome;
   final String? defaultAccountId;
+  final Transaction? editTransaction;
 
-  const AddTransactionDialog({super.key, this.isIncome = false, this.defaultAccountId});
+  const AddTransactionDialog({super.key, this.isIncome = false, this.defaultAccountId, this.editTransaction});
 
   @override
   ConsumerState<AddTransactionDialog> createState() => _AddTransactionDialogState();
@@ -74,9 +76,24 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   @override
   void initState() {
     super.initState();
-    _isIncome = widget.isIncome;
-    _selectedAccountId = widget.defaultAccountId;
-    _category = _categories.first;
+    final edit = widget.editTransaction;
+    if (edit != null) {
+      _isIncome = edit.amount > 0;
+      _selectedAccountId = edit.accountId;
+      _amountController.text = edit.amount.abs().toStringAsFixed(2);
+      _noteController.text = edit.description;
+      _tagsController.text = edit.tags?.join(', ') ?? '';
+      _date = DateTime.parse(edit.date);
+      _category = _categories.contains(edit.category) ? edit.category : 'Other';
+      if (_category == 'Other' && edit.category != 'Other') {
+        _customCategoryController.text = edit.category;
+      }
+      _autoSelected = true;
+    } else {
+      _isIncome = widget.isIncome;
+      _selectedAccountId = widget.defaultAccountId;
+      _category = _categories.first;
+    }
     // Initialize with 2 split entries
     _splitEntries.add(_SplitEntry());
     _splitEntries.add(_SplitEntry());
@@ -128,14 +145,27 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           ? null
           : _tagsController.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
 
-      await repo.createTransaction(
-        amount: _isIncome ? amount : -amount,
-        category: _effectiveCategory,
-        description: _noteController.text.trim(),
-        date: _date,
-        accountId: _selectedAccountId,
-        tags: tags,
-      );
+      final edit = widget.editTransaction;
+      if (edit != null) {
+        await repo.updateTransaction(
+          id: edit.id,
+          amount: _isIncome ? amount : -amount,
+          category: _effectiveCategory,
+          description: _noteController.text.trim(),
+          date: _date,
+          accountId: _selectedAccountId,
+          tags: tags,
+        );
+      } else {
+        await repo.createTransaction(
+          amount: _isIncome ? amount : -amount,
+          category: _effectiveCategory,
+          description: _noteController.text.trim(),
+          date: _date,
+          accountId: _selectedAccountId,
+          tags: tags,
+        );
+      }
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -192,7 +222,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
             // Header: "Add Expense" / "Add Income" + Split + Repeat toggle
             Row(children: [
-              Text(_isIncome ? 'Add Income' : 'Add Expense',
+              Text(widget.editTransaction != null
+                  ? 'Edit ${_isIncome ? 'Income' : 'Expense'}'
+                  : (_isIncome ? 'Add Income' : 'Add Expense'),
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const Spacer(),
               if (!_isIncome) ...[
@@ -290,7 +322,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     Text(selectedAccount?.name ?? 'Select account',
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                     const SizedBox(width: 4),
-                    if (selectedAccount != null)
+                    if (selectedAccount != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
@@ -300,45 +332,15 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                         child: Text(selectedAccount.currency,
                             style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
                       ),
+                      const SizedBox(width: 6),
+                      Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
+                    ],
                     const SizedBox(width: 4),
                     Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
                   ]),
                 ),
               ),
-
-              // Selected account balance card
-              if (selectedAccount != null) ...[
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
-                    borderRadius: BorderRadius.circular(10),
-                    color: cs.surfaceContainerLowest,
-                  ),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Text(selectedAccount.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(selectedAccount.currency,
-                              style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
-                        ),
-                      ]),
-                      const SizedBox(height: 2),
-                      Text(selectedAccount.type, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                    ]),
-                    Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.income)),
-                  ]),
-                ),
-              ],
               const SizedBox(height: 16),
             ],
 
@@ -719,11 +721,13 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               child: _saving
                   ? const SizedBox(height: 18, width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(_showRepeat
-                      ? 'Set Recurring ${_isIncome ? 'Income' : 'Expense'}'
-                      : _showSplit
-                          ? 'Add Split Expense'
-                          : 'Add ${_isIncome ? 'Income' : 'Expense'}'),
+                  : Text(widget.editTransaction != null
+                      ? 'Save Changes'
+                      : _showRepeat
+                          ? 'Set Recurring ${_isIncome ? 'Income' : 'Expense'}'
+                          : _showSplit
+                              ? 'Add Split Expense'
+                              : 'Add ${_isIncome ? 'Income' : 'Expense'}'),
             ),
           ],
         ),

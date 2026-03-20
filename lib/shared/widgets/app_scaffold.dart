@@ -10,6 +10,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'brand_mark.dart';
 import 'nav_drawer.dart';
 import 'context_fab.dart';
+import 'universal_search.dart';
 
 final _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -61,11 +62,11 @@ class AppScaffold extends StatelessWidget {
                       ),
                     ),
 
-                    // Search (placeholder)
+                    // Search
                     IconButton(
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        // TODO: Command palette / search
+                        showUniversalSearch(context);
                       },
                       icon: const Icon(LucideIcons.search, size: 20),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
