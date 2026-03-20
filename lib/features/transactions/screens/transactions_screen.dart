@@ -10,6 +10,8 @@ import '../../../data/models/transaction.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../providers/transaction_providers.dart';
+import '../../../data/models/account.dart';
+import '../../accounts/providers/account_providers.dart';
 import '../widgets/add_transaction_dialog.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
@@ -243,9 +245,47 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               );
             }
 
+            // Merge transfer pairs: keep only the outgoing (negative) one
+            // and build a display title "Transfer from X to Y"
+            final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+            final accountMap = {for (final a in accounts) a.id: a.name};
+            final seenTransferIds = <String>{};
+            final displayTxns = <Transaction>[];
+
+            for (final t in txns) {
+              if (t.isTransfer && t.transferId != null) {
+                if (seenTransferIds.contains(t.transferId)) continue;
+                seenTransferIds.add(t.transferId!);
+                // Find the pair
+                final pair = txns.where((x) => x.transferId == t.transferId).toList();
+                final outgoing = pair.firstWhere((x) => x.amount < 0, orElse: () => t);
+                final incoming = pair.where((x) => x.amount > 0).firstOrNull;
+
+                final fromName = accountMap[outgoing.accountId] ?? 'Account';
+                final toName = incoming != null ? (accountMap[incoming.accountId] ?? 'Account') : 'Account';
+
+                // Create a merged display transaction using the outgoing one
+                displayTxns.add(Transaction(
+                  id: outgoing.id,
+                  createdAt: outgoing.createdAt,
+                  userId: outgoing.userId,
+                  amount: outgoing.amount.abs(), // store as positive for display
+                  category: 'Transfer',
+                  description: 'Transfer from $fromName to $toName',
+                  date: outgoing.date,
+                  currency: outgoing.currency,
+                  accountId: outgoing.accountId,
+                  transferId: outgoing.transferId,
+                  tags: outgoing.tags,
+                ));
+              } else {
+                displayTxns.add(t);
+              }
+            }
+
             // Group by date
             final grouped = <String, List<Transaction>>{};
-            for (final t in txns) {
+            for (final t in displayTxns) {
               final key = formatDate(DateTime.parse(t.date));
               grouped.putIfAbsent(key, () => []).add(t);
             }
@@ -341,18 +381,20 @@ class _TransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isIncome = transaction.isIncome;
-    final isTransfer = transaction.isTransfer;
+    final isTransfer = transaction.transferId != null;
+    final isIncome = !isTransfer && transaction.amount > 0;
     final iconColor = isTransfer
         ? AppColors.transfer
         : (isIncome ? AppColors.income : colorScheme.onSurfaceVariant);
-    final amountColor = isIncome ? AppColors.income : colorScheme.onSurface;
+    final amountColor = isTransfer
+        ? colorScheme.onSurface
+        : (isIncome ? AppColors.income : colorScheme.onSurface);
     final icon = isTransfer
         ? LucideIcons.arrowLeftRight
         : (isIncome ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight);
 
     final subtitle = isTransfer
-        ? '${transaction.amount > 0 ? 'Incoming' : 'Outgoing'} Transfer · ${formatDateRelative(DateTime.parse(transaction.date))}'
+        ? 'Transfer · ${formatDateRelative(DateTime.parse(transaction.date))}'
         : '${transaction.category} · ${formatDateRelative(DateTime.parse(transaction.date))}';
 
     final tags = transaction.tags;
@@ -390,7 +432,9 @@ class _TransactionRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
+                    isTransfer
+                        ? formatCurrency(transaction.amount.abs())
+                        : '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: amountColor),
                   ),
                 ],
