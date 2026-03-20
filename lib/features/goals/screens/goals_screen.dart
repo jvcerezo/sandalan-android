@@ -189,7 +189,7 @@ class _GoalCard extends StatelessWidget {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Expanded(child: Row(children: [
               if (goal.isCompleted) ...[
-                Icon(LucideIcons.partyPopper, size: 16, color: AppColors.income),
+                Icon(LucideIcons.trophy, size: 16, color: AppColors.income),
                 const SizedBox(width: 6),
               ],
               Expanded(child: Text(goal.name,

@@ -38,7 +38,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _autoGenerate = prefs.getBool('auto_generate_contributions') ?? true;
+        _autoGenerate = prefs.getBool('auto_generate_contributions') ?? false;
       });
     }
   }
@@ -297,6 +297,11 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
         FilledButton.icon(
           onPressed: () async {
             HapticFeedback.mediumImpact();
+            // Save salary and employment type for auto-generation
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setDouble(AutomationKeys.contribSalary, salary);
+            await prefs.setString(AutomationKeys.contribEmploymentType, _employmentType);
+
             final now = DateTime.now();
             final period = '${now.year}-${now.month.toString().padLeft(2, '0')}';
             final repo = ref.read(contributionRepositoryProvider);

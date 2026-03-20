@@ -186,23 +186,6 @@ class AppDatabase {
       )
     ''');
 
-    await _db.customStatement('''
-      CREATE TABLE IF NOT EXISTS local_pending_payments (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        source_type TEXT NOT NULL,
-        source_id TEXT NOT NULL,
-        name TEXT NOT NULL,
-        period TEXT NOT NULL,
-        default_amount REAL NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending',
-        account_id TEXT,
-        notes TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL DEFAULT ''
-      )
-    ''');
-
     // Create indexes for common queries
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_user ON local_transactions(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_sync ON local_transactions(sync_status)');
@@ -213,8 +196,6 @@ class AppDatabase {
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bills_user ON local_bills(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_debts_user ON local_debts(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
-    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_pending_payments_user ON local_pending_payments(user_id)');
-    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_pending_payments_period ON local_pending_payments(user_id, source_type, period)');
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -498,34 +479,6 @@ class AppDatabase {
     await _db.customStatement('DELETE FROM local_insurance WHERE id = ?', [id]);
   }
 
-  // ─── Pending Payments ────────────────────────────────────────────────────
-
-  Future<List<Map<String, dynamic>>> getPendingPayments(String userId, {String? sourceType, String? period, String? status}) async {
-    var sql = 'SELECT * FROM local_pending_payments WHERE user_id = ?';
-    final vars = <Variable>[Variable.withString(userId)];
-    if (sourceType != null) {
-      sql += ' AND source_type = ?';
-      vars.add(Variable.withString(sourceType));
-    }
-    if (period != null) {
-      sql += ' AND period = ?';
-      vars.add(Variable.withString(period));
-    }
-    if (status != null) {
-      sql += ' AND status = ?';
-      vars.add(Variable.withString(status));
-    }
-    sql += ' ORDER BY created_at DESC';
-    final results = await _db.customSelect(sql, variables: vars).get();
-    return results.map((r) => r.data).toList();
-  }
-
-  Future<void> upsertPendingPayment(Map<String, dynamic> values) => _upsert('local_pending_payments', values);
-
-  Future<void> deletePendingPayment(String id) async {
-    await _db.customStatement('DELETE FROM local_pending_payments WHERE id = ?', [id]);
-  }
-
   // ─── Row lookup ──────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> getRowById(String table, String id) async {
@@ -572,7 +525,6 @@ class AppDatabase {
       'local_bills',
       'local_debts',
       'local_insurance',
-      'local_pending_payments',
     ]) {
       await _db.customStatement('DELETE FROM $table WHERE user_id = ?', [userId]);
     }
