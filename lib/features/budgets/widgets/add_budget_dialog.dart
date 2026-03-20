@@ -43,9 +43,23 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
   final _amountCtl = TextEditingController();
   final _customCategoryCtl = TextEditingController();
   bool _saving = false;
+  String? _customCategoryError;
 
   @override
   void dispose() { _amountCtl.dispose(); _customCategoryCtl.dispose(); super.dispose(); }
+
+  /// Check if the custom category duplicates an existing one (case-insensitive).
+  void _validateCustomCategory(String value) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.isNotEmpty &&
+        kExpenseCategories.any((c) => c.toLowerCase() == trimmed && c != 'Other')) {
+      setState(() => _customCategoryError = 'This category already exists \u2014 select it above');
+    } else {
+      setState(() => _customCategoryError = null);
+    }
+  }
+
+  bool get _hasCustomCategoryError => _category == 'Other' && _customCategoryError != null;
 
   /// The effective category to save — uses custom input when "Other" is selected.
   String get _effectiveCategory {
@@ -129,9 +143,12 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _customCategoryCtl,
+              onChanged: _validateCustomCategory,
               decoration: InputDecoration(
                 hintText: 'Type a custom category name...',
                 hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                errorText: _customCategoryError,
+                errorStyle: const TextStyle(fontSize: 11),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
@@ -204,7 +221,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
           const SizedBox(height: 24),
 
           FilledButton(
-            onPressed: _saving ? null : _save,
+            onPressed: _saving || _hasCustomCategoryError ? null : _save,
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: _saving

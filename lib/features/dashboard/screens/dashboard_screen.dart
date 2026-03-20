@@ -311,7 +311,7 @@ class _TrendsTab extends StatelessWidget {
 
           return Column(children: [
             const Align(alignment: Alignment.centerLeft,
-                child: Text('Spending by Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+                child: Text('Spending This Month', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
@@ -411,30 +411,27 @@ class _TrendsTab extends StatelessWidget {
           final colorScheme = Theme.of(context).colorScheme;
 
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Monthly Trend', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text('Monthly Income & Expenses', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
             SizedBox(
               height: 220,
               child: BarChart(
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
-                  maxY: maxVal * 1.15,
+                  maxY: maxVal * 1.25,
                   barTouchData: BarTouchData(
+                    enabled: false,
                     touchTooltipData: BarTouchTooltipData(
-                      tooltipBorderRadius: BorderRadius.circular(8),
+                      tooltipBorderRadius: BorderRadius.circular(6),
+                      tooltipPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      getTooltipColor: (_) => Colors.transparent,
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        final label = rodIndex == 0 ? 'Income' : 'Expenses';
                         final value = rodIndex == 0 ? incomes[groupIndex] : expenses[groupIndex];
+                        if (value == 0) return null;
                         return BarTooltipItem(
-                          '$label\n',
-                          TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
-                          children: [
-                            TextSpan(
-                              text: formatCurrency(value),
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
-                                  color: rodIndex == 0 ? AppColors.income : Colors.grey.shade500),
-                            ),
-                          ],
+                          _formatCompactCurrency(value),
+                          TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                              color: rodIndex == 0 ? AppColors.income : Colors.grey.shade500),
                         );
                       },
                     ),
@@ -494,6 +491,10 @@ class _TrendsTab extends StatelessWidget {
                   borderData: FlBorderData(show: false),
                   barGroups: List.generate(6, (i) => BarChartGroupData(
                     x: i,
+                    showingTooltipIndicators: [
+                      if (incomes[i] > 0) 0,
+                      if (expenses[i] > 0) 1,
+                    ],
                     barRods: [
                       BarChartRodData(
                         toY: incomes[i],
@@ -861,6 +862,16 @@ class _TrendsTab extends StatelessWidget {
         error: (_, __) => const SizedBox.shrink(),
       ),
     );
+  }
+
+  String _formatCompactCurrency(double value) {
+    if (value >= 1000000) {
+      return '₱${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '₱${(value / 1000).toStringAsFixed(0)}K';
+    } else {
+      return '₱${value.toStringAsFixed(0)}';
+    }
   }
 
   String _formatMonth(String ym) {

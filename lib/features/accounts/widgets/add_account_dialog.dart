@@ -42,12 +42,46 @@ class AddAccountDialog extends ConsumerStatefulWidget {
 class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   final _nameCtl = TextEditingController();
   final _balanceCtl = TextEditingController();
+  final _customTypeCtl = TextEditingController();
   String _type = 'cash';
   String _currency = 'PHP';
   bool _saving = false;
+  String? _nameError;
+  String? _customTypeError;
+
+  static const _builtInTypes = ['cash', 'bank', 'e-wallet', 'credit-card'];
+
+  void _validateName(String value) {
+    final trimmed = value.trim().toLowerCase();
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    if (trimmed.isNotEmpty && accounts.any((a) => a.name.toLowerCase() == trimmed)) {
+      setState(() => _nameError = 'An account with this name already exists');
+    } else {
+      setState(() => _nameError = null);
+    }
+  }
+
+  void _validateCustomType(String value) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.isNotEmpty && _builtInTypes.any((t) => t.toLowerCase() == trimmed)) {
+      setState(() => _customTypeError = 'This type already exists \u2014 select it above');
+    } else {
+      setState(() => _customTypeError = null);
+    }
+  }
+
+  bool get _hasValidationError => _nameError != null || (_type == 'custom' && _customTypeError != null);
 
   @override
-  void dispose() { _nameCtl.dispose(); _balanceCtl.dispose(); super.dispose(); }
+  void dispose() { _nameCtl.dispose(); _balanceCtl.dispose(); _customTypeCtl.dispose(); super.dispose(); }
+
+  String get _effectiveType {
+    if (_type == 'custom') {
+      final custom = _customTypeCtl.text.trim();
+      return custom.isNotEmpty ? custom : 'custom';
+    }
+    return _type;
+  }
 
   Future<void> _save() async {
     final name = _nameCtl.text.trim();
@@ -56,7 +90,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
     try {
       final balance = double.tryParse(_balanceCtl.text.replaceAll(',', '')) ?? 0;
       await ref.read(accountRepositoryProvider).createAccount(
-          name: name, type: _type, currency: _currency, balance: balance);
+          name: name, type: _effectiveType, currency: _currency, balance: balance);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) { setState(() => _saving = false); }
   }
@@ -117,14 +151,22 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             decoration: BoxDecoration(
               color: cs.surfaceContainerLowest,
-              border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+              border: Border.all(color: _nameError != null ? cs.error : cs.outline.withValues(alpha: 0.12)),
               borderRadius: BorderRadius.circular(10)),
             child: TextField(controller: _nameCtl,
+              onChanged: _validateName,
               decoration: InputDecoration(isDense: true, hintText: 'e.g. BDO Savings',
                   hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                   border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
               style: const TextStyle(fontSize: 14)),
           ),
+          if (_nameError != null) ...[
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(_nameError!, style: TextStyle(fontSize: 11, color: cs.error)),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Type chips
@@ -154,6 +196,36 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               );
             }),
           ]),
+
+          // "Custom" type input
+          if (_type == 'custom') ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _customTypeCtl,
+              onChanged: _validateCustomType,
+              decoration: InputDecoration(
+                hintText: 'Type a custom account type...',
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                errorText: _customTypeError,
+                errorStyle: const TextStyle(fontSize: 11),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.primary),
+                ),
+              ),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Currency + Starting Balance
@@ -207,7 +279,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
           const SizedBox(height: 24),
 
           FilledButton(
-            onPressed: _saving ? null : _save,
+            onPressed: _saving || _hasValidationError ? null : _save,
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: _saving
