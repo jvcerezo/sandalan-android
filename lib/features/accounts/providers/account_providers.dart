@@ -1,9 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/local/app_database.dart';
+import '../../../data/repositories/local_account_repository.dart';
 import '../../../data/repositories/account_repository.dart';
 import '../../../data/models/account.dart';
 import '../../auth/providers/auth_provider.dart';
 
-final accountRepositoryProvider = Provider<AccountRepository>((ref) {
+final accountRepositoryProvider = Provider<LocalAccountRepository>((ref) {
+  return LocalAccountRepository(
+    AppDatabase.instance,
+    ref.watch(supabaseClientProvider),
+  );
+});
+
+/// Keep the Supabase repository available for sync service usage.
+final remoteAccountRepositoryProvider = Provider<AccountRepository>((ref) {
   return AccountRepository(ref.watch(supabaseClientProvider));
 });
 

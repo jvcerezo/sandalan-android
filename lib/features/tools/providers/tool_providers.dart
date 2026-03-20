@@ -1,4 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../data/local/app_database.dart';
+import '../../../data/repositories/local_contribution_repository.dart';
+import '../../../data/repositories/local_bill_repository.dart';
+import '../../../data/repositories/local_debt_repository.dart';
+import '../../../data/repositories/local_insurance_repository.dart';
 import '../../../data/repositories/debt_repository.dart';
 import '../../../data/repositories/contribution_repository.dart';
 import '../../../data/repositories/tax_repository.dart';
@@ -13,26 +18,56 @@ import '../../../data/models/insurance_policy.dart';
 import '../../../data/models/recurring_transaction.dart';
 import '../../auth/providers/auth_provider.dart';
 
-// ─── Repositories ─────────────────────────────────────────────────────────────
+// ─── Local-first Repositories ────────────────────────────────────────────────
 
-final debtRepositoryProvider = Provider<DebtRepository>((ref) {
+final debtRepositoryProvider = Provider<LocalDebtRepository>((ref) {
+  return LocalDebtRepository(
+    AppDatabase.instance,
+    ref.watch(supabaseClientProvider),
+  );
+});
+
+final contributionRepositoryProvider = Provider<LocalContributionRepository>((ref) {
+  return LocalContributionRepository(
+    AppDatabase.instance,
+    ref.watch(supabaseClientProvider),
+  );
+});
+
+final billRepositoryProvider = Provider<LocalBillRepository>((ref) {
+  return LocalBillRepository(
+    AppDatabase.instance,
+    ref.watch(supabaseClientProvider),
+  );
+});
+
+final insuranceRepositoryProvider = Provider<LocalInsuranceRepository>((ref) {
+  return LocalInsuranceRepository(
+    AppDatabase.instance,
+    ref.watch(supabaseClientProvider),
+  );
+});
+
+// ─── Remote repositories (still used by sync + features not yet migrated) ────
+
+final remoteDebtRepositoryProvider = Provider<DebtRepository>((ref) {
   return DebtRepository(ref.watch(supabaseClientProvider));
 });
 
-final contributionRepositoryProvider = Provider<ContributionRepository>((ref) {
+final remoteContributionRepositoryProvider = Provider<ContributionRepository>((ref) {
   return ContributionRepository(ref.watch(supabaseClientProvider));
+});
+
+final remoteBillRepositoryProvider = Provider<BillRepository>((ref) {
+  return BillRepository(ref.watch(supabaseClientProvider));
+});
+
+final remoteInsuranceRepositoryProvider = Provider<InsuranceRepository>((ref) {
+  return InsuranceRepository(ref.watch(supabaseClientProvider));
 });
 
 final taxRepositoryProvider = Provider<TaxRepository>((ref) {
   return TaxRepository(ref.watch(supabaseClientProvider));
-});
-
-final billRepositoryProvider = Provider<BillRepository>((ref) {
-  return BillRepository(ref.watch(supabaseClientProvider));
-});
-
-final insuranceRepositoryProvider = Provider<InsuranceRepository>((ref) {
-  return InsuranceRepository(ref.watch(supabaseClientProvider));
 });
 
 final recurringTransactionRepositoryProvider = Provider<RecurringTransactionRepository>((ref) {

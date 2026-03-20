@@ -1,0 +1,536 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+
+/// Offline-first local SQLite database using Drift's raw SQL approach.
+/// No code generation needed — all queries use customSelect / customInsert.
+class AppDatabase {
+  final DatabaseConnection _connection;
+  late final GeneratedDatabase _db;
+
+  AppDatabase._(this._connection) {
+    _db = _RawDatabase(_connection);
+  }
+
+  static AppDatabase? _instance;
+
+  static AppDatabase get instance {
+    if (_instance == null) {
+      throw StateError('AppDatabase not initialized. Call AppDatabase.init() first.');
+    }
+    return _instance!;
+  }
+
+  static Future<void> init() async {
+    if (_instance != null) return;
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dir.path, 'sandalan.sqlite'));
+    final connection = DatabaseConnection(NativeDatabase.createInBackground(file));
+    _instance = AppDatabase._(connection);
+    await _instance!._createTables();
+  }
+
+  /// For testing with an in-memory database.
+  static void initWith(DatabaseConnection connection) {
+    _instance = AppDatabase._(connection);
+  }
+
+  DatabaseConnection get connection => _connection;
+
+  Future<void> _createTables() async {
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_transactions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        amount REAL NOT NULL,
+        category TEXT NOT NULL,
+        description TEXT NOT NULL,
+        date TEXT NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'PHP',
+        attachment_path TEXT,
+        account_id TEXT,
+        transfer_id TEXT,
+        split_group_id TEXT,
+        tags TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_accounts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'PHP',
+        balance REAL NOT NULL DEFAULT 0,
+        is_archived INTEGER NOT NULL DEFAULT 0,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_budgets (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        month TEXT NOT NULL,
+        period TEXT NOT NULL DEFAULT 'monthly',
+        rollover INTEGER NOT NULL DEFAULT 0,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_goals (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        target_amount REAL NOT NULL,
+        current_amount REAL NOT NULL DEFAULT 0,
+        deadline TEXT,
+        category TEXT NOT NULL DEFAULT 'Savings',
+        is_completed INTEGER NOT NULL DEFAULT 0,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_contributions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        period TEXT NOT NULL,
+        monthly_salary REAL NOT NULL,
+        employee_share REAL NOT NULL,
+        employer_share REAL,
+        total_contribution REAL NOT NULL,
+        is_paid INTEGER NOT NULL DEFAULT 0,
+        employment_type TEXT NOT NULL DEFAULT 'employed',
+        notes TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_bills (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+        due_day INTEGER,
+        provider TEXT,
+        last_paid_date TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        notes TEXT,
+        account_id TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_debts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        lender TEXT,
+        current_balance REAL NOT NULL,
+        original_amount REAL NOT NULL,
+        interest_rate REAL NOT NULL,
+        minimum_payment REAL NOT NULL,
+        due_day INTEGER,
+        is_paid_off INTEGER NOT NULL DEFAULT 0,
+        notes TEXT,
+        account_id TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_insurance (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        provider TEXT,
+        policy_number TEXT,
+        premium_amount REAL NOT NULL,
+        premium_frequency TEXT NOT NULL DEFAULT 'monthly',
+        coverage_amount REAL,
+        renewal_date TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        notes TEXT,
+        account_id TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+
+    // Create indexes for common queries
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_user ON local_transactions(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_sync ON local_transactions(sync_status)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_accounts_user ON local_accounts(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_budgets_user ON local_budgets(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_goals_user ON local_goals(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_contributions_user ON local_contributions(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bills_user ON local_bills(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_debts_user ON local_debts(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  static String now() => DateTime.now().toUtc().toIso8601String();
+
+  static String? encodeTags(List<String>? tags) {
+    if (tags == null || tags.isEmpty) return null;
+    return jsonEncode(tags);
+  }
+
+  static List<String>? decodeTags(String? encoded) {
+    if (encoded == null || encoded.isEmpty) return null;
+    return (jsonDecode(encoded) as List<dynamic>).cast<String>();
+  }
+
+  // ─── Generic upsert ─────────────────────────────────────────────────────
+
+  Future<void> _upsert(String table, Map<String, dynamic> values) async {
+    final columns = values.keys.join(', ');
+    final placeholders = values.keys.map((_) => '?').join(', ');
+    final updateClauses = values.keys
+        .where((k) => k != 'id')
+        .map((k) => '$k = excluded.$k')
+        .join(', ');
+
+    await _db.customStatement(
+      'INSERT INTO $table ($columns) VALUES ($placeholders) '
+      'ON CONFLICT(id) DO UPDATE SET $updateClauses',
+      values.values.toList(),
+    );
+  }
+
+  // ─── Transactions ────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getTransactions(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_transactions WHERE user_id = ? ORDER BY date DESC, created_at DESC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentTransactions(String userId, {int limit = 10}) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_transactions WHERE user_id = ? ORDER BY date DESC, created_at DESC LIMIT ?',
+      variables: [Variable.withString(userId), Variable.withInt(limit)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getFilteredTransactions(
+    String userId, {
+    String? category,
+    String? type,
+    String? search,
+    String? startDate,
+    String? endDate,
+    String? accountId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    var where = 'WHERE user_id = ?';
+    final vars = <Variable>[Variable.withString(userId)];
+
+    if (category != null) {
+      where += ' AND category = ?';
+      vars.add(Variable.withString(category));
+    }
+    if (accountId != null) {
+      where += ' AND account_id = ?';
+      vars.add(Variable.withString(accountId));
+    }
+    if (startDate != null) {
+      where += ' AND date >= ?';
+      vars.add(Variable.withString(startDate));
+    }
+    if (endDate != null) {
+      where += ' AND date <= ?';
+      vars.add(Variable.withString(endDate));
+    }
+    if (type == 'income') where += ' AND amount > 0';
+    if (type == 'expense') where += ' AND amount < 0';
+    if (search != null && search.isNotEmpty) {
+      where += ' AND description LIKE ?';
+      vars.add(Variable.withString('%$search%'));
+    }
+
+    final offset = (page - 1) * pageSize;
+    final results = await _db.customSelect(
+      'SELECT * FROM local_transactions $where ORDER BY date DESC, created_at DESC LIMIT $pageSize OFFSET $offset',
+      variables: vars,
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<int> getFilteredTransactionsCount(
+    String userId, {
+    String? category,
+    String? type,
+    String? startDate,
+    String? endDate,
+    String? accountId,
+  }) async {
+    var where = "WHERE user_id = ? AND category != 'Transfer'";
+    final vars = <Variable>[Variable.withString(userId)];
+
+    if (category != null) {
+      where += ' AND category = ?';
+      vars.add(Variable.withString(category));
+    }
+    if (accountId != null) {
+      where += ' AND account_id = ?';
+      vars.add(Variable.withString(accountId));
+    }
+    if (startDate != null) {
+      where += ' AND date >= ?';
+      vars.add(Variable.withString(startDate));
+    }
+    if (endDate != null) {
+      where += ' AND date <= ?';
+      vars.add(Variable.withString(endDate));
+    }
+    if (type == 'income') where += ' AND amount > 0';
+    if (type == 'expense') where += ' AND amount < 0';
+
+    final results = await _db.customSelect(
+      'SELECT COUNT(*) as cnt FROM local_transactions $where',
+      variables: vars,
+    ).get();
+    return results.first.data['cnt'] as int;
+  }
+
+  Future<void> upsertTransaction(Map<String, dynamic> values) => _upsert('local_transactions', values);
+
+  Future<void> deleteTransaction(String id) async {
+    await _db.customStatement('DELETE FROM local_transactions WHERE id = ?', [id]);
+  }
+
+  // ─── Accounts ────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getAccounts(String userId, {bool archived = false}) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_accounts WHERE user_id = ? AND is_archived = ? ORDER BY name ASC',
+      variables: [Variable.withString(userId), Variable.withInt(archived ? 1 : 0)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllAccounts(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_accounts WHERE user_id = ?',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertAccount(Map<String, dynamic> values) => _upsert('local_accounts', values);
+
+  Future<void> deleteAccount(String id) async {
+    await _db.customStatement('DELETE FROM local_accounts WHERE id = ?', [id]);
+  }
+
+  // ─── Budgets ─────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getBudgets(String userId, String month, String period) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_budgets WHERE user_id = ? AND month = ? AND period = ? ORDER BY category ASC',
+      variables: [Variable.withString(userId), Variable.withString(month), Variable.withString(period)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllBudgets(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_budgets WHERE user_id = ?',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertBudget(Map<String, dynamic> values) => _upsert('local_budgets', values);
+
+  Future<void> deleteBudget(String id) async {
+    await _db.customStatement('DELETE FROM local_budgets WHERE id = ?', [id]);
+  }
+
+  // ─── Goals ───────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getGoals(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_goals WHERE user_id = ? ORDER BY is_completed ASC, created_at DESC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertGoal(Map<String, dynamic> values) => _upsert('local_goals', values);
+
+  Future<void> deleteGoal(String id) async {
+    await _db.customStatement('DELETE FROM local_goals WHERE id = ?', [id]);
+  }
+
+  // ─── Contributions ──────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getContributions(String userId, {String? period}) async {
+    var sql = 'SELECT * FROM local_contributions WHERE user_id = ?';
+    final vars = <Variable>[Variable.withString(userId)];
+    if (period != null) {
+      sql += ' AND period = ?';
+      vars.add(Variable.withString(period));
+    }
+    sql += ' ORDER BY period DESC';
+    final results = await _db.customSelect(sql, variables: vars).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertContribution(Map<String, dynamic> values) => _upsert('local_contributions', values);
+
+  Future<void> deleteContribution(String id) async {
+    await _db.customStatement('DELETE FROM local_contributions WHERE id = ?', [id]);
+  }
+
+  // ─── Bills ───────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getBills(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_bills WHERE user_id = ? ORDER BY is_active DESC, category ASC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertBill(Map<String, dynamic> values) => _upsert('local_bills', values);
+
+  Future<void> deleteBill(String id) async {
+    await _db.customStatement('DELETE FROM local_bills WHERE id = ?', [id]);
+  }
+
+  // ─── Debts ───────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getDebts(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_debts WHERE user_id = ? ORDER BY is_paid_off ASC, current_balance DESC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertDebt(Map<String, dynamic> values) => _upsert('local_debts', values);
+
+  Future<void> deleteDebt(String id) async {
+    await _db.customStatement('DELETE FROM local_debts WHERE id = ?', [id]);
+  }
+
+  // ─── Insurance ───────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getInsurancePolicies(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_insurance WHERE user_id = ? ORDER BY is_active DESC, type ASC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertInsurance(Map<String, dynamic> values) => _upsert('local_insurance', values);
+
+  Future<void> deleteInsurance(String id) async {
+    await _db.customStatement('DELETE FROM local_insurance WHERE id = ?', [id]);
+  }
+
+  // ─── Row lookup ──────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> getRowById(String table, String id) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM $table WHERE id = ? LIMIT 1',
+      variables: [Variable.withString(id)],
+    ).get();
+    if (results.isEmpty) return null;
+    return results.first.data;
+  }
+
+  // ─── Pending sync queries ────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getPendingRows(String table) async {
+    final results = await _db.customSelect(
+      "SELECT * FROM $table WHERE sync_status = 'pending'",
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> markSynced(String table, String id) async {
+    await _db.customStatement(
+      "UPDATE $table SET sync_status = 'synced' WHERE id = ?",
+      [id],
+    );
+  }
+
+  Future<void> markFailed(String table, String id) async {
+    await _db.customStatement(
+      "UPDATE $table SET sync_status = 'failed' WHERE id = ?",
+      [id],
+    );
+  }
+
+  // ─── Clear all data ──────────────────────────────────────────────────────
+
+  Future<void> clearAllData(String userId) async {
+    for (final table in [
+      'local_transactions',
+      'local_accounts',
+      'local_budgets',
+      'local_goals',
+      'local_contributions',
+      'local_bills',
+      'local_debts',
+      'local_insurance',
+    ]) {
+      await _db.customStatement('DELETE FROM $table WHERE user_id = ?', [userId]);
+    }
+  }
+
+  /// Close the database.
+  Future<void> close() async {
+    await _db.close();
+    _instance = null;
+  }
+}
+
+/// Minimal GeneratedDatabase subclass to expose customSelect/customStatement
+/// without code generation.
+class _RawDatabase extends GeneratedDatabase {
+  _RawDatabase(DatabaseConnection connection) : super(connection);
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  Iterable<TableInfo<Table, dynamic>> get allTables => const [];
+
+  @override
+  List<DatabaseSchemaEntity> get allSchemaEntities => const [];
+}
