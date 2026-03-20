@@ -102,6 +102,7 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
             'Retail Treasury Bonds (RTBs): 6–7% fixed coupon',
             'Bank time deposits: 4–6% per annum',
             'UITF money market: 3–5%',
+            'SSS pension: Based on contributions + CRE',
           ].map((t) => Padding(padding: const EdgeInsets.only(bottom: 4),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('•  ', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
@@ -245,13 +246,42 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
       Row(children: [
         _ResultVal('FIRE Number', formatCurrency(fireNumber), AppColors.income, sub: 'Annual / ${(swr * 100).toStringAsFixed(0)}% SWR'),
         const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Years to FIRE', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 2),
-          Text('$yearsToFire years $monthsToFire months',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        ])),
+        Expanded(child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+            borderRadius: BorderRadius.circular(10)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Years to FIRE', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 2),
+            Text('$yearsToFire years $monthsToFire months',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ]),
+        )),
       ]),
+      const SizedBox(height: 10),
+      // Annual Expenses + Savings Rate
+      Row(children: [
+        _ResultVal('Annual Expenses', formatCurrency(expenses * 12), null),
+        const SizedBox(width: 8),
+        _ResultVal('Savings Rate', contrib > 0 && expenses > 0
+            ? '${(contrib / (contrib + expenses) * 100).toStringAsFixed(0)}%' : '0%', null),
+      ]),
+      const SizedBox(height: 12),
+      // FIRE explanation
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.income.withValues(alpha: 0.05),
+          border: Border.all(color: AppColors.income.withValues(alpha: 0.12)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'FIRE = Financial Independence, Retire Early. Your FIRE number is how much you need invested so that a ${(swr * 100).toStringAsFixed(0)}% annual withdrawal covers your expenses. '
+          'Increasing your savings rate is the single most powerful lever — at 50%+ savings rate, you could retire in under 17 years.',
+          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, height: 1.4),
+        ),
+      ),
     ]));
   }
 }
