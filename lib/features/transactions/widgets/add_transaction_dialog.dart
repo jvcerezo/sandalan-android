@@ -9,6 +9,33 @@ import '../../../data/models/account.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/transaction_providers.dart';
 
+// Formats numbers with thousand separators: 10000 → 10,000
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text.replaceAll(',', '');
+    if (text.isEmpty) return newValue;
+
+    // Split by decimal
+    final parts = text.split('.');
+    final intPart = parts[0];
+    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+
+    // Add commas
+    final buffer = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+
+    final formatted = '$buffer$decPart';
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 class AddTransactionDialog extends ConsumerStatefulWidget {
   final bool isIncome;
   final String? defaultAccountId;
@@ -17,6 +44,12 @@ class AddTransactionDialog extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<AddTransactionDialog> createState() => _AddTransactionDialogState();
+}
+
+class _SplitEntry {
+  String? accountId;
+  final TextEditingController amountCtl;
+  _SplitEntry({this.accountId}) : amountCtl = TextEditingController();
 }
 
 class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
@@ -28,6 +61,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   String _category = '';
   DateTime _date = DateTime.now();
   bool _showRepeat = false;
+  bool _showSplit = false;
+  final List<_SplitEntry> _splitEntries = [];
   int _repeatInterval = 1;
   String _repeatFrequency = 'monthly';
   bool _saving = false;
@@ -38,6 +73,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     _isIncome = widget.isIncome;
     _selectedAccountId = widget.defaultAccountId;
     _category = _categories.first;
+    // Initialize with 2 split entries
+    _splitEntries.add(_SplitEntry());
+    _splitEntries.add(_SplitEntry());
   }
 
   List<String> get _categories => _isIncome ? kIncomeCategories : kExpenseCategories;
@@ -118,17 +156,33 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               const Spacer(),
               if (!_isIncome) ...[
                 GestureDetector(
-                  onTap: () {}, // TODO: Split
-                  child: Row(children: [
-                    Icon(LucideIcons.gitBranch, size: 14, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('Split', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                  ]),
+                  onTap: () => setState(() {
+                    _showSplit = !_showSplit;
+                    if (_showSplit) _showRepeat = false;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _showSplit ? cs.primary : Colors.transparent,
+                      border: Border.all(color: _showSplit ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(LucideIcons.gitBranch, size: 12,
+                          color: _showSplit ? cs.onPrimary : cs.onSurfaceVariant),
+                      const SizedBox(width: 4),
+                      Text('Split', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                          color: _showSplit ? cs.onPrimary : cs.onSurfaceVariant)),
+                    ]),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
               ],
               GestureDetector(
-                onTap: () => setState(() => _showRepeat = !_showRepeat),
+                onTap: () => setState(() {
+                  _showRepeat = !_showRepeat;
+                  if (_showRepeat) _showSplit = false;
+                }),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -208,6 +262,99 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             ],
             const SizedBox(height: 16),
 
+            // ─── Split mode ─────────────────────────────────────
+            if (_showSplit) ...[
+              Text('Total amount', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 4),
+              // Show total from split entries
+              Builder(builder: (_) {
+                double total = 0;
+                for (final e in _splitEntries) {
+                  total += double.tryParse(e.amountCtl.text.replaceAll(',', '')) ?? 0;
+                }
+                return Text('₱ ${_formatWithCommas(total)}',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant));
+              }),
+              const SizedBox(height: 12),
+              Text('Split between accounts', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              ...List.generate(_splitEntries.length, (i) {
+                final entry = _splitEntries[i];
+                final acct = accounts.where((a) => a.id == entry.accountId).firstOrNull;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(children: [
+                    // Account picker
+                    PopupMenuButton<String>(
+                      onSelected: (id) => setState(() => entry.accountId = id),
+                      itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
+                        value: a.id,
+                        child: Text('${a.name}  ${a.currency}', style: const TextStyle(fontSize: 13)),
+                      )).toList(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                          borderRadius: BorderRadius.circular(8)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(acct?.name ?? 'Choose an account',
+                              style: TextStyle(fontSize: 12, color: acct != null ? cs.onSurface : cs.onSurfaceVariant)),
+                          if (acct != null) ...[
+                            const SizedBox(width: 4),
+                            Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                          ],
+                          const SizedBox(width: 4),
+                          Icon(LucideIcons.chevronDown, size: 12, color: cs.onSurfaceVariant),
+                        ]),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Amount for this split
+                    Row(children: [
+                      Text('₱', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
+                      const SizedBox(width: 8),
+                      Expanded(child: TextField(
+                        controller: entry.amountCtl,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                          _ThousandsSeparatorFormatter(),
+                        ],
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          hintText: '0.00', isDense: true,
+                          border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+                        ),
+                        style: const TextStyle(fontSize: 14),
+                      )),
+                    ]),
+                    if (acct != null)
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                        Text(acct.name, style: const TextStyle(fontSize: 12)),
+                        Text(formatCurrency(acct.balance, currencyCode: acct.currency),
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
+                      ]),
+                  ]),
+                );
+              }),
+              GestureDetector(
+                onTap: () => setState(() => _splitEntries.add(_SplitEntry())),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.plus, size: 12, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text('Add account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                ]),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // ─── Normal amount input ──────────────────────────────
+            if (!_showSplit) ...[
             // Amount input
             Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
               Text('₱', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
@@ -216,7 +363,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 child: TextField(
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                    _ThousandsSeparatorFormatter(),
+                  ],
                   autofocus: true,
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
                   decoration: InputDecoration(
@@ -228,6 +378,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 ),
               ),
             ]),
+            ],
             const SizedBox(height: 12),
 
             // Category
@@ -388,7 +539,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text(_showRepeat
                       ? 'Set Recurring ${_isIncome ? 'Income' : 'Expense'}'
-                      : 'Add ${_isIncome ? 'Income' : 'Expense'}'),
+                      : _showSplit
+                          ? 'Add Split Expense'
+                          : 'Add ${_isIncome ? 'Income' : 'Expense'}'),
             ),
           ],
         ),
@@ -410,5 +563,18 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       case 'Investment': return LucideIcons.trendingUp;
       default: return LucideIcons.moreHorizontal;
     }
+  }
+
+  String _formatWithCommas(double value) {
+    if (value == 0) return '0.00';
+    final parts = value.toStringAsFixed(2).split('.');
+    final intPart = parts[0];
+    final decPart = parts[1];
+    final buffer = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+    return '$buffer.$decPart';
   }
 }
