@@ -90,6 +90,16 @@ class _ArticleScreenState extends State<ArticleScreen> {
             Text(section.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(section.content, style: TextStyle(fontSize: 14, color: cs.onSurface, height: 1.6)),
+            if (section.items.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ...section.items.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('•  ', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
+                  Expanded(child: Text(item, style: TextStyle(fontSize: 13, color: cs.onSurface, height: 1.5))),
+                ]),
+              )),
+            ],
             if (section.callout != null) ...[
               const SizedBox(height: 10),
               Container(
