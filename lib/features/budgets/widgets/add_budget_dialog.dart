@@ -5,6 +5,33 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../providers/budget_providers.dart';
 
+// Formats numbers with thousand separators: 10000 → 10,000
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text.replaceAll(',', '');
+    if (text.isEmpty) return newValue;
+
+    // Split by decimal
+    final parts = text.split('.');
+    final intPart = parts[0];
+    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+
+    // Add commas
+    final buffer = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+
+    final formatted = '$buffer$decPart';
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 class AddBudgetDialog extends ConsumerStatefulWidget {
   const AddBudgetDialog({super.key});
   @override
@@ -14,10 +41,20 @@ class AddBudgetDialog extends ConsumerStatefulWidget {
 class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
   String _category = kExpenseCategories.first;
   final _amountCtl = TextEditingController();
+  final _customCategoryCtl = TextEditingController();
   bool _saving = false;
 
   @override
-  void dispose() { _amountCtl.dispose(); super.dispose(); }
+  void dispose() { _amountCtl.dispose(); _customCategoryCtl.dispose(); super.dispose(); }
+
+  /// The effective category to save — uses custom input when "Other" is selected.
+  String get _effectiveCategory {
+    if (_category == 'Other') {
+      final custom = _customCategoryCtl.text.trim();
+      return custom.isNotEmpty ? custom : 'Other';
+    }
+    return _category;
+  }
 
   IconData _icon(String c) {
     switch (c) {
@@ -27,7 +64,8 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
       case 'Entertainment': return LucideIcons.film;
       case 'Healthcare': return LucideIcons.heart;
       case 'Education': return LucideIcons.graduationCap;
-      case 'Family Support': return LucideIcons.moreHorizontal;
+      case 'Family Support': return LucideIcons.users;
+      case 'Other': return LucideIcons.moreHorizontal;
       default: return LucideIcons.moreHorizontal;
     }
   }
@@ -40,7 +78,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
       final month = ref.read(budgetMonthProvider);
       final period = ref.read(budgetPeriodProvider);
       await ref.read(budgetRepositoryProvider).createBudget(
-          category: _category, amount: amount, month: month, period: period);
+          category: _effectiveCategory, amount: amount, month: month, period: period);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) { setState(() => _saving = false); }
   }
@@ -54,15 +92,13 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
         child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
+          // Drag handle
           Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(color: cs.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
           const Center(child: Text('Add Budget', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           const SizedBox(height: 4),
-          Center(child: Text('Set a spending limit for a category. Monthly is the default.',
+          Center(child: Text('Set a spending limit for a category.',
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant), textAlign: TextAlign.center)),
-          const SizedBox(height: 4),
-          Center(child: Text('Use weekly/quarterly instead',
-              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant))),
           const SizedBox(height: 16),
 
           // Category
@@ -87,31 +123,90 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
               ),
             );
           }).toList()),
+
+          // "Other" custom category input
+          if (_category == 'Other') ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _customCategoryCtl,
+              decoration: InputDecoration(
+                hintText: 'Type a custom category name...',
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.primary),
+                ),
+              ),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Monthly Limit
           const Text('Monthly Limit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 6),
-          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-            Text('₱', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
-            const SizedBox(width: 4),
-            Expanded(child: TextField(
-              controller: _amountCtl, autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
-              decoration: InputDecoration(hintText: '0.00',
-                  hintStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
-                  border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.zero),
-            )),
-          ]),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+              borderRadius: BorderRadius.circular(10)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              Text('\u20B1', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 4),
+              Expanded(child: TextField(
+                controller: _amountCtl, autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                  _ThousandsSeparatorFormatter(),
+                ],
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
+                decoration: InputDecoration(hintText: '0.00',
+                    hintStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero),
+              )),
+            ]),
+          ),
           const SizedBox(height: 16),
+
+          // Quick presets
+          Text('Quick presets', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [1000, 3000, 5000, 10000, 15000, 20000].map((amt) {
+            return GestureDetector(
+              onTap: () => setState(() {
+                // Format with commas
+                final formatted = _formatWithCommas(amt.toDouble());
+                _amountCtl.text = formatted;
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(14)),
+                child: Text('\u20B1${_formatWithCommas(amt.toDouble())}',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
+              ),
+            );
+          }).toList()),
+          const SizedBox(height: 24),
 
           FilledButton(
             onPressed: _saving ? null : _save,
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: _saving
                 ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Text('Add Budget'),
@@ -119,5 +214,16 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
         ]),
       ),
     );
+  }
+
+  String _formatWithCommas(double value) {
+    final intVal = value.toInt();
+    final str = intVal.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(str[i]);
+    }
+    return buffer.toString();
   }
 }

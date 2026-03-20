@@ -5,6 +5,33 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../providers/goal_providers.dart';
 
+// Formats numbers with thousand separators: 10000 → 10,000
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text.replaceAll(',', '');
+    if (text.isEmpty) return newValue;
+
+    // Split by decimal
+    final parts = text.split('.');
+    final intPart = parts[0];
+    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+
+    // Add commas
+    final buffer = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+
+    final formatted = '$buffer$decPart';
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 class AddGoalDialog extends ConsumerStatefulWidget {
   const AddGoalDialog({super.key});
   @override
@@ -16,11 +43,21 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   final _nameCtl = TextEditingController();
   final _targetCtl = TextEditingController();
   final _savedCtl = TextEditingController();
+  final _customCategoryCtl = TextEditingController();
   DateTime? _deadline;
   bool _saving = false;
 
   @override
-  void dispose() { _nameCtl.dispose(); _targetCtl.dispose(); _savedCtl.dispose(); super.dispose(); }
+  void dispose() { _nameCtl.dispose(); _targetCtl.dispose(); _savedCtl.dispose(); _customCategoryCtl.dispose(); super.dispose(); }
+
+  /// The effective category to save — uses custom input when "Other" is selected.
+  String get _effectiveCategory {
+    if (_category == 'Other') {
+      final custom = _customCategoryCtl.text.trim();
+      return custom.isNotEmpty ? custom : 'Other';
+    }
+    return _category;
+  }
 
   IconData _icon(String c) {
     switch (c) {
@@ -33,6 +70,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
       case 'Education': return LucideIcons.graduationCap;
       case 'Home': return LucideIcons.home;
       case 'Vehicle': return LucideIcons.car;
+      case 'Other': return LucideIcons.moreHorizontal;
       default: return LucideIcons.moreHorizontal;
     }
   }
@@ -46,7 +84,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
       final saved = double.tryParse(_savedCtl.text.replaceAll(',', '')) ?? 0;
       await ref.read(goalRepositoryProvider).createGoal(
           name: name, targetAmount: target, currentAmount: saved,
-          category: _category, deadline: _deadline);
+          category: _effectiveCategory, deadline: _deadline);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) { setState(() => _saving = false); }
   }
@@ -55,11 +93,12 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
-      initialChildSize: 0.8, maxChildSize: 0.95, minChildSize: 0.4, expand: false,
+      initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.4, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
         child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
+          // Drag handle
           Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(color: cs.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
           const Center(child: Text('Create a New Goal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
@@ -87,52 +126,128 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               ),
             );
           }).toList()),
+
+          // "Other" custom category input
+          if (_category == 'Other') ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _customCategoryCtl,
+              decoration: InputDecoration(
+                hintText: 'Type a custom category name...',
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: cs.primary),
+                ),
+              ),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Goal Name
           const Text('Goal Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
-          TextField(controller: _nameCtl,
-              decoration: InputDecoration(isDense: true, hintText: 'e.g., Emergency Fund',
-                  hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
-                  border: InputBorder.none),
-              style: const TextStyle(fontSize: 14)),
-          Divider(color: cs.outline.withValues(alpha: 0.10)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+              borderRadius: BorderRadius.circular(10)),
+            child: TextField(controller: _nameCtl,
+                decoration: InputDecoration(isDense: true, hintText: 'e.g., Emergency Fund',
+                    hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                    border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                style: const TextStyle(fontSize: 14)),
+          ),
+          const SizedBox(height: 16),
 
           // Target Amount
           const Text('Target Amount', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
-          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-            Text('₱', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
-            const SizedBox(width: 4),
-            Expanded(child: TextField(
-              controller: _targetCtl, autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
-              decoration: InputDecoration(hintText: '0.00',
-                  hintStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
-                  border: InputBorder.none, contentPadding: EdgeInsets.zero),
-            )),
-          ]),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+              borderRadius: BorderRadius.circular(10)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              Text('\u20B1', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
+              const SizedBox(width: 4),
+              Expanded(child: TextField(
+                controller: _targetCtl, autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                  _ThousandsSeparatorFormatter(),
+                ],
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
+                decoration: InputDecoration(hintText: '0.00',
+                    hintStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero),
+              )),
+            ]),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick presets for target
+          Text('Quick presets', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [10000, 25000, 50000, 100000, 250000, 500000].map((amt) {
+            return GestureDetector(
+              onTap: () => setState(() {
+                _targetCtl.text = _formatWithCommas(amt.toDouble());
+              }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(14)),
+                child: Text('\u20B1${_formatWithCommas(amt.toDouble())}',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
+              ),
+            );
+          }).toList()),
+          const SizedBox(height: 16),
 
           // Saved So Far + Deadline
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Saved So Far', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 4),
-              TextField(controller: _savedCtl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
-                decoration: InputDecoration(isDense: true, hintText: '0.00', prefixText: '₱ ',
-                    prefixStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant))),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLowest,
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                  borderRadius: BorderRadius.circular(10)),
+                child: TextField(controller: _savedCtl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                    _ThousandsSeparatorFormatter(),
+                  ],
+                  decoration: InputDecoration(isDense: true, hintText: '0.00', prefixText: '\u20B1 ',
+                      prefixStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
+                      border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                  style: const TextStyle(fontSize: 14)),
+              ),
             ])),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Deadline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               GestureDetector(
                 onTap: () async {
                   final picked = await showDatePicker(context: context,
@@ -143,8 +258,9 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                   decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                    borderRadius: BorderRadius.circular(8)),
+                    color: cs.surfaceContainerLowest,
+                    border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                    borderRadius: BorderRadius.circular(10)),
                   child: Row(children: [
                     Text(_deadline != null
                         ? '${_deadline!.month.toString().padLeft(2, '0')}/${_deadline!.day.toString().padLeft(2, '0')}/${_deadline!.year}'
@@ -157,12 +273,12 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               ),
             ])),
           ]),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
           FilledButton(
             onPressed: _saving ? null : _save,
             style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: _saving
                 ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Text('Create Goal'),
@@ -170,5 +286,16 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
         ]),
       ),
     );
+  }
+
+  String _formatWithCommas(double value) {
+    final intVal = value.toInt();
+    final str = intVal.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(str[i]);
+    }
+    return buffer.toString();
   }
 }

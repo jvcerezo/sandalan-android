@@ -14,7 +14,7 @@ class BrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFF0F4F2) : const Color(0xFF14213D);
+    final textColor = isDark ? const Color(0xFFF3F6F4) : const Color(0xFF14213D);
 
     // Dark mode: use version with white bg (dark house visible on white).
     // Light mode: use transparent bg version (dark house visible on light surface).
