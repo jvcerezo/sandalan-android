@@ -42,7 +42,7 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolGreen,
             title: '13th Month Pay',
             subtitle: 'Tax exemption calculator',
-            onTap: () {},
+            onTap: () => context.go('/tools/13th-month'),
           ),
         ]),
         const SizedBox(height: 16),
