@@ -1,15 +1,13 @@
 /// Main app scaffold with:
 /// 1. Top header bar (hamburger + logo + search)
 /// 2. Navigation drawer (3 groups: primary, money, tools)
-/// 3. Bottom 5-tab nav bar
-/// 4. Context-aware floating action button
+/// 3. Context-aware floating action button
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'brand_mark.dart';
-import 'bottom_nav_bar.dart';
 import 'nav_drawer.dart';
 import 'context_fab.dart';
 
@@ -79,7 +77,6 @@ class AppScaffold extends StatelessWidget {
           Expanded(child: child),
         ],
       ),
-      bottomNavigationBar: const BottomNavBar(),
       floatingActionButton: ContextFAB(currentPath: location),
     );
   }

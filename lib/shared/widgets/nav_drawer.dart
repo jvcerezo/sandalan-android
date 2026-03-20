@@ -177,34 +177,44 @@ class NavDrawer extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
 
-                    // Theme toggle row
+                    const SizedBox(height: 8),
+
+                    // Theme section
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         children: [
-                          Icon(
-                            themeMode == ThemeMode.dark ? LucideIcons.moon : LucideIcons.sun,
-                            size: 16,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 8),
-                          Text('Dark Mode',
-                              style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                          Text('THEME',
+                              style: TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.w600,
+                                letterSpacing: 1.2,
+                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                              )),
                           const Spacer(),
-                          SizedBox(
-                            height: 28,
-                            child: Switch(
-                              value: themeMode == ThemeMode.dark,
-                              onChanged: (v) {
-                                ref.read(themeModeProvider.notifier).state =
-                                    v ? ThemeMode.dark : ThemeMode.light;
-                              },
+                          GestureDetector(
+                            onTap: () {
+                              ref.read(themeModeProvider.notifier).state =
+                                  themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                            },
+                            child: Icon(
+                              themeMode == ThemeMode.dark ? LucideIcons.moon : LucideIcons.sun,
+                              size: 16,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 4),
+
+                    // Take a Tour
+                    _DrawerFooterItem(
+                      icon: LucideIcons.compass,
+                      label: 'Take a Tour',
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
 
                     // Settings
                     _DrawerFooterItem(
