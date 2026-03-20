@@ -18,6 +18,7 @@ class ChecklistDetailScreen extends StatefulWidget {
 class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
   bool _isDone = false;
   bool _isSkipped = false;
+  double _readProgress = 0.0;
 
   @override
   void initState() {
@@ -69,8 +70,31 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
         : item.priority == 'important' ? 'SHOULD DO' : 'NICE TO HAVE';
 
     return Column(children: [
+      // Reading progress bar
+      TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: _readProgress),
+        duration: const Duration(milliseconds: 150),
+        builder: (context, value, _) => LinearProgressIndicator(
+          value: value,
+          minHeight: 3,
+          backgroundColor: cs.surfaceContainerHighest,
+          valueColor: AlwaysStoppedAnimation(stage.color),
+        ),
+      ),
       Expanded(
-        child: ListView(
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.maxScrollExtent > 0) {
+              final progress = (notification.metrics.pixels /
+                      notification.metrics.maxScrollExtent)
+                  .clamp(0.0, 1.0);
+              if ((progress - _readProgress).abs() > 0.005) {
+                setState(() => _readProgress = progress);
+              }
+            }
+            return false;
+          },
+          child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           children: [
             // ← Back
@@ -260,6 +284,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                 )),
               ]),
           ],
+        ),
         ),
       ),
 

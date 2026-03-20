@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/math/debt_math.dart';
 import '../../../data/models/debt.dart';
 import '../providers/tool_providers.dart';
+import '../widgets/add_debt_dialog.dart';
+import '../widgets/record_debt_payment_dialog.dart';
 
 class DebtManagerScreen extends ConsumerStatefulWidget {
   const DebtManagerScreen({super.key});
@@ -18,6 +21,29 @@ class DebtManagerScreen extends ConsumerStatefulWidget {
 
 class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
   final _extraPaymentController = TextEditingController(text: '0');
+  bool _remindersEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPref();
+  }
+
+  Future<void> _loadPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _remindersEnabled = prefs.getBool('debt_reminders_enabled') ?? true;
+      });
+    }
+  }
+
+  Future<void> _toggleReminders() async {
+    final newValue = !_remindersEnabled;
+    setState(() => _remindersEnabled = newValue);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('debt_reminders_enabled', newValue);
+  }
 
   @override
   void dispose() {
@@ -112,17 +138,24 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
             )),
           ])),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+          GestureDetector(
+            onTap: _toggleReminders,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _remindersEnabled
+                    ? AppColors.warning.withValues(alpha: 0.15)
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (_remindersEnabled) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
+                if (_remindersEnabled) const SizedBox(width: 4),
+                Text(_remindersEnabled ? 'On' : 'Off',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        color: _remindersEnabled ? AppColors.warning : colorScheme.onSurfaceVariant)),
+              ]),
             ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
-              SizedBox(width: 4),
-              Text('On', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.warning)),
-            ]),
           ),
         ])),
         const SizedBox(height: 16),
@@ -130,7 +163,17 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
         // Add Debt button
         OutlinedButton.icon(
           onPressed: () {
-            // TODO: Add debt dialog
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (_) => const AddDebtDialog(),
+            ).then((result) {
+              if (result == true) {
+                ref.invalidate(debtsProvider);
+                ref.invalidate(debtSummaryProvider);
+              }
+            });
           },
           icon: const Icon(LucideIcons.plus, size: 16),
           label: const Text('Add Debt'),
@@ -156,7 +199,7 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
               Text('Active Debts (${active.length})',
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
-              ...active.map((d) => _DebtRow(debt: d)),
+              ...active.map((d) => _DebtRow(debt: d, ref: ref)),
             ]));
           },
           loading: () => const SizedBox(height: 80),
@@ -255,7 +298,7 @@ class _Card extends StatelessWidget {
       width: double.infinity, padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(14),
       ),
       child: child,
@@ -275,7 +318,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: highlight ? AppColors.toolRed.withValues(alpha: 0.06) : cs.surface,
-        border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -289,7 +332,8 @@ class _SummaryCard extends StatelessWidget {
 
 class _DebtRow extends StatelessWidget {
   final Debt debt;
-  const _DebtRow({required this.debt});
+  final WidgetRef ref;
+  const _DebtRow({required this.debt, required this.ref});
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -346,7 +390,19 @@ class _DebtRow extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => RecordDebtPaymentDialog(debt: debt),
+              ).then((result) {
+                if (result == true) {
+                  ref.invalidate(debtsProvider);
+                  ref.invalidate(debtSummaryProvider);
+                }
+              });
+            },
             icon: const Icon(LucideIcons.circleDollarSign, size: 14),
             label: const Text('Record Payment'),
             style: OutlinedButton.styleFrom(
@@ -394,7 +450,7 @@ class _StrategyCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: recommended ? cs.primary.withValues(alpha: 0.04) : null,
-        border: Border.all(color: recommended ? cs.primary.withValues(alpha: 0.2) : cs.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: recommended ? cs.primary.withValues(alpha: 0.2) : cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

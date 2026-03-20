@@ -68,10 +68,10 @@ class GuideScreen extends StatelessWidget {
 
               // Overall progress
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
-                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+                  border: Border.all(color: colorScheme.surfaceContainerHighest),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(

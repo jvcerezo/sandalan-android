@@ -84,17 +84,54 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
     }
   }
 
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _save() async {
     final amount = double.tryParse(_amountCtl.text.replaceAll(',', ''));
-    if (amount == null || amount <= 0) return;
+    if (amount == null || amount <= 0) {
+      _showError('Enter a valid budget amount');
+      return;
+    }
+    if (amount > 999999999) {
+      _showError('Amount must be less than \u20B1999,999,999');
+      return;
+    }
+
+    // Check for duplicate category in the current period
+    final existingBudgets = ref.read(budgetsProvider).valueOrNull ?? [];
+    final effectiveCat = _effectiveCategory.toLowerCase();
+    final hasDuplicate = existingBudgets.any(
+      (b) => b.category.toLowerCase() == effectiveCat,
+    );
+    if (hasDuplicate) {
+      _showError('A budget for $_effectiveCategory already exists this month');
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final month = ref.read(budgetMonthProvider);
       final period = ref.read(budgetPeriodProvider);
       await ref.read(budgetRepositoryProvider).createBudget(
           category: _effectiveCategory, amount: amount, month: month, period: period);
-      if (mounted) Navigator.of(context).pop(true);
-    } catch (_) { setState(() => _saving = false); }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Budget added!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      setState(() => _saving = false);
+      _showError('Failed to save budget: $e');
+    }
   }
 
   @override

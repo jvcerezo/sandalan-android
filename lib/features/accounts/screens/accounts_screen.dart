@@ -12,6 +12,7 @@ import '../../../shared/widgets/animated_counter.dart';
 import '../providers/account_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../widgets/add_account_dialog.dart';
+import '../widgets/transfer_dialog.dart';
 
 class AccountsScreen extends ConsumerWidget {
   const AccountsScreen({super.key});
@@ -39,12 +40,32 @@ class AccountsScreen extends ConsumerWidget {
           // Header
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          FilledButton.icon(
-            onPressed: () => _showAddAccount(context, ref),
-            icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add'),
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-          ),
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            OutlinedButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (_) => const TransferDialog(),
+                ).then((result) {
+                  if (result == true) {
+                    ref.invalidate(accountsProvider);
+                  }
+                });
+              },
+              icon: const Icon(LucideIcons.arrowLeftRight, size: 14),
+              label: const Text('Transfer'),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: () => _showAddAccount(context, ref),
+              icon: const Icon(LucideIcons.plus, size: 16),
+              label: const Text('Add'),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+            ),
+          ]),
         ]),
         const SizedBox(height: 4),
         AnimatedCurrency(
@@ -77,7 +98,7 @@ class AccountsScreen extends ConsumerWidget {
         contribSummary.when(
           data: (cs) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('GOVERNMENT CONTRIBUTIONS',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 1.2,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8,
                     color: colorScheme.onSurfaceVariant)),
             const SizedBox(height: 8),
             _ContribDetailCard(label: 'SSS', yourShare: cs.sssPaid,
@@ -202,10 +223,10 @@ class _ContribDetailCard extends StatelessWidget {
     final total = yourShare + employerShare;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(children: [

@@ -2,16 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/insurance_policy.dart';
 import '../providers/tool_providers.dart';
+import '../widgets/add_insurance_dialog.dart';
+import '../widgets/pay_insurance_dialog.dart';
 
-class InsuranceScreen extends ConsumerWidget {
+class InsuranceScreen extends ConsumerStatefulWidget {
   const InsuranceScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InsuranceScreen> createState() => _InsuranceScreenState();
+}
+
+class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
+  bool _remindersEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPref();
+  }
+
+  Future<void> _loadPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _remindersEnabled = prefs.getBool('insurance_reminders_enabled') ?? true;
+      });
+    }
+  }
+
+  Future<void> _toggleReminders() async {
+    final newValue = !_remindersEnabled;
+    setState(() => _remindersEnabled = newValue);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('insurance_reminders_enabled', newValue);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final policies = ref.watch(insurancePoliciesProvider);
     final summary = ref.watch(insuranceSummaryProvider);
@@ -114,7 +146,19 @@ class InsuranceScreen extends ConsumerWidget {
 
         // Add Policy
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (_) => const AddInsuranceDialog(),
+            ).then((result) {
+              if (result == true) {
+                ref.invalidate(insurancePoliciesProvider);
+                ref.invalidate(insuranceSummaryProvider);
+              }
+            });
+          },
           icon: const Icon(LucideIcons.plus, size: 16),
           label: const Text('Add Policy'),
           style: OutlinedButton.styleFrom(
@@ -177,8 +221,8 @@ class _Card extends StatelessWidget {
     width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface,
-      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
-      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      borderRadius: BorderRadius.circular(12),
     ),
     child: child,
   );
@@ -196,7 +240,7 @@ class _SumCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: highlight ? (highlightColor ?? cs.primary).withValues(alpha: 0.06) : cs.surface,
-        border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -253,7 +297,19 @@ class _PolicyRow extends StatelessWidget {
         const SizedBox(width: 4),
         // Pay premium
         IconButton(
-          onPressed: () {},
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (_) => PayInsuranceDialog(policy: policy),
+            ).then((result) {
+              if (result == true) {
+                ref.invalidate(insurancePoliciesProvider);
+                ref.invalidate(insuranceSummaryProvider);
+              }
+            });
+          },
           icon: Icon(LucideIcons.circleDollarSign, size: 16, color: cs.onSurfaceVariant),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 28, minHeight: 28),

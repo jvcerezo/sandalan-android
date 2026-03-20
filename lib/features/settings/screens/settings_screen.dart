@@ -12,6 +12,7 @@ import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../app.dart';
+import '../../../core/l10n/app_localizations.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 
@@ -161,8 +162,8 @@ class _C extends StatelessWidget {
   @override
   Widget build(BuildContext c) => Container(width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: Theme.of(c).colorScheme.surface,
-      border: Border.all(color: Theme.of(c).colorScheme.outline.withValues(alpha: 0.12)),
-      borderRadius: BorderRadius.circular(14)), child: child);
+      border: Border.all(color: Theme.of(c).colorScheme.surfaceContainerHighest),
+      borderRadius: BorderRadius.circular(12)), child: child);
 }
 
 class _ToggleRow extends StatelessWidget {
@@ -300,16 +301,7 @@ class _AppearanceSection extends StatelessWidget {
         ]),
       ])),
       const SizedBox(height: 12),
-      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Language / Wika', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        Text('Choose your preferred language', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(child: FilledButton(onPressed: () {}, child: const Text('English'))),
-          const SizedBox(width: 8),
-          Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Filipino'))),
-        ]),
-      ])),
+      _LanguageSection(ref: ref),
     ]);
   }
 }
@@ -371,6 +363,37 @@ class _ThemeBtn extends StatelessWidget {
         Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
             color: selected ? cs.onPrimary : cs.onSurfaceVariant)),
       ]))));
+  }
+}
+
+class _LanguageSection extends StatelessWidget {
+  final WidgetRef ref;
+  const _LanguageSection({required this.ref});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final currentLocale = ref.watch(localeProvider);
+    final isFilipino = currentLocale?.languageCode == 'fil';
+    final isEnglish = currentLocale?.languageCode == 'en' || currentLocale == null;
+
+    return _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Language / Wika', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      Text('Choose your preferred language', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      const SizedBox(height: 10),
+      Row(children: [
+        Expanded(child: isEnglish
+            ? FilledButton(onPressed: () => ref.read(localeProvider.notifier).setLocale(const Locale('en')),
+                child: const Text('English'))
+            : OutlinedButton(onPressed: () => ref.read(localeProvider.notifier).setLocale(const Locale('en')),
+                child: const Text('English'))),
+        const SizedBox(width: 8),
+        Expanded(child: isFilipino
+            ? FilledButton(onPressed: () => ref.read(localeProvider.notifier).setLocale(const Locale('fil')),
+                child: const Text('Filipino'))
+            : OutlinedButton(onPressed: () => ref.read(localeProvider.notifier).setLocale(const Locale('fil')),
+                child: const Text('Filipino'))),
+      ]),
+    ]));
   }
 }
 

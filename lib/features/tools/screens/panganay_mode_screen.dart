@@ -129,8 +129,8 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext c) => Container(width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: Theme.of(c).colorScheme.surface,
-      border: Border.all(color: Theme.of(c).colorScheme.outline.withValues(alpha: 0.12)),
-      borderRadius: BorderRadius.circular(14)), child: child);
+      border: Border.all(color: Theme.of(c).colorScheme.surfaceContainerHighest),
+      borderRadius: BorderRadius.circular(12)), child: child);
 }
 
 class _SumCard extends StatelessWidget {
@@ -141,7 +141,7 @@ class _SumCard extends StatelessWidget {
     final cs = Theme.of(c).colorScheme;
     return Expanded(child: Container(padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: cs.surface,
-        border: Border.all(color: cs.outline.withValues(alpha: 0.12)), borderRadius: BorderRadius.circular(12)),
+        border: Border.all(color: cs.surfaceContainerHighest), borderRadius: BorderRadius.circular(12)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
         const SizedBox(height: 4),

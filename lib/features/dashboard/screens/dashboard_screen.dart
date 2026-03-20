@@ -1515,8 +1515,8 @@ class _OverviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
-        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: child,
     );
@@ -1534,10 +1534,10 @@ class _MiniStat extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.10)),
-          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colorScheme.surfaceContainerHighest),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [

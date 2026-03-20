@@ -300,11 +300,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
         // Search + filter card
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
-            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colorScheme.surfaceContainerHighest),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Column(children: [
             // Search row
@@ -638,7 +638,7 @@ class _TransactionRow extends StatelessWidget {
                   Wrap(spacing: 4, children: tags.map((tag) => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
+                      border: Border.all(color: colorScheme.surfaceContainerHighest),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text('#$tag', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),

@@ -164,8 +164,8 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext c) => Container(width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: Theme.of(c).colorScheme.surface,
-      border: Border.all(color: Theme.of(c).colorScheme.outline.withValues(alpha: 0.12)),
-      borderRadius: BorderRadius.circular(14)), child: child);
+      border: Border.all(color: Theme.of(c).colorScheme.surfaceContainerHighest),
+      borderRadius: BorderRadius.circular(12)), child: child);
 }
 
 class _F extends StatelessWidget {

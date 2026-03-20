@@ -177,8 +177,8 @@ class _Card extends StatelessWidget {
     width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface,
-      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
-      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      borderRadius: BorderRadius.circular(12),
     ),
     child: child,
   );

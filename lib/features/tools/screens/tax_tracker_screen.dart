@@ -320,8 +320,8 @@ class _Card extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
-        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: child,
     );
@@ -338,7 +338,7 @@ class _BracketPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15)),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(text, style: const TextStyle(fontSize: 11)),
     );
@@ -387,8 +387,8 @@ class _ResultCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: highlight ? AppColors.toolOrange.withValues(alpha: 0.06) : colorScheme.surface,
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
-        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),

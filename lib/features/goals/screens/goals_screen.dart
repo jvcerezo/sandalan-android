@@ -123,10 +123,10 @@ class _StatCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
-          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colorScheme.surfaceContainerHighest),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(children: [
           Icon(icon, size: 16, color: colorScheme.primary),

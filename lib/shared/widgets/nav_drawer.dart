@@ -102,9 +102,9 @@ class NavDrawer extends ConsumerWidget {
                       child: Text(
                         group.label!,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 1.2,
+                          letterSpacing: 0.8,
                           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                         ),
                       ),
@@ -177,8 +177,8 @@ class NavDrawer extends ConsumerWidget {
                         children: [
                           Text('THEME',
                               style: TextStyle(
-                                fontSize: 10, fontWeight: FontWeight.w600,
-                                letterSpacing: 1.2,
+                                fontSize: 11, fontWeight: FontWeight.w600,
+                                letterSpacing: 0.8,
                                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               )),
                           const Spacer(),

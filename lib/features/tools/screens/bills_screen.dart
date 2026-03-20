@@ -2,16 +2,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/bill.dart';
 import '../providers/tool_providers.dart';
+import '../widgets/add_bill_dialog.dart';
 
-class BillsScreen extends ConsumerWidget {
+class BillsScreen extends ConsumerStatefulWidget {
   const BillsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BillsScreen> createState() => _BillsScreenState();
+}
+
+class _BillsScreenState extends ConsumerState<BillsScreen> {
+  bool _remindersEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPref();
+  }
+
+  Future<void> _loadPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _remindersEnabled = prefs.getBool('bills_reminders_enabled') ?? true;
+      });
+    }
+  }
+
+  Future<void> _toggleReminders() async {
+    final newValue = !_remindersEnabled;
+    setState(() => _remindersEnabled = newValue);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('bills_reminders_enabled', newValue);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final bills = ref.watch(billsProvider);
     final summary = ref.watch(billsSummaryProvider);
@@ -68,8 +99,8 @@ class BillsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 14),
 
-        // Due soon alert
-        summary.when(
+        // Due soon alert (hidden when reminders are off)
+        if (_remindersEnabled) summary.when(
           data: (s) {
             if (s.dueSoonCount == 0) return const SizedBox.shrink();
             return bills.when(
@@ -134,7 +165,7 @@ class BillsScreen extends ConsumerWidget {
                   child: Wrap(spacing: 8, runSpacing: 8, children: sorted.map((e) => Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+                      border: Border.all(color: colorScheme.surfaceContainerHighest),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -183,24 +214,43 @@ class BillsScreen extends ConsumerWidget {
             )),
           ])),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+          GestureDetector(
+            onTap: _toggleReminders,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _remindersEnabled
+                    ? AppColors.warning.withValues(alpha: 0.15)
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (_remindersEnabled) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
+                if (_remindersEnabled) const SizedBox(width: 4),
+                Text(_remindersEnabled ? 'On' : 'Off',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        color: _remindersEnabled ? AppColors.warning : colorScheme.onSurfaceVariant)),
+              ]),
             ),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
-              SizedBox(width: 4),
-              Text('On', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.warning)),
-            ]),
           ),
         ])),
         const SizedBox(height: 16),
 
         // Add Bill button
         OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (_) => const AddBillDialog(),
+            ).then((result) {
+              if (result == true) {
+                ref.invalidate(billsProvider);
+                ref.invalidate(billsSummaryProvider);
+              }
+            });
+          },
           icon: const Icon(LucideIcons.plus, size: 16),
           label: const Text('Add Bill'),
           style: OutlinedButton.styleFrom(
@@ -244,7 +294,7 @@ class _Card extends StatelessWidget {
     width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Theme.of(context).colorScheme.surface,
-      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
+      border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
       borderRadius: BorderRadius.circular(14),
     ),
     child: child,
@@ -264,7 +314,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: highlight ? (highlightColor ?? cs.primary).withValues(alpha: 0.06) : cs.surface,
-        border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

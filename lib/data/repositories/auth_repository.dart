@@ -40,15 +40,6 @@ class AuthRepository {
     );
   }
 
-  /// Sign in with Google OAuth.
-  Future<bool> signInWithGoogle() async {
-    final response = await _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'com.jvcerezo.exitplan://login-callback/',
-    );
-    return response;
-  }
-
   /// Sign out.
   Future<void> signOut() async {
     await _client.auth.signOut();

@@ -78,22 +78,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      await ref.read(authRepositoryProvider).signInWithGoogle();
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Google sign-in failed. Please try again.';
-      });
-    }
-  }
-
   String _parseAuthError(dynamic e) {
     final msg = e.toString().toLowerCase();
     if (msg.contains('invalid') || msg.contains('400')) {
@@ -128,30 +112,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
               const SizedBox(height: 32),
-
-              // Google Sign-In
-              OutlinedButton.icon(
-                onPressed: _isLoading ? null : _handleGoogleSignIn,
-                icon: const Icon(LucideIcons.chrome, size: 18),
-                label: const Text('Continue with Google'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Divider
-              Row(children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('or continue with email',
-                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                ),
-                const Expanded(child: Divider()),
-              ]),
-              const SizedBox(height: 16),
 
               // Error
               if (_error != null)

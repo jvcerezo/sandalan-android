@@ -132,10 +132,131 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     super.dispose();
   }
 
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _handleSave() async {
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+
+    if (_showSplit) {
+      // Split mode validations
+      // Check all accounts selected
+      final hasUnselected = _splitEntries.any((e) => e.accountId == null);
+      if (hasUnselected) {
+        _showError('Select an account for each split part');
+        return;
+      }
+
+      // Check duplicate accounts
+      final accountIds = _splitEntries.map((e) => e.accountId).toList();
+      if (accountIds.toSet().length != accountIds.length) {
+        _showError('Select different accounts for each split part');
+        return;
+      }
+
+      // Parse split amounts and validate upper bound
+      double splitTotal = 0;
+      for (final entry in _splitEntries) {
+        final amt = double.tryParse(entry.amountCtl.text.replaceAll(',', '')) ?? 0;
+        if (amt > 999999999) {
+          _showError('Amount must be less than \u20B1999,999,999');
+          return;
+        }
+        splitTotal += amt;
+      }
+
+      if (splitTotal <= 0) {
+        _showError('Enter an amount for each split part');
+        return;
+      }
+
+      // Check insufficient balance for each split entry (expense only)
+      if (!_isIncome) {
+        for (final entry in _splitEntries) {
+          final amt = double.tryParse(entry.amountCtl.text.replaceAll(',', '')) ?? 0;
+          final acct = accounts.where((a) => a.id == entry.accountId).firstOrNull;
+          if (acct != null && acct.type != 'credit_card' && amt > acct.balance) {
+            _showError('Insufficient balance in ${acct.name}');
+            return;
+          }
+        }
+      }
+
+      // For split mode, use the split total as the main amount
+      setState(() => _saving = true);
+
+      try {
+        final repo = ref.read(transactionRepositoryProvider);
+        final tags = _tagsController.text.trim().isEmpty
+            ? null
+            : _tagsController.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+
+        // Create a transaction for each split entry
+        for (final entry in _splitEntries) {
+          final amt = double.tryParse(entry.amountCtl.text.replaceAll(',', '')) ?? 0;
+          if (amt <= 0) continue;
+          await repo.createTransaction(
+            amount: -amt,
+            category: _effectiveCategory,
+            description: _noteController.text.trim(),
+            date: _date,
+            accountId: entry.accountId,
+            tags: tags,
+          );
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Transaction added!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        setState(() => _saving = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to save: $e')),
+          );
+        }
+      }
+      return;
+    }
+
+    // Normal (non-split) mode
     final amountText = _amountController.text.replaceAll(',', '');
     final amount = double.tryParse(amountText);
-    if (amount == null || amount <= 0) return;
+    if (amount == null || amount <= 0) {
+      _showError('Enter a valid amount');
+      return;
+    }
+
+    // Amount upper bound
+    if (amount > 999999999) {
+      _showError('Amount must be less than \u20B1999,999,999');
+      return;
+    }
+
+    // Account selection check
+    if (_selectedAccountId == null) {
+      _showError('Select an account');
+      return;
+    }
+
+    // Insufficient balance check (expense, non-credit-card)
+    if (!_isIncome) {
+      final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
+      if (selectedAccount != null && selectedAccount.type != 'credit_card' && amount > selectedAccount.balance) {
+        _showError('Insufficient balance in ${selectedAccount.name}');
+        return;
+      }
+    }
 
     setState(() => _saving = true);
 
@@ -167,7 +288,15 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         );
       }
 
-      if (mounted) Navigator.of(context).pop(true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(edit != null ? 'Transaction updated!' : 'Transaction added!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop(true);
+      }
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
@@ -564,10 +693,12 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             Row(children: [
               Expanded(child: TextField(
                 controller: _noteController,
+                maxLength: 500,
                 decoration: InputDecoration(
                   hintText: 'Add a note... (optional)',
                   hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
                   border: InputBorder.none, contentPadding: EdgeInsets.zero,
+                  counterText: '',
                 ),
                 style: const TextStyle(fontSize: 13),
               )),
@@ -632,7 +763,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       decoration: const InputDecoration(isDense: true),
                       keyboardType: TextInputType.number,
                       controller: TextEditingController(text: '$_repeatInterval'),
-                      onChanged: (v) => _repeatInterval = int.tryParse(v) ?? 1,
+                      onChanged: (v) {
+                        final parsed = int.tryParse(v) ?? 1;
+                        _repeatInterval = parsed.clamp(1, 365);
+                      },
                     )),
                     const SizedBox(width: 8),
                     Expanded(child: DropdownButtonFormField<String>(

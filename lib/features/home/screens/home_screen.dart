@@ -172,11 +172,11 @@ class _CurrentStageCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
-          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.surfaceContainerHighest),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
@@ -197,8 +197,8 @@ class _CurrentStageCard extends StatelessWidget {
                 children: [
                   Text('CURRENT STAGE',
                       style: TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.w600,
-                        letterSpacing: 1, color: colorScheme.onSurfaceVariant,
+                        fontSize: 11, fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
                       )),
                   const SizedBox(height: 3),
                   const Text('Unang Hakbang',
@@ -267,10 +267,10 @@ class _FinStat extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+            border: Border.all(color: colorScheme.surfaceContainerHighest),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -357,8 +357,8 @@ class _UpcomingPaymentsSection extends StatelessWidget {
             // Items
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
-                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.surfaceContainerHighest),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 children: visible.asMap().entries.map((entry) {
@@ -578,11 +578,11 @@ class _NextStepCardState extends State<_NextStepCard> {
 
     return Container(
       width: 260,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
-        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,8 +606,8 @@ class _NextStepCardState extends State<_NextStepCard> {
                 child: Text(
                   isChecklist ? 'NEXT STEP' : 'READ',
                   style: TextStyle(
-                    fontSize: 10, fontWeight: FontWeight.w600,
-                    letterSpacing: 1, color: colorScheme.onSurfaceVariant,
+                    fontSize: 11, fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -674,10 +674,10 @@ class _NavRow extends StatelessWidget {
         onTap();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+          border: Border.all(color: colorScheme.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(

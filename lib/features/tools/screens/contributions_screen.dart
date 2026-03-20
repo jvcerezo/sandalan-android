@@ -371,7 +371,7 @@ class _Card extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(14),
       ),
       child: child,
@@ -454,7 +454,7 @@ class _SummaryCard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: highlight ? AppColors.income.withValues(alpha: 0.08) : colorScheme.surface,
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+          border: Border.all(color: colorScheme.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -492,7 +492,7 @@ class _HistoryMonthState extends State<_HistoryMonth> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.10)),
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(children: [

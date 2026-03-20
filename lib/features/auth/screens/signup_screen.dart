@@ -34,11 +34,11 @@ class _PasswordStrength {
 _PasswordStrength _getPasswordStrength(String password) {
   final checks = [
     _PasswordCheck(label: 'At least 8 characters', passed: password.length >= 8),
-    _PasswordCheck(label: 'Uppercase letter (A–Z)', passed: RegExp(r'[A-Z]').hasMatch(password)),
-    _PasswordCheck(label: 'Lowercase letter (a–z)', passed: RegExp(r'[a-z]').hasMatch(password)),
-    _PasswordCheck(label: 'Number (0–9)', passed: RegExp(r'[0-9]').hasMatch(password)),
+    _PasswordCheck(label: 'Uppercase letter (A\u2013Z)', passed: RegExp(r'[A-Z]').hasMatch(password)),
+    _PasswordCheck(label: 'Lowercase letter (a\u2013z)', passed: RegExp(r'[a-z]').hasMatch(password)),
+    _PasswordCheck(label: 'Number (0\u20139)', passed: RegExp(r'[0-9]').hasMatch(password)),
     _PasswordCheck(
-        label: 'Special character (!@#\$…)',
+        label: 'Special character (!@#\$\u2026)',
         passed: RegExp(r'[^A-Za-z0-9]').hasMatch(password)),
   ];
 
@@ -204,30 +204,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
-
-              // Google
-              OutlinedButton.icon(
-                onPressed: _isLoading
-                    ? null
-                    : () => ref.read(authRepositoryProvider).signInWithGoogle(),
-                icon: const Icon(LucideIcons.chrome, size: 18),
-                label: const Text('Continue with Google'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(children: [
-                const Expanded(child: Divider()),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('or sign up with email',
-                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                ),
-                const Expanded(child: Divider()),
-              ]),
-              const SizedBox(height: 16),
 
               // Success message
               if (_successEmail != null)

@@ -214,11 +214,11 @@ class _GuideItem extends StatelessWidget {
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isRead ? color.withValues(alpha: 0.03) : null,
-          border: Border.all(color: isRead ? color.withValues(alpha: 0.15) : cs.outline.withValues(alpha: 0.12)),
-          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: isRead ? color.withValues(alpha: 0.15) : cs.surfaceContainerHighest),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(children: [
           Container(
@@ -292,10 +292,10 @@ class _ChecklistRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isDone ? color.withValues(alpha: 0.04) : null,
-          border: Border.all(color: isDone ? color.withValues(alpha: 0.2) : cs.outline.withValues(alpha: 0.10)),
+          border: Border.all(color: isDone ? color.withValues(alpha: 0.2) : cs.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(children: [

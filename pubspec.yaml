@@ -37,9 +37,6 @@ dependencies:
   # Animations
   flutter_animate: ^4.5.2
 
-  # Auth
-  google_sign_in: ^6.2.2
-
   # Connectivity
   connectivity_plus: ^6.1.4
 

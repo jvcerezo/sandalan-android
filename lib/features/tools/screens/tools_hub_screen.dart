@@ -123,11 +123,11 @@ class _ToolSection extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Text(title,
+            child: Text(title.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1.2,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 )),
           ),
