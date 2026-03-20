@@ -31,7 +31,7 @@ class PagIbigRate {
   static const double employeeLow = 0.01;
   static const double employerLow = 0.02;
   static const double salaryThreshold = 1500;
-  static const double maxCompensation = 5000;
+  static const double maxCompensation = 10000;
 }
 
 // ─── TRAIN Law Tax Brackets (2023+, annual) ───────────────────────────────────
