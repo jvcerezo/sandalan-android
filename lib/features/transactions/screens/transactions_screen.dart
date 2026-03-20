@@ -232,7 +232,8 @@ class _TransactionRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isIncome = transaction.isIncome;
     final isTransfer = transaction.isTransfer;
-    final color = isTransfer ? AppColors.transfer : (isIncome ? AppColors.income : AppColors.expense);
+    final iconColor = isTransfer ? AppColors.transfer : (isIncome ? AppColors.income : colorScheme.onSurfaceVariant);
+    final amountColor = isIncome ? AppColors.income : colorScheme.onSurface;
     final icon = isTransfer ? LucideIcons.arrowLeftRight
         : (isIncome ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight);
 
@@ -241,8 +242,8 @@ class _TransactionRow extends StatelessWidget {
       child: Row(children: [
         Container(
           width: 36, height: 36,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, size: 16, color: color),
+          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, size: 16, color: iconColor),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -250,12 +251,14 @@ class _TransactionRow extends StatelessWidget {
             Text(transaction.description.isNotEmpty ? transaction.description : transaction.category,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(transaction.category,
+            Text(isTransfer
+                ? '${transaction.amount > 0 ? 'Incoming' : 'Outgoing'} Transfer · ${formatDateRelative(DateTime.parse(transaction.date))}'
+                : '${transaction.category} · ${formatDateRelative(DateTime.parse(transaction.date))}',
                 style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
           ]),
         ),
         Text('${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: amountColor)),
       ]),
     );
   }

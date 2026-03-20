@@ -796,15 +796,16 @@ class _InsightsTab extends StatelessWidget {
                 ...txns.map((t) {
                   final isIncome = t.isIncome;
                   final isTransfer = t.isTransfer;
-                  final color = isTransfer ? AppColors.transfer : (isIncome ? AppColors.income : AppColors.expense);
+                  final iconColor = isTransfer ? AppColors.transfer : (isIncome ? AppColors.income : colorScheme.onSurfaceVariant);
+                  final amountColor = isIncome ? AppColors.income : colorScheme.onSurface;
                   final icon = isTransfer ? LucideIcons.arrowLeftRight
                       : (isIncome ? LucideIcons.arrowDownLeft : LucideIcons.arrowUpRight);
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(children: [
                       Container(width: 32, height: 32,
-                          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                          child: Icon(icon, size: 14, color: color)),
+                          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                          child: Icon(icon, size: 14, color: iconColor)),
                       const SizedBox(width: 10),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(t.description.isNotEmpty ? t.description : t.category,
@@ -813,7 +814,7 @@ class _InsightsTab extends StatelessWidget {
                         Text(t.category, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
                       ])),
                       Text('${isIncome ? '+' : '-'}${formatCurrency(t.amount.abs())}',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: amountColor)),
                     ]),
                   );
                 }),
