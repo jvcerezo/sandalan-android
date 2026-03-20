@@ -112,7 +112,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         ...guide.sections.map((section) => Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(section.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            Text(section.heading, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(section.content, style: TextStyle(fontSize: 14, color: cs.onSurface, height: 1.6)),
             if (section.items.isNotEmpty) ...[
@@ -125,22 +125,9 @@ class _ArticleScreenState extends State<ArticleScreen> {
                 ]),
               )),
             ],
-            if (section.callout != null) ...[
+            if (section.calloutType != null && section.calloutText != null) ...[
               const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: stage.color.withValues(alpha: 0.06),
-                  border: Border(left: BorderSide(color: stage.color, width: 3)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(LucideIcons.info, size: 14, color: stage.color),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(section.callout!,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, height: 1.4))),
-                ]),
-              ),
+              _CalloutBox(type: section.calloutType!, text: section.calloutText!),
             ],
           ]),
         )),
@@ -153,7 +140,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
               letterSpacing: 0.8, color: cs.onSurfaceVariant)),
           const SizedBox(height: 8),
           Wrap(spacing: 8, children: guide.toolLinks.map((tool) => GestureDetector(
-            onTap: () => context.go('/tools/$tool'),
+            onTap: () => context.go(tool.href),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -162,7 +149,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(LucideIcons.wrench, size: 12, color: cs.primary),
                 const SizedBox(width: 4),
-                Text(tool, style: TextStyle(fontSize: 12, color: cs.primary)),
+                Text(tool.label, style: TextStyle(fontSize: 12, color: cs.primary)),
               ]),
             ),
           )).toList()),
@@ -170,6 +157,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         ],
 
         // Mark as read button
+        // Mark as complete
         FilledButton.icon(
           onPressed: _toggleRead,
           icon: Icon(_isRead ? LucideIcons.checkCircle2 : LucideIcons.circle, size: 16),
@@ -182,8 +170,148 @@ class _ArticleScreenState extends State<ArticleScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Prev/Next navigation
+        _buildPrevNext(stage, guide, cs),
+        const SizedBox(height: 16),
+
+        // View Stage Progress
+        OutlinedButton.icon(
+          onPressed: () => context.go('/guide/${widget.stageSlug}'),
+          icon: Icon(LucideIcons.wrench, size: 14, color: cs.primary),
+          label: Text('View Stage Progress', style: TextStyle(color: cs.primary)),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            minimumSize: const Size(double.infinity, 0),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
       ],
     )),
     ]);
+  }
+
+  Widget _buildPrevNext(LifeStage stage, Guide currentGuide, ColorScheme cs) {
+    final idx = stage.guides.indexWhere((g) => g.slug == currentGuide.slug);
+    final prev = idx > 0 ? stage.guides[idx - 1] : null;
+    final next = idx < stage.guides.length - 1 ? stage.guides[idx + 1] : null;
+
+    if (prev == null && next == null) return const SizedBox.shrink();
+
+    return Row(children: [
+      if (prev != null)
+        Expanded(
+          child: GestureDetector(
+            onTap: () => context.go('/guide/${widget.stageSlug}/${prev.slug}'),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(LucideIcons.arrowLeft, size: 12, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text('Previous', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                ]),
+                const SizedBox(height: 4),
+                Text(prev.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis),
+              ]),
+            ),
+          ),
+        ),
+      if (prev != null && next != null) const SizedBox(width: 8),
+      if (next != null)
+        Expanded(
+          child: GestureDetector(
+            onTap: () => context.go('/guide/${widget.stageSlug}/${next.slug}'),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Next', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                  const SizedBox(width: 4),
+                  Icon(LucideIcons.arrowRight, size: 12, color: cs.onSurfaceVariant),
+                ]),
+                const SizedBox(height: 4),
+                Text(next.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
+              ]),
+            ),
+          ),
+        ),
+    ]);
+  }
+}
+
+// ─── Callout Box ──────────────────────────────────────────────────────────────
+
+class _CalloutBox extends StatelessWidget {
+  final CalloutType type;
+  final String text;
+  const _CalloutBox({required this.type, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Color borderColor;
+    Color bgColor;
+    Color iconColor;
+    IconData icon;
+    String label;
+
+    switch (type) {
+      case CalloutType.tip:
+        borderColor = Colors.green;
+        bgColor = isDark ? Colors.green.withValues(alpha: 0.08) : Colors.green.shade50;
+        iconColor = isDark ? Colors.green.shade300 : Colors.green.shade600;
+        icon = LucideIcons.lightbulb;
+        label = 'TIP';
+      case CalloutType.warning:
+        borderColor = Colors.amber;
+        bgColor = isDark ? Colors.amber.withValues(alpha: 0.08) : Colors.amber.shade50;
+        iconColor = isDark ? Colors.amber.shade300 : Colors.amber.shade700;
+        icon = LucideIcons.alertTriangle;
+        label = 'WARNING';
+      case CalloutType.info:
+        borderColor = Colors.blueGrey;
+        bgColor = isDark ? Colors.blueGrey.withValues(alpha: 0.08) : Colors.blueGrey.shade50;
+        iconColor = isDark ? Colors.blueGrey.shade300 : Colors.blueGrey.shade600;
+        icon = LucideIcons.info;
+        label = 'NOTE';
+      case CalloutType.phLaw:
+        borderColor = Colors.blue;
+        bgColor = isDark ? Colors.blue.withValues(alpha: 0.08) : Colors.blue.shade50;
+        iconColor = isDark ? Colors.blue.shade300 : Colors.blue.shade600;
+        icon = LucideIcons.scale;
+        label = 'PHILIPPINE LAW';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border(left: BorderSide(color: borderColor, width: 4)),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, size: 14, color: iconColor),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: iconColor)),
+        ]),
+        const SizedBox(height: 6),
+        Text(text, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85), height: 1.5)),
+      ]),
+    );
   }
 }

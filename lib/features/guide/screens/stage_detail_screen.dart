@@ -150,7 +150,7 @@ class _StageDetailScreenState extends State<StageDetailScreen> {
 }
 
 class _GuideItem extends StatelessWidget {
-  final GuideArticle guide;
+  final Guide guide;
   final String stageSlug;
   final Color color;
   const _GuideItem({required this.guide, required this.stageSlug, required this.color});
