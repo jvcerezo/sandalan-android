@@ -24,6 +24,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedTab = 0;
+  int _trendView = 0;
   static const _tabLabels = ['Trends', 'Planning', 'Health', 'Insights'];
 
   Future<void> _onRefresh() async {
@@ -74,7 +75,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             ]),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Income / Expenses
           summary.when(
@@ -108,7 +109,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             loading: () => const ShimmerStatRow(count: 2),
             error: (_, __) => const SizedBox.shrink(),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Accounts / Goals / Budgets row
           Row(children: [
@@ -167,7 +168,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 16),
 
           // Tab content
-          if (_selectedTab == 0) _TrendsTab(ref: ref),
+          if (_selectedTab == 0) _TrendsTab(ref: ref, trendView: _trendView,
+              onTrendViewChanged: (v) => setState(() => _trendView = v)),
           if (_selectedTab == 1) _PlanningTab(ref: ref),
           if (_selectedTab == 2) _HealthTab(ref: ref),
           if (_selectedTab == 3) _InsightsTab(ref: ref),
@@ -179,22 +181,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 // ─── Trends Tab ────────────────────────────────────────────────────────────────
 
-class _TrendsTab extends StatefulWidget {
+class _TrendsTab extends StatelessWidget {
   final WidgetRef ref;
-  const _TrendsTab({required this.ref});
-
-  @override
-  State<_TrendsTab> createState() => _TrendsTabState();
-}
-
-class _TrendsTabState extends State<_TrendsTab> {
-  int _trendView = 0;
+  final int trendView;
+  final ValueChanged<int> onTrendViewChanged;
   static const _views = ['Spending', 'Monthly', 'Net Worth', 'Compare'];
+
+  const _TrendsTab({required this.ref, required this.trendView, required this.onTrendViewChanged});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final transactions = widget.ref.watch(transactionsProvider);
+    final transactions = ref.watch(transactionsProvider);
 
     return Column(children: [
       _SectionLabel('TREND VIEWS'),
@@ -208,16 +206,16 @@ class _TrendsTabState extends State<_TrendsTab> {
         ),
         child: Row(children: List.generate(_views.length, (i) => Expanded(
           child: GestureDetector(
-            onTap: () => setState(() => _trendView = i),
+            onTap: () => onTrendViewChanged(i),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                color: _trendView == i ? colorScheme.surface : Colors.transparent,
+                color: trendView == i ? colorScheme.surface : Colors.transparent,
                 borderRadius: BorderRadius.circular(7),
               ),
               child: Center(child: Text(_views[i],
                   style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                      color: _trendView == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
+                      color: trendView == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
             ),
           ),
         ))),
