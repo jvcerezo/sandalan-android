@@ -61,7 +61,7 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolIndigo,
             title: 'Bills & Subscriptions',
             subtitle: 'Track recurring payments',
-            onTap: () {},
+            onTap: () => context.go('/tools/bills'),
           ),
           _ToolItem(
             icon: LucideIcons.shield,

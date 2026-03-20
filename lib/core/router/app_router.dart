@@ -15,6 +15,7 @@ import '../../features/tools/screens/contributions_screen.dart';
 import '../../features/tools/screens/tax_tracker_screen.dart';
 import '../../features/tools/screens/thirteenth_month_screen.dart';
 import '../../features/tools/screens/debt_manager_screen.dart';
+import '../../features/tools/screens/bills_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
@@ -125,6 +126,12 @@ final appRouter = GoRouter(
           path: '/tools/13th-month',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: ThirteenthMonthScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/tools/bills',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: BillsScreen(),
           ),
         ),
         GoRoute(
