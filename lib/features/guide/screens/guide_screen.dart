@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../painters/ph_map_painter.dart';
+import '../../../core/theme/color_tokens.dart' show StageColors;
 
 // ─── Stage Data ────────────────────────────────────────────────────────────────
 
@@ -124,9 +125,9 @@ class _JourneyMap extends StatelessWidget {
       slivers: [
         SliverToBoxAdapter(
           child: CustomPaint(
-            painter: PhilippineMapPainter(
+            painter: JourneyBackdropPainter(
               isDark: isDark,
-              color: colorScheme.primary,
+              stageColors: StageColors.all,
             ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
