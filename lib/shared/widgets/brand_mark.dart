@@ -16,25 +16,22 @@ class BrandMark extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? const Color(0xFFF3F6F4) : const Color(0xFF14213D);
 
-    // Dark mode: use version with white bg (dark house visible on white).
-    // Light mode: use transparent bg version (dark house visible on light surface).
+    // Dark mode: light-colored house on transparent bg
+    // Light mode: dark-colored house on transparent bg
     final svgAsset = isDark
-        ? 'assets/images/app-icon.svg'
+        ? 'assets/images/app-icon-dark.svg'
         : 'assets/images/app-icon-nobg.svg';
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(size * 0.22),
-          child: SvgPicture.asset(
-            svgAsset,
-            width: size,
-            height: size,
-          ),
+        SvgPicture.asset(
+          svgAsset,
+          width: size,
+          height: size,
         ),
         if (showText) ...[
-          SizedBox(width: size * 0.25),
+          SizedBox(width: size * 0.2),
           RichText(
             text: TextSpan(
               style: TextStyle(

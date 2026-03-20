@@ -287,7 +287,8 @@ class _TrendsTab extends StatelessWidget {
             SizedBox(height: 180, child: CustomPaint(size: const Size(180, 180),
                 painter: _DonutChartPainter(
                   values: sorted.map((e) => e.value).toList(),
-                  colors: List.generate(sorted.length, (i) => chartColors[i % chartColors.length])))),
+                  colors: List.generate(sorted.length, (i) => chartColors[i % chartColors.length]),
+                  centerLabel: formatCurrency(total)))),
             const SizedBox(height: 16),
             ...sorted.asMap().entries.map((entry) {
               final i = entry.key; final e = entry.value;
@@ -496,38 +497,82 @@ class _PlanningTab extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final budgets = ref.watch(budgetsProvider);
     final goals = ref.watch(goalsProvider);
+    final transactions = ref.watch(transactionsProvider);
 
     return Column(children: [
-      // Budget Status
+      // Budget Status with Progress Bars
       _OverviewCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Budget Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           budgets.when(
-            data: (list) => list.isEmpty
-                ? Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      const SizedBox(height: 8),
-                      Text('No budgets set this month.',
-                          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () => context.go('/budgets'),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Text('Set up budgets', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
-                          const SizedBox(width: 4),
-                          Icon(LucideIcons.arrowRight, size: 14, color: colorScheme.primary),
-                        ]),
+            data: (list) {
+              if (list.isEmpty) {
+                return Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const SizedBox(height: 8),
+                    Text('No budgets set this month.',
+                        style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => context.go('/budgets'),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text('Set up budgets', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                        const SizedBox(width: 4),
+                        Icon(LucideIcons.arrowRight, size: 14, color: colorScheme.primary),
+                      ]),
+                    ),
+                  ]),
+                );
+              }
+
+              // Compute spending per budget category
+              final now = DateTime.now();
+              final thisMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+              final txnList = transactions.valueOrNull ?? [];
+              final spentByCategory = <String, double>{};
+              for (final t in txnList) {
+                if (t.amount >= 0 || t.category.toLowerCase() == 'transfer') continue;
+                if (t.date.substring(0, 7) == thisMonth) {
+                  spentByCategory[t.category] = (spentByCategory[t.category] ?? 0) + t.amount.abs();
+                }
+              }
+
+              return Column(children: list.map((b) {
+                final spent = spentByCategory[b.category] ?? 0;
+                final ratio = b.amount > 0 ? spent / b.amount : 0.0;
+                final progressColor = ratio > 0.9 ? const Color(0xFFEF4444)
+                    : ratio > 0.75 ? const Color(0xFFEAB308)
+                    : AppColors.income;
+                final isOver = ratio > 1.0;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Expanded(child: Text(b.category, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                      Text('${formatCurrency(spent)} / ${formatCurrency(b.amount)}',
+                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                    ]),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: ratio.clamp(0, 1).toDouble(),
+                        minHeight: 8,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        color: progressColor,
                       ),
-                    ]),
-                  )
-                : Column(children: list.map((b) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text(b.category, style: const TextStyle(fontSize: 13)),
-                      Text(formatCurrency(b.amount), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    ]),
-                  )).toList()),
+                    ),
+                    if (isOver) ...[
+                      const SizedBox(height: 4),
+                      Text('Over budget by ${formatCurrency(spent - b.amount)}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFFEF4444))),
+                    ],
+                  ]),
+                );
+              }).toList());
+            },
             loading: () => const ShimmerLoading(height: 40),
             error: (_, __) => const SizedBox.shrink(),
           ),
@@ -591,6 +636,8 @@ class _HealthTab extends StatelessWidget {
     final totalBalance = ref.watch(totalBalanceProvider);
     final billsSummary = ref.watch(billsSummaryProvider);
     final debtSummary = ref.watch(debtSummaryProvider);
+    final budgets = ref.watch(budgetsProvider);
+    final transactions = ref.watch(transactionsProvider);
 
     return summary.when(
       data: (s) {
@@ -599,6 +646,105 @@ class _HealthTab extends StatelessWidget {
             (debtSummary.valueOrNull?.totalMinMonthly ?? 0);
         final safeToSpend = s.income - s.expenses;
         final emergencyMonths = s.expenses > 0 ? totalBalance / (s.expenses > 0 ? s.expenses : 1) : 0.0;
+
+        // --- Compute Real Financial Health Score ---
+        // 1) Savings Rate score (25%): 20% savings = perfect
+        final savingsRateScore = s.income > 0
+            ? ((savingsRate / 20) * 100).clamp(0.0, 100.0)
+            : 0.0;
+
+        // 2) Budget Adherence score (25%): % of budgets under limit
+        double budgetAdherenceScore = 50.0; // default if no budgets
+        String budgetAdherenceText = 'No budgets set';
+        final budgetList = budgets.valueOrNull ?? [];
+        final txnList = transactions.valueOrNull ?? [];
+        if (budgetList.isNotEmpty) {
+          final now = DateTime.now();
+          final thisMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+          final expensesByCategory = <String, double>{};
+          for (final t in txnList) {
+            if (t.amount >= 0 || t.category.toLowerCase() == 'transfer') continue;
+            if (t.date.substring(0, 7) == thisMonth) {
+              expensesByCategory[t.category] = (expensesByCategory[t.category] ?? 0) + t.amount.abs();
+            }
+          }
+          int underLimit = 0;
+          for (final b in budgetList) {
+            final spent = expensesByCategory[b.category] ?? 0;
+            if (spent <= b.amount) underLimit++;
+          }
+          budgetAdherenceScore = (underLimit / budgetList.length * 100).clamp(0.0, 100.0);
+          budgetAdherenceText = '${underLimit}/${budgetList.length} under limit';
+        }
+
+        // 3) Emergency Fund score (25%): 3 months = perfect
+        final emergencyFundScore = (emergencyMonths / 3 * 100).clamp(0.0, 100.0);
+
+        // 4) Debt-to-Income score (25%)
+        final monthlyDebt = debtSummary.valueOrNull?.totalMinMonthly ?? 0;
+        final debtToIncomeScore = s.income > 0
+            ? ((1 - monthlyDebt / s.income) * 100).clamp(0.0, 100.0)
+            : (monthlyDebt > 0 ? 0.0 : 100.0);
+
+        // Weighted total
+        final healthScore = (savingsRateScore * 0.25 +
+            budgetAdherenceScore * 0.25 +
+            emergencyFundScore * 0.25 +
+            debtToIncomeScore * 0.25).clamp(0.0, 100.0);
+
+        // Label and color
+        final healthLabel = healthScore >= 91 ? 'Excellent'
+            : healthScore >= 71 ? 'Great'
+            : healthScore >= 51 ? 'Good'
+            : healthScore >= 31 ? 'Fair'
+            : 'Needs Work';
+        final healthColor = healthScore >= 71 ? AppColors.income
+            : healthScore >= 51 ? const Color(0xFFEAB308)
+            : healthScore >= 31 ? const Color(0xFFF97316)
+            : const Color(0xFFEF4444);
+
+        // --- Spending Velocity ---
+        Widget? spendingVelocityWidget;
+        if (txnList.isNotEmpty) {
+          final now = DateTime.now();
+          final thisMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+          final lastMonthDt = DateTime(now.year, now.month - 1);
+          final lastMonthStr = '${lastMonthDt.year}-${lastMonthDt.month.toString().padLeft(2, '0')}';
+          final dayOfMonth = now.day;
+
+          double thisMonthSpend = 0;
+          double lastMonthSpendSamePoint = 0;
+          for (final t in txnList) {
+            if (t.amount >= 0 || t.category.toLowerCase() == 'transfer') continue;
+            final txMonth = t.date.substring(0, 7);
+            if (txMonth == thisMonth) {
+              thisMonthSpend += t.amount.abs();
+            } else if (txMonth == lastMonthStr) {
+              final txDay = int.tryParse(t.date.substring(8, 10)) ?? 0;
+              if (txDay <= dayOfMonth) {
+                lastMonthSpendSamePoint += t.amount.abs();
+              }
+            }
+          }
+
+          if (lastMonthSpendSamePoint > 0) {
+            final velocityPct = ((thisMonthSpend - lastMonthSpendSamePoint) / lastMonthSpendSamePoint * 100);
+            final isFaster = velocityPct > 0;
+            spendingVelocityWidget = _OverviewCard(
+              child: Row(children: [
+                Icon(isFaster ? LucideIcons.arrowUp : LucideIcons.arrowDown,
+                    size: 20, color: isFaster ? const Color(0xFFEF4444) : AppColors.income),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Spending Velocity', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text('Spending ${velocityPct.abs().toStringAsFixed(0)}% ${isFaster ? 'faster' : 'slower'} than last month',
+                      style: TextStyle(fontSize: 12, color: isFaster ? const Color(0xFFEF4444) : AppColors.income)),
+                ])),
+              ]),
+            );
+          }
+        }
 
         return Column(children: [
           // Financial Health Score
@@ -612,22 +758,28 @@ class _HealthTab extends StatelessWidget {
                 height: 100,
                 child: CustomPaint(
                   size: const Size(120, 100),
-                  painter: _GaugePainter(value: 50, color: AppColors.warning),
+                  painter: _GaugePainter(value: healthScore, color: healthColor, label: healthLabel),
                 ),
               ),
               const SizedBox(height: 12),
               // Metrics
               _HealthRow(label: 'Savings Rate', value: '${savingsRate.toStringAsFixed(0)}% of income saved',
-                  color: AppColors.income, progress: savingsRate / 100),
-              _HealthRow(label: 'Budget Adherence', value: 'No budgets set',
-                  color: colorScheme.onSurfaceVariant, progress: 0),
-              _HealthRow(label: 'Goal Progress', value: 'No active goals',
-                  color: colorScheme.onSurfaceVariant, progress: 0),
-              _HealthRow(label: 'Emergency Fund', value: '${formatCurrency(totalBalance)} in accounts',
-                  color: AppColors.income, progress: (emergencyMonths / 3).clamp(0, 1)),
+                  color: savingsRateScore >= 50 ? AppColors.income : const Color(0xFFF97316), progress: savingsRateScore / 100),
+              _HealthRow(label: 'Budget Adherence', value: budgetAdherenceText,
+                  color: budgetAdherenceScore >= 50 ? AppColors.income : const Color(0xFFF97316), progress: budgetAdherenceScore / 100),
+              _HealthRow(label: 'Emergency Fund', value: '${emergencyMonths.toStringAsFixed(1)} of 3 months',
+                  color: emergencyFundScore >= 50 ? AppColors.income : const Color(0xFFF97316), progress: emergencyFundScore / 100),
+              _HealthRow(label: 'Debt-to-Income', value: s.income > 0 ? '${(monthlyDebt / s.income * 100).toStringAsFixed(0)}% of income' : 'No income data',
+                  color: debtToIncomeScore >= 50 ? AppColors.income : const Color(0xFFF97316), progress: debtToIncomeScore / 100),
             ]),
           ),
           const SizedBox(height: 12),
+
+          // Spending Velocity Indicator
+          if (spendingVelocityWidget != null) ...[
+            spendingVelocityWidget,
+            const SizedBox(height: 12),
+          ],
 
           // Safe to Spend
           _OverviewCard(
@@ -741,6 +893,8 @@ class _InsightsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final recentTxns = ref.watch(recentTransactionsProvider);
+    final summaryAsync = ref.watch(transactionsSummaryProvider);
+    final budgetsAsync = ref.watch(budgetsProvider);
 
     return recentTxns.when(
       data: (txns) {
@@ -751,6 +905,32 @@ class _InsightsTab extends StatelessWidget {
             ? expenses.fold(0.0, (s, t) => s + t.amount.abs()) / expenses.length : 0.0;
         final largestExpense = expenses.isNotEmpty
             ? expenses.map((t) => t.amount.abs()).reduce((a, b) => a > b ? a : b) : 0.0;
+
+        // --- Average Daily Spend ---
+        final now = DateTime.now();
+        final daysElapsed = now.day;
+        final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+        final daysRemaining = daysInMonth - daysElapsed;
+        final totalExpenses = summaryAsync.valueOrNull?.expenses ?? 0.0;
+        final totalBudget = (budgetsAsync.valueOrNull ?? []).fold(0.0, (double s, b) => s + b.amount);
+        final avgDailySpend = daysElapsed > 0 ? totalExpenses / daysElapsed : 0.0;
+        final dailyBudgetRemaining = daysRemaining > 0 && totalBudget > 0
+            ? (totalBudget - totalExpenses) / daysRemaining
+            : 0.0;
+
+        // --- Top Merchants (by description) ---
+        final merchantTotals = <String, ({double total, int count})>{};
+        for (final t in expenses) {
+          final payee = t.description.isNotEmpty ? t.description : t.category;
+          final existing = merchantTotals[payee];
+          merchantTotals[payee] = (
+            total: (existing?.total ?? 0) + t.amount.abs(),
+            count: (existing?.count ?? 0) + 1,
+          );
+        }
+        final topMerchants = merchantTotals.entries.toList()
+          ..sort((a, b) => b.value.total.compareTo(a.value.total));
+        final top5Merchants = topMerchants.take(5).toList();
 
         return Column(children: [
           // This Month's Activity
@@ -783,6 +963,91 @@ class _InsightsTab extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 12),
+
+          // Average Daily Spend
+          _OverviewCard(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(LucideIcons.calendar, size: 16, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                const Text('Average Daily Spend', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Daily Average', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                  Text(formatCurrency(avgDailySpend), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                ])),
+                if (totalBudget > 0)
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text('Daily Budget Left', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                    Text(formatCurrency(dailyBudgetRemaining < 0 ? 0.0 : dailyBudgetRemaining),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700,
+                            color: dailyBudgetRemaining > 0 ? AppColors.income : const Color(0xFFEF4444))),
+                  ])),
+              ]),
+              if (totalBudget > 0 && daysRemaining > 0) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: (dailyBudgetRemaining > 0 ? AppColors.income : const Color(0xFFEF4444)).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    dailyBudgetRemaining > 0
+                        ? 'You can spend ~${formatCurrency(dailyBudgetRemaining)}/day to stay on track'
+                        : 'You have exceeded your budget for this month',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                        color: dailyBudgetRemaining > 0 ? AppColors.income : const Color(0xFFEF4444)),
+                  ),
+                ),
+              ],
+            ]),
+          ),
+          const SizedBox(height: 12),
+
+          // Top Merchants
+          if (top5Merchants.isNotEmpty) ...[
+            _OverviewCard(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(LucideIcons.shoppingBag, size: 16, color: colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  const Text('Top Merchants', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ]),
+                const SizedBox(height: 12),
+                ...top5Merchants.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final e = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(children: [
+                      Container(
+                        width: 24, height: 24,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(child: Text('${i + 1}',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant))),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text('${e.value.count} transaction${e.value.count == 1 ? '' : 's'}',
+                            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                      ])),
+                      Text(formatCurrency(e.value.total),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    ]),
+                  );
+                }),
+              ]),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Recent Transactions
           _OverviewCard(
@@ -965,8 +1230,9 @@ class _BreakdownRow extends StatelessWidget {
 class _DonutChartPainter extends CustomPainter {
   final List<double> values;
   final List<Color> colors;
+  final String? centerLabel;
 
-  _DonutChartPainter({required this.values, required this.colors});
+  _DonutChartPainter({required this.values, required this.colors, this.centerLabel});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -992,6 +1258,18 @@ class _DonutChartPainter extends CustomPainter {
       );
       startAngle += sweep;
     }
+
+    // Draw center label (total spending)
+    if (centerLabel != null) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: centerLabel,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
+    }
   }
 
   @override
@@ -1003,8 +1281,9 @@ class _DonutChartPainter extends CustomPainter {
 class _GaugePainter extends CustomPainter {
   final double value; // 0-100
   final Color color;
+  final String label;
 
-  _GaugePainter({required this.value, required this.color});
+  _GaugePainter({required this.value, required this.color, this.label = 'Fair'});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1045,7 +1324,7 @@ class _GaugePainter extends CustomPainter {
 
     final labelPainter = TextPainter(
       text: TextSpan(
-        text: 'Fair',
+        text: label,
         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color),
       ),
       textDirection: TextDirection.ltr,
