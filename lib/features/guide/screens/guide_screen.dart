@@ -312,60 +312,60 @@ class _ArchipelagoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-    final opacity = isDark ? 0.04 : 0.035;
+    final opacity = isDark ? 0.15 : 0.08;
 
-    // Luzon (top-left, large)
+    // Luzon (top area, large)
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.18, cy: size.height * 0.08,
-      points: _luzonShape, scale: size.width * 0.35, color: primaryColor, opacity: opacity);
+      cx: size.width * 0.55, cy: size.height * 0.10,
+      points: _luzonShape, scale: size.width * 0.50, color: primaryColor, opacity: opacity);
 
     // Mindoro (mid-left)
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.12, cy: size.height * 0.28,
-      points: _smallIslandShape, scale: size.width * 0.12, color: StageColors.emerald, opacity: opacity);
+      cx: size.width * 0.15, cy: size.height * 0.30,
+      points: _smallIslandShape, scale: size.width * 0.18, color: StageColors.emerald, opacity: opacity * 0.8);
 
     // Visayas cluster (center)
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.55, cy: size.height * 0.38,
-      points: _visayasShape1, scale: size.width * 0.18, color: StageColors.violet, opacity: opacity);
+      cx: size.width * 0.50, cy: size.height * 0.42,
+      points: _visayasShape1, scale: size.width * 0.28, color: StageColors.violet, opacity: opacity * 0.9);
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.75, cy: size.height * 0.42,
-      points: _visayasShape2, scale: size.width * 0.14, color: StageColors.violet, opacity: opacity * 0.7);
+      cx: size.width * 0.78, cy: size.height * 0.46,
+      points: _visayasShape2, scale: size.width * 0.20, color: StageColors.violet, opacity: opacity * 0.7);
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.40, cy: size.height * 0.45,
-      points: _smallIslandShape, scale: size.width * 0.09, color: StageColors.amber, opacity: opacity * 0.6);
+      cx: size.width * 0.30, cy: size.height * 0.50,
+      points: _smallIslandShape, scale: size.width * 0.14, color: StageColors.amber, opacity: opacity * 0.6);
 
-    // Mindanao (bottom-right, large)
+    // Mindanao (bottom area, large)
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.72, cy: size.height * 0.68,
-      points: _mindanaoShape, scale: size.width * 0.32, color: StageColors.rose, opacity: opacity);
+      cx: size.width * 0.60, cy: size.height * 0.72,
+      points: _mindanaoShape, scale: size.width * 0.45, color: StageColors.rose, opacity: opacity * 0.9);
 
     // Palawan (left side, elongated)
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.05, cy: size.height * 0.50,
-      points: _palawanShape, scale: size.width * 0.08, color: StageColors.amber, opacity: opacity);
+      cx: size.width * 0.06, cy: size.height * 0.45,
+      points: _palawanShape, scale: size.width * 0.12, color: StageColors.amber, opacity: opacity * 0.8);
 
     // Scattered small islands
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.88, cy: size.height * 0.18,
-      points: _smallIslandShape, scale: size.width * 0.06, color: primaryColor, opacity: opacity * 0.5);
+      cx: size.width * 0.90, cy: size.height * 0.20,
+      points: _smallIslandShape, scale: size.width * 0.10, color: primaryColor, opacity: opacity * 0.5);
     _drawIsland(canvas, size, paint,
-      cx: size.width * 0.30, cy: size.height * 0.62,
-      points: _smallIslandShape, scale: size.width * 0.07, color: StageColors.yellow, opacity: opacity * 0.5);
+      cx: size.width * 0.20, cy: size.height * 0.65,
+      points: _smallIslandShape, scale: size.width * 0.10, color: StageColors.yellow, opacity: opacity * 0.5);
     _drawIsland(canvas, size, paint,
       cx: size.width * 0.85, cy: size.height * 0.88,
-      points: _smallIslandShape, scale: size.width * 0.05, color: StageColors.yellow, opacity: opacity * 0.4);
+      points: _smallIslandShape, scale: size.width * 0.08, color: StageColors.yellow, opacity: opacity * 0.4);
 
     // Water ripple circles (subtle)
     final ripplePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8
-      ..color = primaryColor.withValues(alpha: isDark ? 0.03 : 0.025);
+      ..strokeWidth = 1.2
+      ..color = primaryColor.withValues(alpha: isDark ? 0.10 : 0.06);
 
     for (final pos in _ripplePositions) {
       canvas.drawCircle(
         Offset(size.width * pos.dx, size.height * pos.dy),
-        size.width * 0.04,
+        size.width * 0.06,
         ripplePaint,
       );
     }
