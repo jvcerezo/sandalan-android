@@ -124,12 +124,7 @@ class _JourneyMap extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: CustomPaint(
-            painter: JourneyBackdropPainter(
-              isDark: isDark,
-              stageColors: StageColors.all,
-            ),
-            child: Padding(
+          child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
               child: Column(
                 children: [
@@ -146,11 +141,10 @@ class _JourneyMap extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
-}
 
 // ─── Journey Node (Circle icon + label) ────────────────────────────────────────
 
