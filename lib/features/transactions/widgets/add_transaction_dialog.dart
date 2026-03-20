@@ -5,7 +5,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
-import '../../../data/models/account.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/transaction_providers.dart';
 
@@ -57,6 +56,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _tagsController = TextEditingController();
+  final _customCategoryController = TextEditingController();
   String? _selectedAccountId;
   String _category = '';
   DateTime _date = DateTime.now();
@@ -68,6 +68,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   TimeOfDay? _repeatTime;
   DateTime? _repeatEndDate;
   bool _saving = false;
+  bool _autoSelected = false;
 
   @override
   void initState() {
@@ -82,11 +83,21 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
   List<String> get _categories => _isIncome ? kIncomeCategories : kExpenseCategories;
 
+  /// The effective category to save — uses custom input when "Other" is selected.
+  String get _effectiveCategory {
+    if (_category == 'Other') {
+      final custom = _customCategoryController.text.trim();
+      return custom.isNotEmpty ? custom : 'Other';
+    }
+    return _category;
+  }
+
   @override
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
     _tagsController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
@@ -105,7 +116,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
       await repo.createTransaction(
         amount: _isIncome ? amount : -amount,
-        category: _category,
+        category: _effectiveCategory,
         description: _noteController.text.trim(),
         date: _date,
         accountId: _selectedAccountId,
@@ -127,6 +138,20 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+
+    // Auto-select first account if none selected yet
+    if (_selectedAccountId == null && accounts.isNotEmpty && !_autoSelected) {
+      _autoSelected = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedAccountId = accounts.first.id;
+            _splitEntries[0].accountId = accounts.first.id;
+          });
+        }
+      });
+    }
+
     final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
 
     return DraggableScrollableSheet(
@@ -207,68 +232,101 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             ]),
             const SizedBox(height: 12),
 
-            // Account selector (hidden in split mode)
+            // ─── Account selector (hidden in split mode) ─────────────
             if (!_showSplit) ...[
-            Text('Account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-            const SizedBox(height: 6),
-            ] else ...[const SizedBox.shrink()],
-            if (!_showSplit)
-            // Account dropdown
-            PopupMenuButton<String>(
-              onSelected: (id) => setState(() => _selectedAccountId = id),
-              itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
-                value: a.id,
-                child: Row(children: [
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Text(a.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                      const SizedBox(width: 6),
-                      Text(a.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                    ]),
-                  ])),
-                  if (a.id == _selectedAccountId)
-                    Icon(Icons.check, size: 16, color: cs.primary),
-                ]),
-              )).toList(),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(selectedAccount?.name ?? 'Select account',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                  const SizedBox(width: 4),
-                  if (selectedAccount != null)
-                    Text(selectedAccount.currency,
-                        style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                  const SizedBox(width: 4),
-                  Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
-                ]),
-              ),
-            ),
-
-            // Selected account balance (hidden in split mode)
-            if (!_showSplit && selectedAccount != null) ...[
+              Text('Account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
               const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.10)),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(selectedAccount.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                    Text(selectedAccount.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              // Account dropdown
+              PopupMenuButton<String>(
+                onSelected: (id) => setState(() => _selectedAccountId = id),
+                itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
+                  value: a.id,
+                  child: Row(children: [
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Text(a.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(a.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
+                        ),
+                      ]),
+                      const SizedBox(height: 2),
+                      Text(a.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                    ])),
+                    Text(formatCurrency(a.balance, currencyCode: a.currency),
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
+                    if (a.id == _selectedAccountId) ...[
+                      const SizedBox(width: 8),
+                      Icon(Icons.check, size: 16, color: cs.primary),
+                    ],
                   ]),
-                  Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.income)),
-                ]),
+                )).toList(),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(selectedAccount?.name ?? 'Select account',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    const SizedBox(width: 4),
+                    if (selectedAccount != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(selectedAccount.currency,
+                            style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
+                      ),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
+                  ]),
+                ),
               ),
+
+              // Selected account balance card
+              if (selectedAccount != null) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                    borderRadius: BorderRadius.circular(10),
+                    color: cs.surfaceContainerLowest,
+                  ),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Text(selectedAccount.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: cs.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(selectedAccount.currency,
+                              style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
+                        ),
+                      ]),
+                      const SizedBox(height: 2),
+                      Text(selectedAccount.type, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                    ]),
+                    Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.income)),
+                  ]),
+                ),
+              ],
+              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 16),
 
             // ─── Split mode ─────────────────────────────────────
             if (_showSplit) ...[
@@ -280,7 +338,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 for (final e in _splitEntries) {
                   total += double.tryParse(e.amountCtl.text.replaceAll(',', '')) ?? 0;
                 }
-                return Text('₱ ${_formatWithCommas(total)}',
+                return Text('\u20B1 ${_formatWithCommas(total)}',
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant));
               }),
               const SizedBox(height: 12),
@@ -289,85 +347,124 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               ...List.generate(_splitEntries.length, (i) {
                 final entry = _splitEntries[i];
                 final acct = accounts.where((a) => a.id == entry.accountId).firstOrNull;
-                final isFirst = i == 0;
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
+                    color: cs.surfaceContainerLowest,
                   ),
-                  child: Column(children: [
-                    // Account dropdown (first slot pre-filled but still changeable)
-                    PopupMenuButton<String>(
-                        onSelected: (id) => setState(() => entry.accountId = id),
-                        itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
-                          value: a.id,
-                          child: Text('${a.name}  ${a.currency}', style: const TextStyle(fontSize: 13)),
-                        )).toList(),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                            borderRadius: BorderRadius.circular(8)),
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Text(acct?.name ?? 'Choose an account',
-                                style: TextStyle(fontSize: 12, color: acct != null ? cs.onSurface : cs.onSurfaceVariant)),
-                            if (acct != null) ...[
-                              const SizedBox(width: 4),
-                              Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                            ],
-                            const SizedBox(width: 4),
-                            Icon(LucideIcons.chevronDown, size: 12, color: cs.onSurfaceVariant),
-                          ]),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    // Account dropdown
+                    Row(children: [
+                      Expanded(
+                        child: PopupMenuButton<String>(
+                          onSelected: (id) => setState(() => entry.accountId = id),
+                          itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
+                            value: a.id,
+                            child: Row(children: [
+                              Expanded(child: Text(a.name, style: const TextStyle(fontSize: 13))),
+                              const SizedBox(width: 8),
+                              Text(formatCurrency(a.balance, currencyCode: a.currency),
+                                  style: TextStyle(fontSize: 11, color: AppColors.income, fontWeight: FontWeight.w600)),
+                            ]),
+                          )).toList(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                              borderRadius: BorderRadius.circular(8)),
+                            child: Row(children: [
+                              Expanded(child: Text(acct?.name ?? 'Choose an account',
+                                  style: TextStyle(fontSize: 12, color: acct != null ? cs.onSurface : cs.onSurfaceVariant))),
+                              if (acct != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: cs.primary.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              Icon(LucideIcons.chevronDown, size: 12, color: cs.onSurfaceVariant),
+                            ]),
+                          ),
                         ),
                       ),
-                    const SizedBox(height: 6),
-                    // Amount for this split
-                    Row(children: [
-                      Text('₱', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
-                      const SizedBox(width: 8),
-                      Expanded(child: TextField(
-                        controller: entry.amountCtl,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                          _ThousandsSeparatorFormatter(),
-                        ],
-                        onChanged: (_) => setState(() {}),
-                        decoration: InputDecoration(
-                          hintText: '0.00', isDense: true,
-                          border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+                      if (_splitEntries.length > 2) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => setState(() => _splitEntries.removeAt(i)),
+                          child: Icon(LucideIcons.x, size: 16, color: cs.onSurfaceVariant),
                         ),
-                        style: const TextStyle(fontSize: 14),
-                      )),
+                      ],
                     ]),
-                    if (acct != null)
+                    if (acct != null) ...[
+                      const SizedBox(height: 4),
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(acct.name, style: const TextStyle(fontSize: 12)),
+                        Text(acct.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                         Text(formatCurrency(acct.balance, currencyCode: acct.currency),
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
                       ]),
+                    ],
+                    const SizedBox(height: 8),
+                    // Amount for this split
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: cs.outline.withValues(alpha: 0.10)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: [
+                        Text('\u20B1', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
+                        const SizedBox(width: 8),
+                        Expanded(child: TextField(
+                          controller: entry.amountCtl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                            _ThousandsSeparatorFormatter(),
+                          ],
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                            hintText: '0.00', isDense: true,
+                            border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
+                          ),
+                          style: const TextStyle(fontSize: 14),
+                        )),
+                      ]),
+                    ),
                   ]),
                 );
               }),
+              // Add account button — styled as outlined chip
               GestureDetector(
                 onTap: () => setState(() => _splitEntries.add(_SplitEntry())),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(LucideIcons.plus, size: 12, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Text('Add account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                ]),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(LucideIcons.plus, size: 12, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text('Add account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ]),
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
             ],
 
             // ─── Normal amount input ──────────────────────────────
             if (!_showSplit) ...[
             // Amount input
             Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              Text('₱', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
+              Text('\u20B1', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant)),
               const SizedBox(width: 4),
               Expanded(
                 child: TextField(
@@ -389,7 +486,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               ),
             ]),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
             // Category
             Text('Category', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
@@ -415,6 +512,33 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 ),
               );
             }).toList()),
+
+            // "Other" custom category input
+            if (_category == 'Other') ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _customCategoryController,
+                decoration: InputDecoration(
+                  hintText: 'Type a custom category name...',
+                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: cs.primary),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
             const SizedBox(height: 14),
 
             // Note + Date row
@@ -453,6 +577,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               ),
             ]),
             Divider(color: cs.outline.withValues(alpha: 0.10)),
+            const SizedBox(height: 8),
 
             // Tags
             TextField(
