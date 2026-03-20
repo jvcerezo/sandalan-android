@@ -1,252 +1,689 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/theme/color_tokens.dart';
+import '../../../core/constants/currencies.dart';
 import '../../../app.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class SettingsScreen extends ConsumerWidget {
+// ─── Main Settings Menu ────────────────────────────────────────────────────────
+
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String? _activeSection;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final profile = ref.watch(profileProvider);
-    final fullName = profile.valueOrNull?.fullName ?? 'User';
-    final email = profile.valueOrNull?.email ?? '';
-    final avatarUrl = profile.valueOrNull?.avatarUrl;
+  Widget build(BuildContext context) {
+    if (_activeSection != null) {
+      return _buildSection(context);
+    }
+    return _buildMenu(context);
+  }
 
+  Widget _buildMenu(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       children: [
-        const Text('Settings',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 24),
-
-        // Profile section
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: colorScheme.surfaceContainerHighest,
-                backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                    ? NetworkImage(avatarUrl) : null,
-                child: avatarUrl == null || avatarUrl.isEmpty
-                    ? Icon(LucideIcons.user, color: colorScheme.onSurfaceVariant) : null,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(fullName,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  Text(email,
-                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                ]),
-              ),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Appearance
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('APPEARANCE',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2, color: colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 12),
-              Row(children: [
-                _ThemeButton(label: 'Light', icon: LucideIcons.sun,
-                    isSelected: themeMode == ThemeMode.light,
-                    onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.light),
-                const SizedBox(width: 8),
-                _ThemeButton(label: 'Dark', icon: LucideIcons.moon,
-                    isSelected: themeMode == ThemeMode.dark,
-                    onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.dark),
-                const SizedBox(width: 8),
-                _ThemeButton(label: 'System', icon: LucideIcons.monitor,
-                    isSelected: themeMode == ThemeMode.system,
-                    onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.system),
-              ]),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Currency
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('CURRENCY',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2, color: colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              _SettingsRow(icon: LucideIcons.coins, title: 'Primary Currency',
-                  trailing: Text(profile.valueOrNull?.primaryCurrency ?? 'PHP',
-                      style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant))),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Privacy
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('PRIVACY & DATA',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2, color: colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              _SettingsRow(icon: LucideIcons.download, title: 'Export Data',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Export coming soon')),
-                    );
-                  }),
-              const Divider(height: 16),
-              _SettingsRow(icon: LucideIcons.fileText, title: 'Privacy Policy', onTap: () {}),
-              const Divider(height: 16),
-              _SettingsRow(icon: LucideIcons.fileText, title: 'Terms of Service', onTap: () {}),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Danger zone
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('ACCOUNT',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2, color: colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              _SettingsRow(
-                icon: LucideIcons.logOut,
-                title: 'Sign Out',
-                onTap: () async {
-                  await ref.read(authRepositoryProvider).signOut();
-                  if (context.mounted) context.go('/login');
-                },
-              ),
-              const Divider(height: 16),
-              _SettingsRow(
-                icon: LucideIcons.trash2,
-                title: 'Delete Account',
-                color: colorScheme.error,
-                onTap: () => _showDeleteConfirmation(context, ref),
-              ),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 32),
-
-        // Version
-        Center(
-          child: Text('Sandalan v1.0.0',
-              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-        ),
-        const SizedBox(height: 16),
+        const Text('Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
+        const SizedBox(height: 2),
+        Text('Manage your account and preferences',
+            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 20),
+        _MenuItem(icon: LucideIcons.user, title: 'Profile', sub: 'Name, avatar, email',
+            onTap: () => setState(() => _activeSection = 'profile')),
+        _MenuItem(icon: LucideIcons.settings2, title: 'Appearance', sub: 'Theme preferences',
+            onTap: () => setState(() => _activeSection = 'appearance')),
+        _MenuItem(icon: LucideIcons.zap, title: 'Automation', sub: 'Reminders & auto-generation',
+            onTap: () => setState(() => _activeSection = 'automation')),
+        _MenuItem(icon: LucideIcons.bell, title: 'Notifications', sub: 'Push notification settings',
+            onTap: () => setState(() => _activeSection = 'notifications')),
+        _MenuItem(icon: LucideIcons.layoutGrid, title: 'Home Page', sub: 'Customize your Home',
+            onTap: () => setState(() => _activeSection = 'homepage')),
+        _MenuItem(icon: LucideIcons.refreshCw, title: 'Currency', sub: 'Rates & primary currency',
+            onTap: () => setState(() => _activeSection = 'currency')),
+        _MenuItem(icon: LucideIcons.shield, title: 'Privacy & Data', sub: 'Export, delete, legal',
+            onTap: () => setState(() => _activeSection = 'privacy')),
+        _MenuItem(icon: LucideIcons.bug, title: 'Report Bug', sub: 'Report issues',
+            onTap: () => setState(() => _activeSection = 'bug')),
+        _MenuItem(icon: LucideIcons.logOut, title: 'Account', sub: 'Sign out, tour, sync',
+            onTap: () => setState(() => _activeSection = 'account')),
       ],
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text(
-          'This will permanently delete your account and all your data. This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await ref.read(authRepositoryProvider).deleteAccount();
-              if (context.mounted) context.go('/login');
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
+  Widget _buildSection(BuildContext context) {
+    final back = GestureDetector(
+      onTap: () => setState(() => _activeSection = null),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 12),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(LucideIcons.arrowLeft, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text('Settings', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ]),
       ),
     );
+
+    Widget content;
+    switch (_activeSection) {
+      case 'profile': content = _ProfileSection(ref: ref, back: back);
+      case 'appearance': content = _AppearanceSection(ref: ref, back: back);
+      case 'automation': content = _AutomationSection(back: back);
+      case 'notifications': content = _NotificationsSection(back: back);
+      case 'homepage': content = _HomePageSection(back: back);
+      case 'currency': content = _CurrencySection(ref: ref, back: back);
+      case 'privacy': content = _PrivacySection(ref: ref, back: back);
+      case 'bug': content = _BugReportSection(ref: ref, back: back);
+      case 'account': content = _AccountSection(ref: ref, back: back);
+      default: content = const SizedBox.shrink();
+    }
+    return content;
   }
 }
 
-class _ThemeButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-  const _ThemeButton({required this.label, required this.icon, required this.isSelected, required this.onTap});
-
+class _MenuItem extends StatelessWidget {
+  final IconData icon; final String title, sub; final VoidCallback onTap;
+  const _MenuItem({required this.icon, required this.title, required this.sub, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
-            border: Border.all(
-              color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(children: [
-            Icon(icon, size: 18,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant)),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Widget? trailing;
-  final Color? color;
-  final VoidCallback? onTap;
-  const _SettingsRow({required this.icon, required this.title, this.trailing, this.color, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = color ?? Theme.of(context).colorScheme.onSurface;
+    final cs = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
         child: Row(children: [
-          Icon(icon, size: 18, color: c),
-          const SizedBox(width: 12),
-          Expanded(child: Text(title, style: TextStyle(fontSize: 14, color: c))),
-          if (trailing != null) trailing!
-          else Icon(LucideIcons.chevronRight, size: 16,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+          Icon(icon, size: 20, color: cs.onSurfaceVariant),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Text(sub, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          ])),
         ]),
       ),
     );
   }
+}
+
+class _C extends StatelessWidget {
+  final Widget child; const _C({required this.child});
+  @override
+  Widget build(BuildContext c) => Container(width: double.infinity, padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: Theme.of(c).colorScheme.surface,
+      border: Border.all(color: Theme.of(c).colorScheme.outline.withValues(alpha: 0.12)),
+      borderRadius: BorderRadius.circular(14)), child: child);
+}
+
+class _ToggleRow extends StatelessWidget {
+  final String title, sub; final bool value; final ValueChanged<bool> onChanged;
+  const _ToggleRow({required this.title, required this.sub, required this.value, required this.onChanged});
+  @override
+  Widget build(BuildContext c) {
+    final cs = Theme.of(c).colorScheme;
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 2),
+          Text(sub, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ])),
+        Switch(value: value, onChanged: onChanged),
+      ]));
+  }
+}
+
+// ─── Profile ───────────────────────────────────────────────────────────────────
+
+class _ProfileSection extends StatelessWidget {
+  final WidgetRef ref; final Widget back;
+  const _ProfileSection({required this.ref, required this.back});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final profile = ref.watch(profileProvider).valueOrNull;
+    final nameCtl = TextEditingController(text: profile?.fullName ?? '');
+
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Your personal information and account details',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 16),
+        // Avatar
+        Row(children: [
+          CircleAvatar(radius: 32, backgroundColor: cs.surfaceContainerHighest,
+            backgroundImage: profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty
+                ? NetworkImage(profile.avatarUrl!) : null,
+            child: profile?.avatarUrl == null || profile!.avatarUrl!.isEmpty
+                ? Icon(LucideIcons.user, size: 28, color: cs.onSurfaceVariant) : null),
+          const SizedBox(width: 14),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(profile?.fullName ?? 'User', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(profile?.email ?? '', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 6),
+            Row(children: [
+              OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 11)), child: const Text('Change Photo')),
+              const SizedBox(width: 8),
+              GestureDetector(onTap: () {},
+                child: Row(children: [
+                  Icon(LucideIcons.x, size: 12, color: AppColors.expense),
+                  const SizedBox(width: 2),
+                  const Text('Remove', style: TextStyle(fontSize: 11, color: AppColors.expense, fontWeight: FontWeight.w500)),
+                ])),
+            ]),
+            Text('JPG, PNG or WebP · Max 2 MB', style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+          ]),
+        ]),
+        const SizedBox(height: 16), const Divider(),
+        const SizedBox(height: 12),
+        // Email
+        const Text('Email', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        TextField(readOnly: true, decoration: InputDecoration(isDense: true, hintText: profile?.email ?? '')),
+        Text('Your email address cannot be changed', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        // Full Name
+        const Text('Full Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        TextField(controller: nameCtl, decoration: const InputDecoration(isDense: true)),
+        const SizedBox(height: 12),
+        FilledButton(onPressed: () async {
+          await ref.read(profileRepositoryProvider).updateProfile(fullName: nameCtl.text);
+          ref.invalidate(profileProvider);
+        }, style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12),
+            minimumSize: const Size(double.infinity, 0)), child: const Text('Save')),
+        const SizedBox(height: 8),
+        Text('Member since ${profile?.createdAt.substring(0, 10) ?? ''}',
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+      ])),
+    ]);
+  }
+}
+
+// ─── Appearance ────────────────────────────────────────────────────────────────
+
+class _AppearanceSection extends StatelessWidget {
+  final WidgetRef ref; final Widget back;
+  const _AppearanceSection({required this.ref, required this.back});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final themeMode = ref.watch(themeModeProvider);
+
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Appearance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Customize how Sandalan looks on your device',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        const Text('Theme', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 8),
+        Row(children: [
+          _ThemeBtn(icon: LucideIcons.sun, label: 'Light', selected: themeMode == ThemeMode.light,
+              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.light),
+          const SizedBox(width: 8),
+          _ThemeBtn(icon: LucideIcons.moon, label: 'Dark', selected: themeMode == ThemeMode.dark,
+              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.dark),
+          const SizedBox(width: 8),
+          _ThemeBtn(icon: LucideIcons.monitor, label: 'System', selected: themeMode == ThemeMode.system,
+              onTap: () => ref.read(themeModeProvider.notifier).state = ThemeMode.system),
+        ]),
+      ])),
+      const SizedBox(height: 12),
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Language / Wika', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Choose your preferred language', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: FilledButton(onPressed: () {}, child: const Text('English'))),
+          const SizedBox(width: 8),
+          Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Filipino'))),
+        ]),
+      ])),
+    ]);
+  }
+}
+
+class _ThemeBtn extends StatelessWidget {
+  final IconData icon; final String label; final bool selected; final VoidCallback onTap;
+  const _ThemeBtn({required this.icon, required this.label, required this.selected, required this.onTap});
+  @override
+  Widget build(BuildContext c) {
+    final cs = Theme.of(c).colorScheme;
+    return Expanded(child: GestureDetector(onTap: onTap, child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: selected ? cs.primary : Colors.transparent,
+        border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(10)),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, size: 14, color: selected ? cs.onPrimary : cs.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+            color: selected ? cs.onPrimary : cs.onSurfaceVariant)),
+      ]))));
+  }
+}
+
+// ─── Automation ────────────────────────────────────────────────────────────────
+
+class _AutomationSection extends StatefulWidget {
+  final Widget back; const _AutomationSection({required this.back});
+  @override
+  State<_AutomationSection> createState() => _AutomationSectionState();
+}
+
+class _AutomationSectionState extends State<_AutomationSection> {
+  bool _autoContrib = true, _billReminders = true, _debtReminders = true, _insuranceReminders = true;
+  @override
+  Widget build(BuildContext context) {
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      widget.back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.zap, size: 18, color: Theme.of(context).colorScheme.onSurface),
+          const SizedBox(width: 8),
+          const Text('Automation & Reminders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Control which features run automatically and send you reminders',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        _ToggleRow(title: 'Auto-generate monthly contributions',
+            sub: 'Create SSS, PhilHealth, and Pag-IBIG entries each month from your last salary',
+            value: _autoContrib, onChanged: (v) => setState(() => _autoContrib = v)),
+        _ToggleRow(title: 'Bill reminders',
+            sub: 'Show upcoming bills on your Home page and send push notifications before due dates',
+            value: _billReminders, onChanged: (v) => setState(() => _billReminders = v)),
+        _ToggleRow(title: 'Debt payment reminders',
+            sub: 'Show upcoming debt payments on your Home page and send push notifications',
+            value: _debtReminders, onChanged: (v) => setState(() => _debtReminders = v)),
+        _ToggleRow(title: 'Insurance premium reminders',
+            sub: 'Show upcoming insurance premiums and send push notifications before renewal dates',
+            value: _insuranceReminders, onChanged: (v) => setState(() => _insuranceReminders = v)),
+      ])),
+    ]);
+  }
+}
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+
+class _NotificationsSection extends StatefulWidget {
+  final Widget back; const _NotificationsSection({required this.back});
+  @override
+  State<_NotificationsSection> createState() => _NotificationsSectionState();
+}
+
+class _NotificationsSectionState extends State<_NotificationsSection> {
+  bool _push = true, _morning = true;
+  @override
+  Widget build(BuildContext context) {
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      widget.back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.bell, size: 18, color: Theme.of(context).colorScheme.onSurface),
+          const SizedBox(width: 8),
+          const Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Push notification preferences (mobile app only)',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        _ToggleRow(title: 'Push notifications',
+            sub: 'Receive notifications on your phone for upcoming payments and reminders',
+            value: _push, onChanged: (v) => setState(() => _push = v)),
+        _ToggleRow(title: 'Morning summary',
+            sub: 'Get a daily summary of what\'s due today at 9:00 AM',
+            value: _morning, onChanged: (v) => setState(() => _morning = v)),
+      ])),
+    ]);
+  }
+}
+
+// ─── Home Page ─────────────────────────────────────────────────────────────────
+
+class _HomePageSection extends StatefulWidget {
+  final Widget back; const _HomePageSection({required this.back});
+  @override
+  State<_HomePageSection> createState() => _HomePageSectionState();
+}
+
+class _HomePageSectionState extends State<_HomePageSection> {
+  bool _upcoming = true, _nextSteps = true, _financial = true, _stage = true;
+  @override
+  Widget build(BuildContext context) {
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      widget.back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.layoutGrid, size: 18, color: Theme.of(context).colorScheme.onSurface),
+          const SizedBox(width: 8),
+          const Text('Home Page', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Choose which sections appear on your Home page',
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        _ToggleRow(title: 'Upcoming Payments', sub: 'Show bills, contributions, debts, and insurance due soon',
+            value: _upcoming, onChanged: (v) => setState(() => _upcoming = v)),
+        _ToggleRow(title: 'Next Steps', sub: 'Show suggested next actions from your adulting journey',
+            value: _nextSteps, onChanged: (v) => setState(() => _nextSteps = v)),
+        _ToggleRow(title: 'Financial Summary', sub: 'Show balance, income, and expenses at a glance',
+            value: _financial, onChanged: (v) => setState(() => _financial = v)),
+        _ToggleRow(title: 'Current Life Stage', sub: 'Show your current adulting journey stage and progress',
+            value: _stage, onChanged: (v) => setState(() => _stage = v)),
+      ])),
+    ]);
+  }
+}
+
+// ─── Currency ──────────────────────────────────────────────────────────────────
+
+class _CurrencySection extends StatelessWidget {
+  final WidgetRef ref; final Widget back;
+  const _CurrencySection({required this.ref, required this.back});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Currency', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Set your primary currency and manage exchange rates',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        const Text('Primary Currency', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(value: 'PHP', isDense: true,
+          items: kCurrencies.map((c) => DropdownMenuItem(value: c.code,
+              child: Text('${c.symbol} ${c.name} (${c.code})'))).toList(),
+          onChanged: (v) {}),
+        const SizedBox(height: 12),
+        FilledButton(onPressed: () {}, style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(double.infinity, 0)),
+            child: const Text('Save')),
+        const SizedBox(height: 4),
+        Text('All amounts on the dashboard will be converted to this currency',
+            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 16),
+        Row(children: [
+          const Expanded(child: Text('Exchange Rates (to PHP)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+          GestureDetector(onTap: () {},
+            child: Row(children: [
+              Icon(LucideIcons.refreshCw, size: 12, color: cs.onSurfaceVariant),
+              const SizedBox(width: 4),
+              Text('Refresh', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            ])),
+        ]),
+        const SizedBox(height: 4),
+        Text('Set custom rates or leave blank to use live market rates',
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 10),
+        _RateRow(code: 'USD', rate: '60.1034'),
+        _RateRow(code: 'AUD', rate: '42.3513'),
+        const SizedBox(height: 6),
+        Text('Market rates updated 18h ago', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+      ])),
+    ]);
+  }
+}
+
+class _RateRow extends StatelessWidget {
+  final String code, rate;
+  const _RateRow({required this.code, required this.rate});
+  @override
+  Widget build(BuildContext c) => Padding(padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(children: [
+      SizedBox(width: 40, child: Text(code, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+      const Text('  =  ', style: TextStyle(fontSize: 13)),
+      SizedBox(width: 100, child: TextField(
+        decoration: InputDecoration(isDense: true, hintText: rate),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true))),
+      const SizedBox(width: 8),
+      const Text('PHP', style: TextStyle(fontSize: 13)),
+    ]));
+}
+
+// ─── Privacy ───────────────────────────────────────────────────────────────────
+
+class _PrivacySection extends StatefulWidget {
+  final WidgetRef ref; final Widget back;
+  const _PrivacySection({required this.ref, required this.back});
+  @override
+  State<_PrivacySection> createState() => _PrivacySectionState();
+}
+
+class _PrivacySectionState extends State<_PrivacySection> {
+  final _deleteCtl = TextEditingController();
+  @override
+  void dispose() { _deleteCtl.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      widget.back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Privacy', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Your data rights and export options under the Data Privacy Act of 2012',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        const Text('Export Your Data', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text('Download a full copy of all your data in JSON format — transactions, accounts, budgets, goals, debts, and contributions.',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.download, size: 14),
+            label: const Text('Download My Data')),
+        const SizedBox(height: 16),
+        const Text('Legal Documents', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        _LegalLink(icon: LucideIcons.externalLink, label: 'Privacy Policy'),
+        _LegalLink(icon: LucideIcons.externalLink, label: 'Terms of Service'),
+        const SizedBox(height: 8),
+        Text('For privacy-related concerns, email privacy@sandalan.com. We will respond within 15 business days.',
+            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+      ])),
+      const SizedBox(height: 16),
+      // Danger Zone
+      Container(width: double.infinity, padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.expense.withValues(alpha: 0.03),
+          border: Border.all(color: AppColors.expense.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(14)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(LucideIcons.alertTriangle, size: 16, color: AppColors.expense),
+            const SizedBox(width: 6),
+            const Text('Danger Zone', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.expense)),
+          ]),
+          Text('Permanent and irreversible actions', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 12),
+          Container(padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: AppColors.expense.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(10)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Delete Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.expense)),
+              const SizedBox(height: 4),
+              Text('Permanently deletes your account and all associated data — transactions, accounts, goals, budgets, debts, and contributions. This cannot be undone.',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              const Text('Type DELETE to confirm', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 4),
+              TextField(controller: _deleteCtl, decoration: const InputDecoration(isDense: true, hintText: 'DELETE'),
+                  onChanged: (_) => setState(() {})),
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: _deleteCtl.text == 'DELETE' ? () async {
+                  await widget.ref.read(authRepositoryProvider).deleteAccount();
+                  if (context.mounted) context.go('/login');
+                } : null,
+                style: FilledButton.styleFrom(backgroundColor: AppColors.expense,
+                    padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(double.infinity, 0)),
+                child: const Text('Delete My Account Permanently')),
+            ])),
+        ])),
+    ]);
+  }
+}
+
+class _LegalLink extends StatelessWidget {
+  final IconData icon; final String label;
+  const _LegalLink({required this.icon, required this.label});
+  @override
+  Widget build(BuildContext c) => Padding(padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(children: [
+      Icon(icon, size: 12, color: Theme.of(c).colorScheme.primary),
+      const SizedBox(width: 6),
+      Text(label, style: TextStyle(fontSize: 13, color: Theme.of(c).colorScheme.primary)),
+    ]));
+}
+
+// ─── Bug Report ────────────────────────────────────────────────────────────────
+
+class _BugReportSection extends StatelessWidget {
+  final WidgetRef ref; final Widget back;
+  const _BugReportSection({required this.ref, required this.back});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      back,
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.bug, size: 18, color: cs.onSurface),
+          const SizedBox(width: 8),
+          const Text('Report a Bug', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Found something broken? Send details and it will appear in the admin dashboard.',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        const Text('Title', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        const TextField(decoration: InputDecoration(isDense: true, hintText: 'Short summary of the issue')),
+        const SizedBox(height: 10),
+        const Text('Severity', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<String>(value: 'medium', isDense: true,
+          items: ['low', 'medium', 'high', 'critical'].map((s) =>
+              DropdownMenuItem(value: s, child: Text(s[0].toUpperCase() + s.substring(1)))).toList(),
+          onChanged: (v) {}),
+        const SizedBox(height: 10),
+        const Text('Description', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        const TextField(maxLines: 4, decoration: InputDecoration(hintText: 'What happened? Include steps to reproduce.')),
+        const SizedBox(height: 12),
+        FilledButton.icon(onPressed: () {},
+          icon: const Icon(LucideIcons.send, size: 14), label: const Text('Submit Bug Report'),
+          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12),
+              minimumSize: const Size(double.infinity, 0))),
+      ])),
+    ]);
+  }
+}
+
+// ─── Account ───────────────────────────────────────────────────────────────────
+
+class _AccountSection extends StatelessWidget {
+  final WidgetRef ref; final Widget back;
+  const _AccountSection({required this.ref, required this.back});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
+      back,
+      // Offline Outbox
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.wifi, size: 16, color: cs.onSurface),
+          const SizedBox(width: 8),
+          const Text('Offline Outbox', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Review queued offline mutations, retry failed items, or clear stale entries.',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 10),
+        Wrap(spacing: 8, children: [
+          _StatusChip('Pending: 0'), _StatusChip('Syncing: 0'),
+          _StatusChip('Failed: 0'), _StatusChip('Conflict: 0'),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          FilledButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.refreshCw, size: 14),
+              label: const Text('Sync now'), style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.trash2, size: 14),
+              label: const Text('Clear queue'), style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
+        ]),
+        const SizedBox(height: 6),
+        Text('No queued offline changes.', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      ])),
+      const SizedBox(height: 12),
+
+      // Conflict Center
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.alertTriangle, size: 16, color: AppColors.warning),
+          const SizedBox(width: 8),
+          const Text('Conflict Center', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Review sync conflicts and retry or dismiss items after investigation.',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 10),
+        Row(children: [
+          _StatusChip('Total conflicts: 0'),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.trash2, size: 12),
+              label: const Text('Clear conflicts'), style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 11))),
+        ]),
+        const SizedBox(height: 6),
+        Text('No conflicts detected.', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      ])),
+      const SizedBox(height: 12),
+
+      // Account actions
+      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        Text('Manage your account settings', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.compass, size: 16),
+            label: const Text('Take a Tour'), style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(double.infinity, 0))),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () async {
+            await ref.read(authRepositoryProvider).signOut();
+            if (context.mounted) context.go('/login');
+          },
+          icon: const Icon(LucideIcons.logOut, size: 16, color: AppColors.expense),
+          label: const Text('Sign Out', style: TextStyle(color: AppColors.expense)),
+          style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.expense),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              minimumSize: const Size(double.infinity, 0))),
+      ])),
+    ]);
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label; const _StatusChip(this.label);
+  @override
+  Widget build(BuildContext c) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      border: Border.all(color: Theme.of(c).colorScheme.outline.withValues(alpha: 0.15)),
+      borderRadius: BorderRadius.circular(6)),
+    child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)));
 }
