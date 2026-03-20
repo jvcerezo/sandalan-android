@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../core/services/guest_mode_service.dart';
 import '../../app.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'brand_mark.dart';
@@ -234,6 +235,10 @@ class NavDrawer extends ConsumerWidget {
                         label: 'Sign Out',
                         onTap: () async {
                           Navigator.of(context).pop();
+                          // Clear guest mode if active
+                          if (GuestModeService.isGuestSync()) {
+                            await GuestModeService.disableGuestMode();
+                          }
                           await ref.read(authRepositoryProvider).signOut();
                           if (context.mounted) context.go('/login');
                         },

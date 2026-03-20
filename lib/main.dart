@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
+import 'core/config/env.dart';
 import 'core/services/guest_mode_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/automation_service.dart';
@@ -12,8 +14,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'https://oinnvvvqqpdffhkhdyyo.supabase.co',
-    anonKey: 'sb_publishable_E9gxDCJBOYe00zKtHwmTxw_CbKjwjDT',
+    url: Env.supabaseUrl,
+    anonKey: Env.supabaseAnonKey,
   );
 
   // Initialize local SQLite database.
@@ -31,10 +33,10 @@ Future<void> main() async {
   if (!isGuest) {
     await AutomationService.runOnAppStart();
 
-    // Start background sync: pull from Supabase, push pending local changes.
+    // Start background sync: pull on app start only, daily sync + on background.
     final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
     syncService.fullSync(); // Initial sync on app start (fire-and-forget).
-    syncService.startPeriodicSync(); // Sync every 5 min + on connectivity change.
+    syncService.startDailySync(); // Once-daily sync + on app background.
   }
 
   runApp(

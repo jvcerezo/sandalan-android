@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/input_sanitizer.dart';
+import '../../accounts/providers/account_providers.dart';
 import '../providers/goal_providers.dart';
 
 // Formats numbers with thousand separators: 10000 → 10,000
@@ -46,6 +47,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   final _savedCtl = TextEditingController();
   final _customCategoryCtl = TextEditingController();
   DateTime? _deadline;
+  String? _accountId;
   bool _saving = false;
   String? _customCategoryError;
 
@@ -113,7 +115,8 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
           : _effectiveCategory;
       await ref.read(goalRepositoryProvider).createGoal(
           name: name, targetAmount: target, currentAmount: saved,
-          category: category.isEmpty ? 'Other' : category, deadline: _deadline);
+          category: category.isEmpty ? 'Other' : category, deadline: _deadline,
+          accountId: _accountId);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) { setState(() => _saving = false); }
   }
@@ -305,6 +308,39 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               ),
             ])),
           ]),
+          const SizedBox(height: 16),
+
+          // Linked Account
+          const Text('Linked Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 6),
+          Builder(builder: (context) {
+            final cs = Theme.of(context).colorScheme;
+            final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
+            final selected = accounts.where((a) => a.id == _accountId).firstOrNull;
+            return PopupMenuButton<String>(
+              onSelected: (id) => setState(() => _accountId = id),
+              itemBuilder: (_) => accounts.map<PopupMenuEntry<String>>((a) => PopupMenuItem<String>(
+                value: a.id,
+                child: Text(a.name, style: const TextStyle(fontSize: 13)),
+              )).toList(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLowest,
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(children: [
+                  Expanded(child: Text(
+                    selected?.name ?? 'Select account (for fund transfers)',
+                    style: TextStyle(fontSize: 12, color: selected != null ? cs.onSurface : cs.onSurfaceVariant),
+                  )),
+                  Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
+                ]),
+              ),
+            );
+          }),
+
           const SizedBox(height: 24),
 
           FilledButton(

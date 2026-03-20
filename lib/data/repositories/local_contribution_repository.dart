@@ -72,6 +72,63 @@ class LocalContributionRepository {
     return _rowToContribution(row);
   }
 
+  /// Mark as paid and deduct employee share from the selected account.
+  /// Creates a Transfer-type transaction (NOT expense).
+  Future<void> markPaidWithAccount(String id, String accountId) async {
+    final existing = await _db.getRowById('local_contributions', id);
+    if (existing == null) return;
+
+    final employeeShare = (existing['employee_share'] as num).toDouble();
+    final type = existing['type'] as String;
+    final period = existing['period'] as String;
+
+    // Parse period for human-readable label
+    final parts = period.split('-');
+    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+    final monthIdx = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+    final displayPeriod = monthIdx > 0 && monthIdx <= 12
+        ? '${monthNames[monthIdx]} ${parts[0]}'
+        : period;
+
+    final typeLabel = type == 'sss' ? 'SSS' : type == 'philhealth' ? 'PhilHealth' : 'Pag-IBIG';
+
+    // Mark as paid
+    final updated = Map<String, dynamic>.from(existing);
+    updated['is_paid'] = 1;
+    updated['sync_status'] = 'pending';
+    updated['updated_at'] = AppDatabase.now();
+    await _db.upsertContribution(updated);
+
+    // Deduct from account
+    final account = await _db.getRowById('local_accounts', accountId);
+    if (account != null) {
+      final updatedAccount = Map<String, dynamic>.from(account);
+      updatedAccount['balance'] = (account['balance'] as num).toDouble() - employeeShare;
+      updatedAccount['sync_status'] = 'pending';
+      updatedAccount['updated_at'] = AppDatabase.now();
+      await _db.upsertAccount(updatedAccount);
+    }
+
+    // Create a Transfer-type transaction (NOT expense)
+    final now = AppDatabase.now();
+    await _db.upsertTransaction({
+      'id': 'local-contrib-pay-${DateTime.now().millisecondsSinceEpoch}',
+      'user_id': _userId,
+      'amount': -employeeShare,
+      'category': 'Transfer',
+      'description': '$typeLabel Contribution - $displayPeriod',
+      'date': DateTime.now().toIso8601String().substring(0, 10),
+      'currency': 'PHP',
+      'account_id': accountId,
+      'status': 'confirmed',
+      'sync_status': 'pending',
+      'created_at': now,
+      'updated_at': now,
+    });
+  }
+
+  /// Simple mark as paid (legacy, no account deduction).
   Future<void> markPaid(String id) async {
     final existing = await _db.getRowById('local_contributions', id);
     if (existing == null) return;

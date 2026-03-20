@@ -28,6 +28,12 @@ class LocalAccountRepository {
     return rows.map(_rowToAccount).toList();
   }
 
+  Future<Account?> getAccountById(String id) async {
+    final row = await _db.getRowById('local_accounts', id);
+    if (row == null) return null;
+    return _rowToAccount(row);
+  }
+
   // ─── Writes ─────────────────────────────────────────────────────────────
 
   Future<Account> createAccount({
@@ -71,8 +77,17 @@ class LocalAccountRepository {
     await _db.upsertAccount(updated);
   }
 
+  /// Permanently delete an account and ALL its associated transactions.
   Future<void> deleteAccount(String id) async {
+    // Delete all transactions linked to this account first
+    await _db.deleteTransactionsByAccountId(id);
+    // Then delete the account itself
     await _db.deleteAccount(id);
+  }
+
+  /// Count transactions associated with this account.
+  Future<int> countTransactions(String id) async {
+    return _db.countTransactionsByAccountId(id);
   }
 
   Future<void> toggleArchive(String id, bool archived) async {

@@ -913,6 +913,9 @@ class _AccountSection extends StatelessWidget {
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: () async {
+              if (GuestModeService.isGuestSync()) {
+                await GuestModeService.disableGuestMode();
+              }
               await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/login');
             },

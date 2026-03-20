@@ -8,8 +8,10 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../data/models/insurance_policy.dart';
+import '../../../data/models/transaction.dart';
 import '../providers/tool_providers.dart';
 import '../widgets/add_insurance_dialog.dart';
+import '../widgets/confirm_payment_dialog.dart';
 import '../widgets/pay_insurance_dialog.dart';
 
 class InsuranceScreen extends ConsumerStatefulWidget {
@@ -184,6 +186,10 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Pending insurance payments
+        _PendingInsuranceList(ref: ref),
         const SizedBox(height: 16),
 
         // Active Policies
@@ -361,5 +367,101 @@ class _PolicyRow extends StatelessWidget {
       case 'annual': return 'yr';
       default: return 'mo';
     }
+  }
+}
+
+class _PendingInsuranceList extends StatelessWidget {
+  final WidgetRef ref;
+  const _PendingInsuranceList({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final pending = ref.watch(pendingInsuranceTransactionsProvider);
+
+    return pending.when(
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.04),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(LucideIcons.clock, size: 16, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text('Pending Payments (${list.length})',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.warning)),
+            ]),
+            const SizedBox(height: 4),
+            Text('Auto-generated — review amounts and confirm to pay',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 12),
+            ...list.map((t) => _PendingInsuranceRow(transaction: t, ref: ref)),
+          ]),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _PendingInsuranceRow extends StatelessWidget {
+  final Transaction transaction;
+  final WidgetRef ref;
+  const _PendingInsuranceRow({required this.transaction, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text('Pending', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.warning)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(transaction.description, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(formatCurrency(transaction.amount.abs()),
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ])),
+        SizedBox(
+          height: 30,
+          child: FilledButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => ConfirmPaymentDialog(pendingTransaction: transaction),
+              ).then((result) {
+                if (result == true) {
+                  ref.invalidate(pendingInsuranceTransactionsProvider);
+                  ref.invalidate(insurancePoliciesProvider);
+                  ref.invalidate(insuranceSummaryProvider);
+                }
+              });
+            },
+            icon: const Icon(LucideIcons.checkCircle2, size: 12),
+            label: const Text('Confirm & Pay'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              textStyle: const TextStyle(fontSize: 11),
+            ),
+          ),
+        ),
+      ]),
+    );
   }
 }

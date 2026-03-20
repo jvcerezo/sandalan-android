@@ -11,12 +11,14 @@ import '../../../data/repositories/bill_repository.dart';
 import '../../../data/repositories/insurance_repository.dart';
 import '../../../data/repositories/recurring_transaction_repository.dart';
 import '../../../data/models/debt.dart';
+import '../../../data/models/transaction.dart';
 import '../../../data/models/contribution.dart';
 import '../../../data/models/tax_record.dart';
 import '../../../data/models/bill.dart';
 import '../../../data/models/insurance_policy.dart';
 import '../../../data/models/recurring_transaction.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../transactions/providers/transaction_providers.dart';
 
 // ─── Local-first Repositories ────────────────────────────────────────────────
 
@@ -122,4 +124,27 @@ final recurringTransactionsProvider = FutureProvider<List<RecurringTransaction>>
 
 final dueRecurringCountProvider = FutureProvider<int>((ref) async {
   return ref.read(recurringTransactionRepositoryProvider).getDueCount();
+});
+
+// ─── Pending Transaction Providers ──────────────────────────────────────────
+
+final pendingTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  final txnRepo = ref.read(transactionRepositoryProvider);
+  final all = await txnRepo.getTransactions();
+  return all.where((t) => t.isPending).toList();
+});
+
+final pendingBillTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  final all = await ref.watch(pendingTransactionsProvider.future);
+  return all.where((t) => t.tags != null && t.tags!.contains('bill')).toList();
+});
+
+final pendingDebtTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  final all = await ref.watch(pendingTransactionsProvider.future);
+  return all.where((t) => t.tags != null && t.tags!.contains('debt')).toList();
+});
+
+final pendingInsuranceTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
+  final all = await ref.watch(pendingTransactionsProvider.future);
+  return all.where((t) => t.tags != null && t.tags!.contains('insurance')).toList();
 });

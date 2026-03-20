@@ -9,6 +9,7 @@ class Goal {
   final double currentAmount;
   final String? deadline;
   final String category;
+  final String? accountId;
   final bool isCompleted;
 
   const Goal({
@@ -20,6 +21,7 @@ class Goal {
     required this.currentAmount,
     this.deadline,
     required this.category,
+    this.accountId,
     required this.isCompleted,
   });
 
@@ -33,6 +35,7 @@ class Goal {
       currentAmount: (json['current_amount'] as num).toDouble(),
       deadline: json['deadline'] as String?,
       category: json['category'] as String,
+      accountId: json['account_id'] as String?,
       isCompleted: json['is_completed'] as bool? ?? false,
     );
   }
@@ -46,6 +49,7 @@ class Goal {
         'current_amount': currentAmount,
         'deadline': deadline,
         'category': category,
+        'account_id': accountId,
         'is_completed': isCompleted,
       };
 

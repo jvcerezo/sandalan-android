@@ -46,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     await GuestModeService.migrateToAccount(userId);
     final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
     syncService.fullSync();
-    syncService.startPeriodicSync();
+    syncService.startDailySync();
   }
 
   Future<void> _handleEmailSignIn() async {
@@ -69,6 +69,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         password: password,
       );
       await _migrateGuestDataIfNeeded();
+      // Always pull fresh data from Supabase after login
+      final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
+      await syncService.fullSync();
       if (mounted) context.go('/home');
     } catch (e) {
       setState(() {

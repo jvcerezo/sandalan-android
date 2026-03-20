@@ -14,6 +14,7 @@ class Transaction {
   final String? transferId;
   final String? splitGroupId;
   final List<String>? tags;
+  final String status; // 'confirmed' | 'pending'
 
   const Transaction({
     required this.id,
@@ -29,6 +30,7 @@ class Transaction {
     this.transferId,
     this.splitGroupId,
     this.tags,
+    this.status = 'confirmed',
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,7 @@ class Transaction {
       transferId: json['transfer_id'] as String?,
       splitGroupId: json['split_group_id'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>(),
+      status: json['status'] as String? ?? 'confirmed',
     );
   }
 
@@ -63,9 +66,12 @@ class Transaction {
         'transfer_id': transferId,
         'split_group_id': splitGroupId,
         'tags': tags,
+        'status': status,
       };
 
   bool get isIncome => amount > 0;
   bool get isExpense => amount < 0;
   bool get isTransfer => transferId != null;
+  bool get isPending => status == 'pending';
+  bool get isConfirmed => status == 'confirmed';
 }

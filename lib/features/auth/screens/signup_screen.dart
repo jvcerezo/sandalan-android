@@ -151,7 +151,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             AppDatabase.instance,
           );
           syncService.fullSync();
-          syncService.startPeriodicSync();
+          syncService.startDailySync();
         }
         context.go('/onboarding');
       } else {

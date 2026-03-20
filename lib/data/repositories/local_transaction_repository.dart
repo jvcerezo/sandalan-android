@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/services/notification_service.dart';
 import '../local/app_database.dart';
 import '../models/transaction.dart';
 import 'transaction_repository.dart';
@@ -54,6 +55,7 @@ class LocalTransactionRepository {
   }
 
   /// Transaction summary computed from local data.
+  /// Only counts confirmed transactions (excludes pending bills/insurance).
   Future<TransactionsSummary> getTransactionsSummary() async {
     final transactions = await _db.getTransactions(_userId);
     final accounts = await _db.getAllAccounts(_userId);
@@ -61,7 +63,11 @@ class LocalTransactionRepository {
     final contributions = await _db.getContributions(_userId);
 
     final nonTransfer = transactions
-        .where((t) => (t['category'] as String).toLowerCase() != 'transfer')
+        .where((t) {
+          final cat = (t['category'] as String).toLowerCase();
+          final status = t['status'] as String? ?? 'confirmed';
+          return cat != 'transfer' && cat != 'goal funding' && status == 'confirmed';
+        })
         .toList();
 
     final income = nonTransfer
@@ -107,6 +113,7 @@ class LocalTransactionRepository {
     String currency = 'PHP',
     String? accountId,
     List<String>? tags,
+    String status = 'confirmed',
   }) async {
     final id = _generateId();
     final now = AppDatabase.now();
@@ -125,6 +132,7 @@ class LocalTransactionRepository {
       'transfer_id': null,
       'split_group_id': null,
       'tags': AppDatabase.encodeTags(tags),
+      'status': status,
       'sync_status': 'pending',
       'created_at': now,
       'updated_at': now,
@@ -132,12 +140,34 @@ class LocalTransactionRepository {
 
     await _db.upsertTransaction(row);
 
-    // Update account balance locally if linked
-    if (accountId != null) {
+    // Update account balance locally if linked and transaction is confirmed
+    if (accountId != null && status == 'confirmed') {
       await _updateAccountBalance(accountId, amount);
     }
 
+    // Check budget thresholds for expense transactions
+    if (amount < 0 && status == 'confirmed' && category.toLowerCase() != 'transfer' && category.toLowerCase() != 'goal funding') {
+      await _checkBudgetThresholds(category);
+    }
+
     return _rowToTransaction(row);
+  }
+
+  /// Confirm a pending transaction (mark as paid, deduct from account).
+  Future<void> confirmTransaction(String id, String accountId) async {
+    final existing = await _db.getRowById('local_transactions', id);
+    if (existing == null) return;
+
+    final updated = Map<String, dynamic>.from(existing);
+    updated['status'] = 'confirmed';
+    updated['account_id'] = accountId;
+    updated['sync_status'] = 'pending';
+    updated['updated_at'] = AppDatabase.now();
+    await _db.upsertTransaction(updated);
+
+    // Deduct from account
+    final amount = (existing['amount'] as num).toDouble();
+    await _updateAccountBalance(accountId, amount);
   }
 
   Future<void> updateTransaction({
@@ -161,12 +191,15 @@ class LocalTransactionRepository {
     final oldAmount = (existing['amount'] as num).toDouble();
     final newAmount = amount ?? oldAmount;
     final newAccountId = accountId ?? oldAccountId;
+    final status = existing['status'] as String? ?? 'confirmed';
 
-    if (oldAccountId != null) {
-      await _updateAccountBalance(oldAccountId, -oldAmount);
-    }
-    if (newAccountId != null) {
-      await _updateAccountBalance(newAccountId, newAmount);
+    if (status == 'confirmed') {
+      if (oldAccountId != null) {
+        await _updateAccountBalance(oldAccountId, -oldAmount);
+      }
+      if (newAccountId != null) {
+        await _updateAccountBalance(newAccountId, newAmount);
+      }
     }
 
     if (amount != null) updated['amount'] = amount;
@@ -185,16 +218,17 @@ class LocalTransactionRepository {
   Future<void> deleteTransaction(String id) async {
     final existing = await _db.getRowById('local_transactions', id);
     if (existing != null) {
-      // Reverse balance
-      final accountId = existing['account_id'] as String?;
-      if (accountId != null) {
-        final amount = (existing['amount'] as num).toDouble();
-        await _updateAccountBalance(accountId, -amount);
+      final status = existing['status'] as String? ?? 'confirmed';
+      // Reverse balance only for confirmed transactions
+      if (status == 'confirmed') {
+        final accountId = existing['account_id'] as String?;
+        if (accountId != null) {
+          final amount = (existing['amount'] as num).toDouble();
+          await _updateAccountBalance(accountId, -amount);
+        }
       }
     }
     await _db.deleteTransaction(id);
-    // Note: For deletes, we'd need a "deleted" sync queue in a full implementation.
-    // For MVP, deletes only apply locally until next full sync pulls the truth from remote.
   }
 
   Future<void> importTransactions(List<Map<String, dynamic>> transactions) async {
@@ -203,6 +237,7 @@ class LocalTransactionRepository {
       final id = _generateId();
       t['id'] = id;
       t['user_id'] = _userId;
+      t['status'] = t['status'] ?? 'confirmed';
       t['sync_status'] = 'pending';
       t['created_at'] = now;
       t['updated_at'] = now;
@@ -235,6 +270,7 @@ class LocalTransactionRepository {
       'currency': 'PHP',
       'account_id': fromAccountId,
       'transfer_id': transferId,
+      'status': 'confirmed',
       'sync_status': 'pending',
       'created_at': now,
       'updated_at': now,
@@ -251,6 +287,7 @@ class LocalTransactionRepository {
       'currency': 'PHP',
       'account_id': toAccountId,
       'transfer_id': transferId,
+      'status': 'confirmed',
       'sync_status': 'pending',
       'created_at': now,
       'updated_at': now,
@@ -259,6 +296,67 @@ class LocalTransactionRepository {
     // Update balances
     await _updateAccountBalance(fromAccountId, -amount);
     await _updateAccountBalance(toAccountId, amount);
+  }
+
+  // ─── Budget threshold checks ───────────────────────────────────────────
+
+  Future<void> _checkBudgetThresholds(String category) async {
+    try {
+      final now = DateTime.now();
+      final monthStr = DateTime(now.year, now.month, 1).toIso8601String().substring(0, 10);
+      final budgets = await _db.getBudgets(_userId, monthStr, 'monthly');
+
+      for (final budget in budgets) {
+        final budgetCat = budget['category'] as String;
+        if (budgetCat.toLowerCase() != category.toLowerCase()) continue;
+
+        final budgetAmount = (budget['amount'] as num).toDouble();
+        if (budgetAmount <= 0) continue;
+
+        // Calculate spent this month for this category
+        final startDate = monthStr;
+        final endDate = DateTime(now.year, now.month + 1, 0).toIso8601String().substring(0, 10);
+        final transactions = await _db.getFilteredTransactions(
+          _userId,
+          category: budgetCat,
+          startDate: startDate,
+          endDate: endDate,
+        );
+
+        final spent = transactions
+            .where((t) {
+              final status = t['status'] as String? ?? 'confirmed';
+              return (t['amount'] as num) < 0 && status == 'confirmed';
+            })
+            .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble().abs());
+
+        final pct = spent / budgetAmount;
+        final notifId = 'budget-$budgetCat-${now.month}'.hashCode;
+
+        if (pct >= 1.0) {
+          final over = spent - budgetAmount;
+          await NotificationService.instance.showNotification(
+            id: notifId,
+            title: 'Budget Exceeded: $budgetCat',
+            body: 'You\'ve gone over your $budgetCat budget by PHP ${over.toStringAsFixed(2)}',
+          );
+        } else if (pct >= 0.9) {
+          await NotificationService.instance.showNotification(
+            id: notifId,
+            title: 'Budget Alert: $budgetCat',
+            body: 'You\'ve spent 90% of your $budgetCat budget (PHP ${spent.toStringAsFixed(2)} of PHP ${budgetAmount.toStringAsFixed(2)})',
+          );
+        } else if (pct >= 0.8) {
+          await NotificationService.instance.showNotification(
+            id: notifId,
+            title: 'Budget Warning: $budgetCat',
+            body: 'You\'ve spent 80% of your $budgetCat budget (PHP ${spent.toStringAsFixed(2)} of PHP ${budgetAmount.toStringAsFixed(2)})',
+          );
+        }
+      }
+    } catch (_) {
+      // Don't let budget checks break transaction creation
+    }
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -278,6 +376,7 @@ class LocalTransactionRepository {
       transferId: row['transfer_id'] as String?,
       splitGroupId: row['split_group_id'] as String?,
       tags: AppDatabase.decodeTags(row['tags'] as String?),
+      status: row['status'] as String? ?? 'confirmed',
     );
   }
 

@@ -79,7 +79,7 @@ class NotificationService {
     required DateTime scheduledDate,
   }) async {
     if (!_initialized) {
-      debugPrint('NotificationService: not initialized, skipping schedule');
+      if (kDebugMode) debugPrint('NotificationService: not initialized, skipping schedule');
       return;
     }
 
@@ -111,6 +111,30 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
+  /// Show an immediate notification (for budget alerts, goal completion, etc.).
+  Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+  }) async {
+    if (!_initialized) return;
+
+    await _plugin.show(
+      id,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id,
+          _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
     );
   }
 

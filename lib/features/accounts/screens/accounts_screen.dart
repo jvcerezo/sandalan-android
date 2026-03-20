@@ -21,7 +21,6 @@ class AccountsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final accounts = ref.watch(accountsProvider);
-    final archived = ref.watch(archivedAccountsProvider);
     final totalBalance = ref.watch(totalBalanceProvider);
     final contribSummary = ref.watch(contributionSummaryProvider);
 
@@ -29,7 +28,6 @@ class AccountsScreen extends ConsumerWidget {
       onRefresh: () async {
         HapticFeedback.mediumImpact();
         ref.invalidate(accountsProvider);
-        ref.invalidate(archivedAccountsProvider);
         ref.invalidate(contributionSummaryProvider);
         await ref.read(accountsProvider.future);
       },
@@ -113,20 +111,6 @@ class AccountsScreen extends ConsumerWidget {
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
-        const SizedBox(height: 20),
-
-        // Archived
-        archived.when(
-          data: (arcs) => arcs.isEmpty
-              ? const SizedBox.shrink()
-              : ExpansionTile(
-                  title: Text('Archived (${arcs.length})',
-                      style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
-                  children: arcs.map((a) => _AccountCard(account: a, isArchived: true)).toList(),
-                ),
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-        ),
       ],
     ),
     );
@@ -140,68 +124,114 @@ class AccountsScreen extends ConsumerWidget {
       builder: (_) => const AddAccountDialog(),
     ).then((_) {
       ref.invalidate(accountsProvider);
-      ref.invalidate(archivedAccountsProvider);
     });
   }
 }
 
-class _AccountCard extends StatelessWidget {
+class _AccountCard extends ConsumerWidget {
   final Account account;
-  final bool isArchived;
 
-  const _AccountCard({required this.account, this.isArchived = false});
+  const _AccountCard({required this.account});
 
   IconData get _typeIcon {
     switch (account.type) {
       case 'bank': return LucideIcons.landmark;
       case 'e-wallet': return LucideIcons.smartphone;
       case 'credit-card': return LucideIcons.creditCard;
-      default: return LucideIcons.banknote;
+      case 'cash': return LucideIcons.banknote;
+      default: return LucideIcons.wallet;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onLongPress: () => _showDeleteConfirmation(context, ref),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(_typeIcon, size: 20, color: colorScheme.primary),
             ),
-            child: Icon(_typeIcon, size: 20, color: colorScheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(account.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(account.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(account.type, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
                   ),
-                  child: Text(account.type, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
-                ),
-                const SizedBox(width: 6),
-                Text(account.currency, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                  const SizedBox(width: 6),
+                  Text(account.currency, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                ]),
               ]),
-            ]),
-          ),
-          Text(formatCurrency(account.balance, currencyCode: account.currency),
-              style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w700,
-                color: account.balance >= 0 ? colorScheme.onSurface : AppColors.expense,
-              )),
-        ]),
+            ),
+            Text(formatCurrency(account.balance, currencyCode: account.currency),
+                style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w700,
+                  color: account.balance >= 0 ? colorScheme.onSurface : AppColors.expense,
+                )),
+            const SizedBox(width: 4),
+            // Delete button
+            IconButton(
+              onPressed: () => _showDeleteConfirmation(context, ref),
+              icon: Icon(LucideIcons.trash2, size: 16, color: AppColors.expense.withValues(alpha: 0.5)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
+          ]),
+        ),
       ),
     );
+  }
+
+  Future<void> _showDeleteConfirmation(BuildContext context, WidgetRef ref) async {
+    final repo = ref.read(accountRepositoryProvider);
+    final txnCount = await repo.countTransactions(account.id);
+
+    if (!context.mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: Text(
+          'Delete ${account.name}? This will permanently delete this account '
+          'and all $txnCount transaction${txnCount == 1 ? '' : 's'} associated with it. '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.expense),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await repo.deleteAccount(account.id);
+      ref.invalidate(accountsProvider);
+    }
   }
 }
 

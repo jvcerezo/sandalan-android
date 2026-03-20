@@ -62,7 +62,6 @@ class LocalBillRepository {
     data['sync_status'] = 'pending';
     data['created_at'] = now;
     data['updated_at'] = now;
-    // Convert booleans to int for SQLite
     if (data['is_active'] is bool) data['is_active'] = (data['is_active'] as bool) ? 1 : 0;
     if (!data.containsKey('is_active')) data['is_active'] = 1;
     await _db.upsertBill(data);
@@ -90,6 +89,9 @@ class LocalBillRepository {
     await _db.deleteBill(id);
   }
 
+  /// Mark bill as paid: update last_paid_date.
+  /// The caller (UI) is responsible for confirming the pending transaction
+  /// and deducting from the chosen account via LocalTransactionRepository.
   Future<void> markPaid(String id) async {
     final existing = await _db.getRowById('local_bills', id);
     if (existing == null) return;

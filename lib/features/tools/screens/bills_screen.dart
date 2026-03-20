@@ -8,8 +8,10 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../data/models/bill.dart';
+import '../../../data/models/transaction.dart';
 import '../providers/tool_providers.dart';
 import '../widgets/add_bill_dialog.dart';
+import '../widgets/confirm_payment_dialog.dart';
 
 class BillsScreen extends ConsumerStatefulWidget {
   const BillsScreen({super.key});
@@ -273,6 +275,10 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
         ),
         const SizedBox(height: 16),
 
+        // Pending bill payments
+        _PendingBillsList(ref: ref),
+        const SizedBox(height: 16),
+
         // Bills list
         bills.when(
           data: (list) {
@@ -425,5 +431,101 @@ class _BillRow extends StatelessWidget {
       case 'annual': return 'yr';
       default: return 'mo';
     }
+  }
+}
+
+class _PendingBillsList extends StatelessWidget {
+  final WidgetRef ref;
+  const _PendingBillsList({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final pending = ref.watch(pendingBillTransactionsProvider);
+
+    return pending.when(
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.04),
+            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(LucideIcons.clock, size: 16, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text('Pending Payments (${list.length})',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.warning)),
+            ]),
+            const SizedBox(height: 4),
+            Text('Auto-generated — review amounts and confirm to pay',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 12),
+            ...list.map((t) => _PendingRow(transaction: t, ref: ref)),
+          ]),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _PendingRow extends StatelessWidget {
+  final Transaction transaction;
+  final WidgetRef ref;
+  const _PendingRow({required this.transaction, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text('Pending', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.warning)),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(transaction.description, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(formatCurrency(transaction.amount.abs()),
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ])),
+        SizedBox(
+          height: 30,
+          child: FilledButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => ConfirmPaymentDialog(pendingTransaction: transaction),
+              ).then((result) {
+                if (result == true) {
+                  ref.invalidate(pendingBillTransactionsProvider);
+                  ref.invalidate(billsProvider);
+                  ref.invalidate(billsSummaryProvider);
+                }
+              });
+            },
+            icon: const Icon(LucideIcons.checkCircle2, size: 12),
+            label: const Text('Confirm & Pay'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              textStyle: const TextStyle(fontSize: 11),
+            ),
+          ),
+        ),
+      ]),
+    );
   }
 }

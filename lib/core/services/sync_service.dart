@@ -1,18 +1,23 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/local/app_database.dart';
 
 /// Background sync service: pulls from Supabase into local DB, pushes pending
 /// local changes back to Supabase. Uses last-write-wins conflict resolution
 /// based on updated_at timestamps.
-class SyncService {
+///
+/// Syncs once daily (end of day), when app goes to background, and on manual trigger.
+class SyncService with WidgetsBindingObserver {
   final SupabaseClient _client;
   final AppDatabase _db;
 
-  Timer? _periodicTimer;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isSyncing = false;
+  static const _lastSyncKey = 'last_sync_date';
 
   SyncService(this._client, this._db);
 
@@ -20,26 +25,47 @@ class SyncService {
 
   // ─── Public API ──────────────────────────────────────────────────────────
 
-  /// Start periodic sync (every 5 minutes) and listen for connectivity changes.
-  void startPeriodicSync() {
-    _periodicTimer?.cancel();
-    _periodicTimer = Timer.periodic(const Duration(minutes: 5), (_) => fullSync());
+  /// Start daily sync: listen for app lifecycle changes and connectivity.
+  /// Replaces the old 5-minute periodic timer.
+  void startDailySync() {
+    // Listen for app lifecycle (sync when app goes to background).
+    WidgetsBinding.instance.addObserver(this);
 
+    // Sync when connectivity is restored.
     _connectivitySub?.cancel();
     _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
       final isOnline = results.any((r) => r != ConnectivityResult.none);
       if (isOnline) {
-        fullSync();
+        _syncIfDailyDue();
       }
     });
   }
 
-  /// Stop periodic sync and connectivity listener.
-  void stopPeriodicSync() {
-    _periodicTimer?.cancel();
-    _periodicTimer = null;
+  /// Stop sync listener and lifecycle observer.
+  void stopSync() {
+    WidgetsBinding.instance.removeObserver(this);
     _connectivitySub?.cancel();
     _connectivitySub = null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      // Sync when app goes to background.
+      fullSync();
+    }
+  }
+
+  /// Check if we should sync today (once per day).
+  Future<void> _syncIfDailyDue() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSync = prefs.getString(_lastSyncKey);
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    if (lastSync != today) {
+      await fullSync();
+      await prefs.setString(_lastSyncKey, today);
+    }
   }
 
   /// Full sync: pull from remote, then push local pending changes.

@@ -176,20 +176,33 @@ class _GoalCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      // Celebratory border for completed goals
+      shape: goal.isCompleted
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppColors.income, width: 2),
+            )
+          : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Expanded(child: Text(goal.name,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                maxLines: 1, overflow: TextOverflow.ellipsis)),
+            Expanded(child: Row(children: [
+              if (goal.isCompleted) ...[
+                Icon(LucideIcons.partyPopper, size: 16, color: AppColors.income),
+                const SizedBox(width: 6),
+              ],
+              Expanded(child: Text(goal.name,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  maxLines: 1, overflow: TextOverflow.ellipsis)),
+            ])),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(goal.category,
+              child: Text(goal.isCompleted ? 'Completed!' : goal.category,
                   style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: color)),
             ),
           ]),
