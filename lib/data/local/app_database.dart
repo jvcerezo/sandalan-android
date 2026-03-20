@@ -513,6 +513,15 @@ class AppDatabase {
     }
   }
 
+  /// Update user_id for all rows in [table] from [oldUserId] to [newUserId]
+  /// and mark them as pending for sync.
+  Future<void> updateUserId(String table, String oldUserId, String newUserId) async {
+    await _db.customStatement(
+      "UPDATE $table SET user_id = ?, sync_status = 'pending' WHERE user_id = ?",
+      [newUserId, oldUserId],
+    );
+  }
+
   /// Close the database.
   Future<void> close() async {
     await _db.close();

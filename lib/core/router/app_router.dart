@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/guest_mode_service.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/guide/screens/guide_screen.dart';
@@ -38,16 +39,22 @@ final appRouter = GoRouter(
   redirect: (context, state) {
     final session = Supabase.instance.client.auth.currentSession;
     final isLoggedIn = session != null;
+    final isGuest = GuestModeService.isGuestSync();
     final isAuthRoute = state.uri.path == '/login' || state.uri.path == '/signup';
     final isOnboarding = state.uri.path == '/onboarding';
 
-    // Not logged in -> redirect to login (unless already on auth route)
-    if (!isLoggedIn && !isAuthRoute) {
+    // Allow through if logged in OR guest
+    if (!isLoggedIn && !isGuest && !isAuthRoute) {
       return '/login';
     }
 
-    // Logged in on auth route -> redirect to home
+    // Logged in (real user) on auth route -> redirect to home
     if (isLoggedIn && isAuthRoute) {
+      return '/home';
+    }
+
+    // Guest on login page -> redirect to home (already in guest mode)
+    if (isGuest && !isLoggedIn && isAuthRoute && state.uri.path == '/login') {
       return '/home';
     }
 

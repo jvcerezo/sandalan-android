@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/guest_mode_service.dart';
+import '../../../core/services/sync_service.dart';
+import '../../../data/local/app_database.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../providers/auth_provider.dart';
 
@@ -77,6 +81,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _isLoading = false;
   String? _error;
   String? _successEmail;
+  bool _wasGuest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _wasGuest = GuestModeService.isGuestSync();
+  }
 
   @override
   void dispose() {
@@ -130,6 +141,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
 
       if (response.session != null && mounted) {
+        // If was previously a guest, migrate local data to the new account
+        if (_wasGuest) {
+          final newUserId = response.session!.user.id;
+          await GuestModeService.migrateToAccount(newUserId);
+          // Trigger a full sync to push migrated data to Supabase
+          final syncService = SyncService(
+            Supabase.instance.client,
+            AppDatabase.instance,
+          );
+          syncService.fullSync();
+          syncService.startPeriodicSync();
+        }
         context.go('/onboarding');
       } else {
         setState(() {

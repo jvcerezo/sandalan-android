@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/guest_mode_service.dart';
 import '../local/app_database.dart';
 import '../models/budget.dart';
 
@@ -9,7 +10,11 @@ class LocalBudgetRepository {
 
   LocalBudgetRepository(this._db, this._client);
 
-  String get _userId => _client.auth.currentUser!.id;
+  String get _userId {
+    final user = _client.auth.currentUser;
+    if (user != null) return user.id;
+    return GuestModeService.getGuestIdSync() ?? 'guest';
+  }
 
   // ─── Reads ──────────────────────────────────────────────────────────────
 

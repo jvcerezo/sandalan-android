@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/theme/theme_color.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../app.dart';
@@ -35,6 +36,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildMenu(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isGuest = GuestModeService.isGuestSync();
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
       children: [
@@ -43,8 +45,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         Text('Manage your account and preferences',
             style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
         const SizedBox(height: 20),
-        _MenuItem(icon: LucideIcons.user, title: 'Profile', sub: 'Name, avatar, email',
-            onTap: () => setState(() => _activeSection = 'profile')),
+
+        // Guest mode banner
+        if (isGuest) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.08),
+              border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(LucideIcons.userPlus, size: 18, color: cs.primary),
+                const SizedBox(width: 8),
+                Text('Create an Account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.primary)),
+              ]),
+              const SizedBox(height: 6),
+              Text('Create an account to back up your data and sync across devices.',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => context.go('/signup'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  minimumSize: const Size(double.infinity, 0),
+                ),
+                child: const Text('Create Account'),
+              ),
+            ]),
+          ),
+        ],
+
+        if (!isGuest)
+          _MenuItem(icon: LucideIcons.user, title: 'Profile', sub: 'Name, avatar, email',
+              onTap: () => setState(() => _activeSection = 'profile')),
         _MenuItem(icon: LucideIcons.settings2, title: 'Appearance', sub: 'Theme preferences',
             onTap: () => setState(() => _activeSection = 'appearance')),
         _MenuItem(icon: LucideIcons.zap, title: 'Automation', sub: 'Reminders & auto-generation',
@@ -55,11 +91,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => setState(() => _activeSection = 'homepage')),
         _MenuItem(icon: LucideIcons.refreshCw, title: 'Currency', sub: 'Rates & primary currency',
             onTap: () => setState(() => _activeSection = 'currency')),
-        _MenuItem(icon: LucideIcons.shield, title: 'Privacy & Data', sub: 'Export, delete, legal',
-            onTap: () => setState(() => _activeSection = 'privacy')),
+        if (!isGuest)
+          _MenuItem(icon: LucideIcons.shield, title: 'Privacy & Data', sub: 'Export, delete, legal',
+              onTap: () => setState(() => _activeSection = 'privacy')),
         _MenuItem(icon: LucideIcons.bug, title: 'Report Bug', sub: 'Report issues',
             onTap: () => setState(() => _activeSection = 'bug')),
-        _MenuItem(icon: LucideIcons.logOut, title: 'Account', sub: 'Sign out, tour, sync',
+        _MenuItem(icon: LucideIcons.logOut, title: 'Account', sub: isGuest ? 'Tour, create account' : 'Sign out, tour, sync',
             onTap: () => setState(() => _activeSection = 'account')),
       ],
     );
@@ -748,59 +785,95 @@ class _AccountSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isGuest = GuestModeService.isGuestSync();
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
       back,
-      // Offline Outbox
-      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(LucideIcons.wifi, size: 16, color: cs.onSurface),
-          const SizedBox(width: 8),
-          const Text('Offline Outbox', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        ]),
-        Text('Review queued offline mutations, retry failed items, or clear stale entries.',
-            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-        const SizedBox(height: 10),
-        Wrap(spacing: 8, children: [
-          _StatusChip('Pending: 0'), _StatusChip('Syncing: 0'),
-          _StatusChip('Failed: 0'), _StatusChip('Conflict: 0'),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          FilledButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.refreshCw, size: 14),
-              label: const Text('Sync now'), style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.trash2, size: 14),
-              label: const Text('Clear queue'), style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
-        ]),
-        const SizedBox(height: 6),
-        Text('No queued offline changes.', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-      ])),
-      const SizedBox(height: 12),
 
-      // Conflict Center
-      _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(LucideIcons.alertTriangle, size: 16, color: AppColors.warning),
-          const SizedBox(width: 8),
-          const Text('Conflict Center', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        ]),
-        Text('Review sync conflicts and retry or dismiss items after investigation.',
-            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-        const SizedBox(height: 10),
-        Row(children: [
-          _StatusChip('Total conflicts: 0'),
-          const SizedBox(width: 8),
-          OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.trash2, size: 12),
-              label: const Text('Clear conflicts'), style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  textStyle: const TextStyle(fontSize: 11))),
-        ]),
-        const SizedBox(height: 6),
-        Text('No conflicts detected.', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-      ])),
-      const SizedBox(height: 12),
+      // Guest banner
+      if (isGuest) ...[
+        Container(
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: cs.primary.withValues(alpha: 0.08),
+            border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Icon(LucideIcons.userPlus, size: 18, color: cs.primary),
+              const SizedBox(width: 8),
+              Text('You\'re in Guest Mode', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: cs.primary)),
+            ]),
+            const SizedBox(height: 6),
+            Text('Your data is stored only on this device. Create an account to back up your data and sync across devices.',
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => context.go('/signup'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                minimumSize: const Size(double.infinity, 0),
+              ),
+              child: const Text('Create Account'),
+            ),
+          ]),
+        ),
+      ],
+
+      // Offline Outbox (hide for guests)
+      if (!isGuest) ...[
+        _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(LucideIcons.wifi, size: 16, color: cs.onSurface),
+            const SizedBox(width: 8),
+            const Text('Offline Outbox', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ]),
+          Text('Review queued offline mutations, retry failed items, or clear stale entries.',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, children: [
+            _StatusChip('Pending: 0'), _StatusChip('Syncing: 0'),
+            _StatusChip('Failed: 0'), _StatusChip('Conflict: 0'),
+          ]),
+          const SizedBox(height: 10),
+          Row(children: [
+            FilledButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.refreshCw, size: 14),
+                label: const Text('Sync now'), style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.trash2, size: 14),
+                label: const Text('Clear queue'), style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
+          ]),
+          const SizedBox(height: 6),
+          Text('No queued offline changes.', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        ])),
+        const SizedBox(height: 12),
+
+        // Conflict Center
+        _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(LucideIcons.alertTriangle, size: 16, color: AppColors.warning),
+            const SizedBox(width: 8),
+            const Text('Conflict Center', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ]),
+          Text('Review sync conflicts and retry or dismiss items after investigation.',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 10),
+          Row(children: [
+            _StatusChip('Total conflicts: 0'),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.trash2, size: 12),
+                label: const Text('Clear conflicts'), style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    textStyle: const TextStyle(fontSize: 11))),
+          ]),
+          const SizedBox(height: 6),
+          Text('No conflicts detected.', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        ])),
+        const SizedBox(height: 12),
+      ],
 
       // Account actions
       _C(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -812,18 +885,20 @@ class _AccountSection extends StatelessWidget {
         }, icon: const Icon(LucideIcons.compass, size: 16),
             label: const Text('Take a Tour'), style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(double.infinity, 0))),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () async {
-            await ref.read(authRepositoryProvider).signOut();
-            if (context.mounted) context.go('/login');
-          },
-          icon: const Icon(LucideIcons.logOut, size: 16, color: AppColors.expense),
-          label: const Text('Sign Out', style: TextStyle(color: AppColors.expense)),
-          style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.expense),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              minimumSize: const Size(double.infinity, 0))),
+        if (!isGuest) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () async {
+              await ref.read(authRepositoryProvider).signOut();
+              if (context.mounted) context.go('/login');
+            },
+            icon: const Icon(LucideIcons.logOut, size: 16, color: AppColors.expense),
+            label: const Text('Sign Out', style: TextStyle(color: AppColors.expense)),
+            style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.expense),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                minimumSize: const Size(double.infinity, 0))),
+        ],
       ])),
     ]);
   }

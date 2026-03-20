@@ -60,8 +60,9 @@ class NavDrawer extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
     final profile = ref.watch(profileProvider);
-    final fullName = profile.valueOrNull?.fullName ?? 'User';
-    final email = profile.valueOrNull?.email ?? '';
+    final isGuest = ref.watch(isGuestProvider);
+    final fullName = isGuest ? 'Guest' : (profile.valueOrNull?.fullName ?? 'User');
+    final email = isGuest ? 'Create account to sync' : (profile.valueOrNull?.email ?? '');
     final themeMode = ref.watch(themeModeProvider);
 
     return Drawer(
@@ -217,16 +218,26 @@ class NavDrawer extends ConsumerWidget {
                       },
                     ),
 
-                    // Sign out
-                    _DrawerFooterItem(
-                      icon: LucideIcons.logOut,
-                      label: 'Sign Out',
-                      onTap: () async {
-                        Navigator.of(context).pop();
-                        await ref.read(authRepositoryProvider).signOut();
-                        if (context.mounted) context.go('/login');
-                      },
-                    ),
+                    // Sign out or Create Account (for guests)
+                    if (isGuest)
+                      _DrawerFooterItem(
+                        icon: LucideIcons.userPlus,
+                        label: 'Create Account',
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          context.go('/signup');
+                        },
+                      )
+                    else
+                      _DrawerFooterItem(
+                        icon: LucideIcons.logOut,
+                        label: 'Sign Out',
+                        onTap: () async {
+                          Navigator.of(context).pop();
+                          await ref.read(authRepositoryProvider).signOut();
+                          if (context.mounted) context.go('/login');
+                        },
+                      ),
                   ],
                 ),
               ),

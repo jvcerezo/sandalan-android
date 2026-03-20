@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/guest_mode_service.dart';
 import '../models/account.dart';
 
 class AccountRepository {
@@ -6,7 +7,11 @@ class AccountRepository {
 
   AccountRepository(this._client);
 
-  String get _userId => _client.auth.currentUser!.id;
+  String get _userId {
+    final user = _client.auth.currentUser;
+    if (user != null) return user.id;
+    return GuestModeService.getGuestIdSync() ?? 'guest';
+  }
 
   /// Get active accounts.
   Future<List<Account>> getAccounts() async {

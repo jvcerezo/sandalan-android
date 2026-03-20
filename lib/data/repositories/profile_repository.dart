@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/guest_mode_service.dart';
 import '../models/profile.dart';
 
 class ProfileRepository {
@@ -7,7 +8,21 @@ class ProfileRepository {
   ProfileRepository(this._client);
 
   /// Get the current user's profile.
+  /// Returns a guest profile when in guest mode.
   Future<Profile?> getProfile() async {
+    if (GuestModeService.isGuestSync()) {
+      return Profile(
+        id: GuestModeService.getGuestIdSync() ?? 'guest',
+        fullName: 'Guest',
+        email: null,
+        role: 'user',
+        createdAt: DateTime.now().toIso8601String(),
+        primaryCurrency: 'PHP',
+        hasCompletedOnboarding: true,
+        avatarUrl: null,
+      );
+    }
+
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return null;
 
@@ -27,6 +42,8 @@ class ProfileRepository {
     String? primaryCurrency,
     String? avatarUrl,
   }) async {
+    if (GuestModeService.isGuestSync()) return; // No-op for guests
+
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
 
@@ -41,7 +58,10 @@ class ProfileRepository {
   }
 
   /// Upload avatar image and update profile.
+  /// Returns empty string for guests (no-op).
   Future<String> uploadAvatar(List<int> bytes, String fileName) async {
+    if (GuestModeService.isGuestSync()) return '';
+
     final userId = _client.auth.currentUser!.id;
     final path = '$userId/$fileName';
 

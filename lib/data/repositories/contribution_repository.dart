@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/guest_mode_service.dart';
 import '../models/contribution.dart';
 
 class ContributionSummary {
@@ -28,7 +29,11 @@ class ContributionRepository {
 
   ContributionRepository(this._client);
 
-  String get _userId => _client.auth.currentUser!.id;
+  String get _userId {
+    final user = _client.auth.currentUser;
+    if (user != null) return user.id;
+    return GuestModeService.getGuestIdSync() ?? 'guest';
+  }
 
   Future<List<Contribution>> getContributions({String? period}) async {
     var query = _client.from('contributions').select().eq('user_id', _userId);

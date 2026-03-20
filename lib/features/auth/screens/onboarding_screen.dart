@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/services/guest_mode_service.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 import '../../../core/constants/account_types.dart';
@@ -127,6 +128,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _handleFinish() async {
     setState(() => _saving = true);
     try {
+      final isGuest = GuestModeService.isGuestSync();
+
+      if (isGuest) {
+        // Guest mode: skip Supabase calls, go straight to home + tour
+        await scheduleTour();
+        if (mounted) context.go('/home');
+        return;
+      }
+
       final client = ref.read(supabaseClientProvider);
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;

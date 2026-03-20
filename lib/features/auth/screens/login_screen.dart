@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/guest_mode_service.dart';
+import '../../../core/services/sync_service.dart';
+import '../../../data/local/app_database.dart';
 import '../../../shared/widgets/brand_mark.dart';
+import '../../../shared/widgets/tour_overlay.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -18,12 +23,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _error;
+  bool _wasGuest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _wasGuest = GuestModeService.isGuestSync();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Migrate guest data after successful authentication.
+  Future<void> _migrateGuestDataIfNeeded() async {
+    if (!_wasGuest) return;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    await GuestModeService.migrateToAccount(userId);
+    final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
+    syncService.fullSync();
+    syncService.startPeriodicSync();
   }
 
   Future<void> _handleEmailSignIn() async {
@@ -45,6 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: email,
         password: password,
       );
+      await _migrateGuestDataIfNeeded();
       if (mounted) context.go('/home');
     } catch (e) {
       setState(() {
@@ -196,6 +220,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
                 ),
               ]),
+
+              const SizedBox(height: 24),
+
+              // Divider
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('or',
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                ),
+                const Expanded(child: Divider()),
+              ]),
+              const SizedBox(height: 16),
+
+              // Guest mode
+              TextButton(
+                onPressed: _isLoading
+                    ? null
+                    : () async {
+                        await GuestModeService.enableGuestMode();
+                        await scheduleTour();
+                        if (mounted) context.go('/home');
+                      },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Column(
+                  children: [
+                    Text('Continue without an account',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurfaceVariant)),
+                    const SizedBox(height: 2),
+                    Text('Your data stays on this device',
+                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7))),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
