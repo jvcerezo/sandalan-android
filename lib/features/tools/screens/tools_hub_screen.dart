@@ -68,7 +68,7 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolTeal,
             title: 'Insurance Tracker',
             subtitle: 'Policies & renewals',
-            onTap: () {},
+            onTap: () => context.go('/tools/insurance'),
           ),
         ]),
         const SizedBox(height: 16),
