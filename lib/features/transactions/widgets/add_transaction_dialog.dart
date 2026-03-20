@@ -160,7 +160,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 GestureDetector(
                   onTap: () => setState(() {
                     _showSplit = !_showSplit;
-                    if (_showSplit) _showRepeat = false;
+                    if (_showSplit) {
+                      _showRepeat = false;
+                      _splitEntries[0].accountId = _selectedAccountId;
+                    }
                   }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -204,9 +207,12 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             ]),
             const SizedBox(height: 12),
 
-            // Account selector
+            // Account selector (hidden in split mode)
+            if (!_showSplit) ...[
             Text('Account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             const SizedBox(height: 6),
+            ] else ...[const SizedBox.shrink()],
+            if (!_showSplit)
             // Account dropdown
             PopupMenuButton<String>(
               onSelected: (id) => setState(() => _selectedAccountId = id),
@@ -243,8 +249,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               ),
             ),
 
-            // Selected account balance
-            if (selectedAccount != null) ...[
+            // Selected account balance (hidden in split mode)
+            if (!_showSplit && selectedAccount != null) ...[
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -283,6 +289,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               ...List.generate(_splitEntries.length, (i) {
                 final entry = _splitEntries[i];
                 final acct = accounts.where((a) => a.id == entry.accountId).firstOrNull;
+                final isFirst = i == 0;
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
@@ -291,30 +299,46 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(children: [
-                    // Account picker
-                    PopupMenuButton<String>(
-                      onSelected: (id) => setState(() => entry.accountId = id),
-                      itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
-                        value: a.id,
-                        child: Text('${a.name}  ${a.currency}', style: const TextStyle(fontSize: 13)),
-                      )).toList(),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                          borderRadius: BorderRadius.circular(8)),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Text(acct?.name ?? 'Choose an account',
-                              style: TextStyle(fontSize: 12, color: acct != null ? cs.onSurface : cs.onSurfaceVariant)),
-                          if (acct != null) ...[
+                    // First slot: static account display (no picker)
+                    // Other slots: account dropdown
+                    if (isFirst && acct != null)
+                      Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                            borderRadius: BorderRadius.circular(8)),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Text(acct.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                             const SizedBox(width: 4),
                             Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                          ],
-                          const SizedBox(width: 4),
-                          Icon(LucideIcons.chevronDown, size: 12, color: cs.onSurfaceVariant),
-                        ]),
+                          ]),
+                        ),
+                      ])
+                    else
+                      PopupMenuButton<String>(
+                        onSelected: (id) => setState(() => entry.accountId = id),
+                        itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
+                          value: a.id,
+                          child: Text('${a.name}  ${a.currency}', style: const TextStyle(fontSize: 13)),
+                        )).toList(),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                            borderRadius: BorderRadius.circular(8)),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Text(acct?.name ?? 'Choose an account',
+                                style: TextStyle(fontSize: 12, color: acct != null ? cs.onSurface : cs.onSurfaceVariant)),
+                            if (acct != null) ...[
+                              const SizedBox(width: 4),
+                              Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                            ],
+                            const SizedBox(width: 4),
+                            Icon(LucideIcons.chevronDown, size: 12, color: cs.onSurfaceVariant),
+                          ]),
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 6),
                     // Amount for this split
                     Row(children: [
