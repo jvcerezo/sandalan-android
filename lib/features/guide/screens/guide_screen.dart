@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../../data/guide/guide_data.dart';
@@ -44,12 +45,52 @@ const _stages = [
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 
-class GuideScreen extends StatelessWidget {
+class GuideScreen extends StatefulWidget {
   const GuideScreen({super.key});
+
+  @override
+  State<GuideScreen> createState() => _GuideScreenState();
+}
+
+class _GuideScreenState extends State<GuideScreen> {
+  Set<String> _completedItems = {};
+  Set<String> _readGuides = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgress();
+  }
+
+  Future<void> _loadProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _completedItems = (prefs.getStringList('checklist_done') ?? []).toSet();
+        _readGuides = (prefs.getStringList('guides_read') ?? []).toSet();
+      });
+    }
+  }
+
+  String _stageProgress(LifeStage stage) {
+    final total = stage.guides.length + stage.checklist.length;
+    final done = stage.guides.where((g) => _readGuides.contains(g.slug)).length +
+        stage.checklist.where((c) => _completedItems.contains(c.id)).length;
+    return '$done/$total';
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    // Compute overall progress from guide data
+    int totalItems = 0;
+    int completedTotal = 0;
+    for (final stage in kLifeStages) {
+      totalItems += stage.guides.length + stage.checklist.length;
+      completedTotal += stage.guides.where((g) => _readGuides.contains(g.slug)).length;
+      completedTotal += stage.checklist.where((c) => _completedItems.contains(c.id)).length;
+    }
 
     return Column(
       children: [
@@ -83,7 +124,7 @@ class GuideScreen extends StatelessWidget {
                           const Text('Overall Progress',
                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
-                          Text('0/58 completed',
+                          Text('$completedTotal/$totalItems completed',
                               style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                         ],
                       ),
@@ -91,7 +132,7 @@ class GuideScreen extends StatelessWidget {
                     SizedBox(
                       width: 120,
                       child: AnimatedProgressBar(
-                        value: 0,
+                        value: totalItems > 0 ? completedTotal / totalItems : 0,
                         minHeight: 6,
                         color: colorScheme.primary,
                       ),
@@ -106,7 +147,9 @@ class GuideScreen extends StatelessWidget {
 
         // Journey map with Philippine backdrop
         Expanded(
-          child: _JourneyMap(),
+          child: _JourneyMap(
+            stageProgress: kLifeStages.map((s) => _stageProgress(s)).toList(),
+          ),
         ),
       ],
     );
@@ -116,6 +159,9 @@ class GuideScreen extends StatelessWidget {
 // ─── Journey Map ───────────────────────────────────────────────────────────────
 
 class _JourneyMap extends StatelessWidget {
+  final List<String> stageProgress;
+  const _JourneyMap({required this.stageProgress});
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -129,7 +175,8 @@ class _JourneyMap extends StatelessWidget {
               child: Column(
                 children: [
                   for (int i = 0; i < _stages.length; i++) ...[
-                    _JourneyNode(stage: _stages[i], index: i),
+                    _JourneyNode(stage: _stages[i], index: i,
+                      dynamicProgress: i < stageProgress.length ? stageProgress[i] : null),
                     if (i < _stages.length - 1)
                       _DashedConnector(
                         fromColor: _stages[i].color,
@@ -151,8 +198,9 @@ class _JourneyMap extends StatelessWidget {
 class _JourneyNode extends StatelessWidget {
   final _StageData stage;
   final int index;
+  final String? dynamicProgress;
 
-  const _JourneyNode({required this.stage, required this.index});
+  const _JourneyNode({required this.stage, required this.index, this.dynamicProgress});
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +246,7 @@ class _JourneyNode extends StatelessWidget {
                     style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
                     textAlign: TextAlign.center),
                 // Progress
-                Text(stage.progress,
+                Text(dynamicProgress ?? stage.progress,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: stage.color)),
               ],
             ),
