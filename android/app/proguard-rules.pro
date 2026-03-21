@@ -18,3 +18,11 @@
 # Google Play Core (required by Flutter deferred components)
 -dontwarn com.google.android.play.core.**
 -keep class com.google.android.play.core.** { *; }
+
+# Google ML Kit (text recognition — all script variants referenced by plugin)
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**
+-keep class com.google.mlkit.vision.** { *; }
+-keep class com.google_mlkit_text_recognition.** { *; }
