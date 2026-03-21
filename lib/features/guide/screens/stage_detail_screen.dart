@@ -415,7 +415,7 @@ class _GuideItem extends StatelessWidget {
                           width: 16,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: Colors.green,
+                            color: const Color(0xFF22C55E),
                             shape: BoxShape.circle,
                             border: Border.all(color: cs.surface, width: 1.5),
                           ),
@@ -472,14 +472,14 @@ class _GuideItem extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text('Completed',
                       style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Colors.green)),
+                          color: const Color(0xFF22C55E))),
                 ),
               ),
             ],
@@ -564,9 +564,9 @@ class _ChecklistTab extends StatelessWidget {
       'good-to-have': 'NICE TO HAVE',
     };
     final priorityColors = {
-      'critical': Colors.red,
-      'important': Colors.amber.shade700,
-      'good-to-have': Colors.grey,
+      'critical': cs.error,
+      'important': const Color(0xFFF59E0B), // amber — works on both themes
+      'good-to-have': cs.onSurfaceVariant,
     };
 
     return ListView(
@@ -764,28 +764,28 @@ class _ChecklistRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               margin: const EdgeInsets.only(right: 4),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: const Color(0xFF22C55E).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text('Done',
                   style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      color: Colors.green)),
+                      color: const Color(0xFF22C55E))),
             )
           else if (isSkipped)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               margin: const EdgeInsets.only(right: 4),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: cs.onSurfaceVariant.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text('Skipped',
+              child: Text('Skipped',
                   style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey)),
+                      color: cs.onSurfaceVariant)),
             ),
           Icon(LucideIcons.chevronRight,
               size: 14,
