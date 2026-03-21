@@ -422,9 +422,13 @@ class _SandalanAppState extends ConsumerState<SandalanApp> with WidgetsBindingOb
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(fontScale),
               ),
-              child: Stack(
-                children: [
-                  child!,
+              child: DefaultTextStyle(
+                style: DefaultTextStyle.of(context).style.copyWith(
+                  decoration: TextDecoration.none,
+                ),
+                child: Stack(
+                  children: [
+                    child!,
                   // Blur overlay when app is backgrounded
                   if (_showBlur && !_showLock)
                     Positioned.fill(
@@ -445,6 +449,7 @@ class _SandalanAppState extends ConsumerState<SandalanApp> with WidgetsBindingOb
                       ),
                     ),
                 ],
+                ),
               ),
             );
           },
