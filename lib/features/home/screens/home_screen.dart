@@ -659,10 +659,21 @@ class _NextStepCard extends StatelessWidget {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: onDismiss,
-                child: Icon(LucideIcons.x, size: 14,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+              Semantics(
+                label: 'Dismiss next step',
+                button: true,
+                child: InkWell(
+                  onTap: onDismiss,
+                  borderRadius: BorderRadius.circular(24),
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: Icon(LucideIcons.x, size: 14,
+                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -716,10 +727,14 @@ class _ErrorRetry extends StatelessWidget {
         Text('Something went wrong',
             style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
         const SizedBox(height: 8),
-        GestureDetector(
+        InkWell(
           onTap: onRetry,
-          child: Text('Tap to retry',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+          borderRadius: BorderRadius.circular(4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text('Tap to retry',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+          ),
         ),
       ]),
     );
@@ -749,45 +764,50 @@ class _NavRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          border: Border.all(color: colorScheme.surfaceContainerHighest),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
+    return Semantics(
+      label: '$title: $subtitle',
+      button: true,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border.all(color: colorScheme.surfaceContainerHighest),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36, height: 36,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
               ),
-              child: Icon(icon, size: 18, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  Text(subtitle,
-                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    Text(subtitle,
+                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
               ),
-            ),
             Icon(LucideIcons.chevronRight, size: 16,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
           ],
         ),
+      ),
       ),
     );
   }

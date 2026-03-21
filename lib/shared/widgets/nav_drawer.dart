@@ -186,15 +186,23 @@ class NavDrawer extends ConsumerWidget {
                                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                               )),
                           const Spacer(),
-                          GestureDetector(
-                            onTap: () {
-                              ref.read(themeModeProvider.notifier).state =
-                                  themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-                            },
-                            child: Icon(
-                              themeMode == ThemeMode.dark ? LucideIcons.moon : LucideIcons.sun,
-                              size: 16,
-                              color: colorScheme.onSurfaceVariant,
+                          Semantics(
+                            label: 'Toggle theme, currently ${themeMode == ThemeMode.dark ? 'dark' : 'light'}',
+                            button: true,
+                            child: InkWell(
+                              onTap: () {
+                                ref.read(themeModeProvider.notifier).state =
+                                    themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(
+                                  themeMode == ThemeMode.dark ? LucideIcons.moon : LucideIcons.sun,
+                                  size: 16,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -285,36 +293,41 @@ class _DrawerNavItem extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          Navigator.of(context).pop();
-          context.go(item.path);
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: isActive ? colorScheme.primary.withValues(alpha: 0.1) : null,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                item.icon,
-                size: 18,
-                color: isActive ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.65),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                item.label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+      child: Semantics(
+        label: '${item.label}${isActive ? ', current page' : ''}',
+        button: true,
+        selected: isActive,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.of(context).pop();
+            context.go(item.path);
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isActive ? colorScheme.primary.withValues(alpha: 0.1) : null,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  item.icon,
+                  size: 18,
                   color: isActive ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.65),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isActive ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.65),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
