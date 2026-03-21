@@ -13,6 +13,30 @@ String formatCurrency(double amount, {String currencyCode = 'PHP'}) {
   return formatter.format(amount);
 }
 
+/// Format currency respecting hide-balances and compact mode.
+///
+/// [hidden] — when true, returns masked dots.
+/// [compact] — when true, abbreviates large amounts (108.7K, 1.2M).
+String displayAmount(double amount, {
+  bool hidden = false,
+  bool compact = false,
+  String currencyCode = 'PHP',
+}) {
+  if (hidden) return '\u2022\u2022\u2022\u2022';
+  if (compact) return formatDisplayCurrency(amount, currencyCode: currencyCode);
+  return formatCurrency(amount, currencyCode: currencyCode);
+}
+
+/// Format a currency value compactly for dashboard/home display.
+String formatDisplayCurrency(double amount, {String currencyCode = 'PHP'}) {
+  final symbol = currencySymbol(currencyCode);
+  final abs = amount.abs();
+  final sign = amount < 0 ? '-' : '';
+  if (abs >= 1000000) return '$sign$symbol${(abs / 1000000).toStringAsFixed(1)}M';
+  if (abs >= 1000) return '$sign$symbol${(abs / 1000).toStringAsFixed(1)}K';
+  return formatCurrency(amount, currencyCode: currencyCode);
+}
+
 /// Format a number compactly (e.g., 1.2K, 3.5M).
 String formatCompact(double amount) {
   return NumberFormat.compact().format(amount);
@@ -47,4 +71,12 @@ String getTimeGreeting() {
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
+}
+
+/// Get a Filipino greeting based on the current time.
+String getTimeGreetingFilipino() {
+  final hour = DateTime.now().hour;
+  if (hour < 12) return 'Magandang umaga';
+  if (hour < 17) return 'Magandang hapon';
+  return 'Magandang gabi';
 }

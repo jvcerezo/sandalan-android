@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/legal.dart';
+import '../../../core/services/app_lock_service.dart';
 import '../../../core/services/data_export_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
@@ -20,10 +21,97 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
   final _deleteCtl = TextEditingController();
   bool _exporting = false;
 
+  // App lock state
+  bool _appLockEnabled = false;
+  bool _biometricEnabled = false;
+  bool _biometricAvailable = false;
+  bool _lockLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLockPrefs();
+  }
+
   @override
   void dispose() {
     _deleteCtl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadLockPrefs() async {
+    final service = AppLockService.instance;
+    final enabled = await service.isEnabled();
+    final bioEnabled = await service.isBiometricEnabled();
+    final bioAvailable = await service.isBiometricAvailable();
+    if (mounted) {
+      setState(() {
+        _appLockEnabled = enabled;
+        _biometricEnabled = bioEnabled;
+        _biometricAvailable = bioAvailable;
+        _lockLoaded = true;
+      });
+    }
+  }
+
+  Future<void> _onAppLockChanged(bool value) async {
+    if (value) {
+      // Prompt to set a PIN
+      final pin = await _showSetPinDialog();
+      if (pin == null) return; // cancelled
+      await AppLockService.instance.setPin(pin);
+      await AppLockService.instance.setEnabled(true);
+      setState(() => _appLockEnabled = true);
+    } else {
+      await AppLockService.instance.setEnabled(false);
+      setState(() {
+        _appLockEnabled = false;
+        _biometricEnabled = false;
+      });
+    }
+  }
+
+  Future<void> _onBiometricChanged(bool value) async {
+    await AppLockService.instance.setBiometricEnabled(value);
+    setState(() => _biometricEnabled = value);
+  }
+
+  Future<String?> _showSetPinDialog() async {
+    String pin = '';
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setDialogState) {
+          final cs = Theme.of(ctx).colorScheme;
+          return AlertDialog(
+            title: const Text('Set PIN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('Enter a 4-digit PIN to lock your app',
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              const SizedBox(height: 12),
+              TextField(
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  hintText: '4-digit PIN',
+                  counterText: '',
+                ),
+                onChanged: (v) => setDialogState(() => pin = v),
+              ),
+            ]),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+              FilledButton(
+                onPressed: pin.length == 4 ? () => Navigator.of(ctx).pop(pin) : null,
+                child: const Text('Set PIN'),
+              ),
+            ],
+          );
+        });
+      },
+    );
   }
 
   Future<void> _exportData() async {
@@ -56,6 +144,31 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
     final cs = Theme.of(context).colorScheme;
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
       widget.back,
+      // App Lock section
+      if (_lockLoaded)
+        SettingsCard(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(LucideIcons.lock, size: 18, color: cs.onSurface),
+            const SizedBox(width: 8),
+            const Text('App Lock', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          ]),
+          Text('Protect your app with a PIN or biometrics',
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+          const SizedBox(height: 8),
+          SettingsToggleRow(
+              title: 'App Lock',
+              sub: 'Require PIN to open the app',
+              value: _appLockEnabled,
+              onChanged: _onAppLockChanged),
+          if (_appLockEnabled && _biometricAvailable)
+            SettingsToggleRow(
+                title: 'Use Biometrics',
+                sub: 'Unlock with fingerprint or face',
+                value: _biometricEnabled,
+                onChanged: _onBiometricChanged),
+        ])),
+      const SizedBox(height: 12),
       SettingsCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Privacy', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),

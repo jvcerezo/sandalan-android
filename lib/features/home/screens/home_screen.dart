@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../app.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/tip_service.dart';
 import '../../../core/services/weekly_recap_service.dart';
@@ -160,6 +161,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final profile = ref.watch(profileProvider);
     final firstName = profile.valueOrNull?.firstName ?? 'there';
     final summary = ref.watch(transactionsSummaryProvider);
+    final greetingStyle = ref.watch(greetingStyleProvider);
+    final hideBalances = ref.watch(hideBalancesProvider);
+    final compactNumbers = ref.watch(compactNumbersProvider);
+
+    // Build greeting based on style
+    String greeting;
+    switch (greetingStyle) {
+      case GreetingStyle.english:
+        greeting = '${getTimeGreeting()}, $firstName';
+      case GreetingStyle.filipino:
+        greeting = '${getTimeGreetingFilipino()}, $firstName';
+      case GreetingStyle.casual:
+        greeting = 'Hey, $firstName!';
+      case GreetingStyle.minimal:
+        greeting = firstName;
+    }
 
     return RefreshIndicator(
       onRefresh: () => _onRefresh(ref),
@@ -174,8 +191,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '${getTimeGreeting()}, $firstName',
+                    greeting,
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+                  ),
+                ),
+                // Hide balances eye toggle
+                GestureDetector(
+                  onTap: () => ref.read(hideBalancesProvider.notifier).toggle(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(
+                      hideBalances ? LucideIcons.eyeOff : LucideIcons.eye,
+                      size: 18,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 if (_streak > 0)
@@ -236,6 +265,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     value: s.balance,
                     iconColor: colorScheme.onSurfaceVariant,
                     valueColor: colorScheme.onSurface,
+                    hidden: hideBalances,
+                    compact: compactNumbers,
                     onTap: () => context.go('/dashboard'),
                   ),
                   const SizedBox(width: 8),
@@ -245,6 +276,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     value: s.income,
                     iconColor: AppColors.income,
                     valueColor: AppColors.income,
+                    hidden: hideBalances,
+                    compact: compactNumbers,
                     onTap: () => context.go('/dashboard'),
                   ),
                   const SizedBox(width: 8),
@@ -254,6 +287,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     value: s.expenses,
                     iconColor: colorScheme.onSurfaceVariant,
                     valueColor: colorScheme.onSurface,
+                    hidden: hideBalances,
+                    compact: compactNumbers,
                     onTap: () => context.go('/dashboard'),
                   ),
                 ],
@@ -273,7 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // ─── Upcoming Payments ───────────────────────────────────
           StaggeredFadeIn(
             index: 4,
-            child: _UpcomingPaymentsSection(ref: ref),
+            child: _UpcomingPaymentsSection(ref: ref, hideBalances: hideBalances),
           ),
 
           // ─── Next Steps Carousel ─────────────────────────────────
@@ -418,6 +453,8 @@ class _FinStat extends StatelessWidget {
   final double value;
   final Color iconColor;
   final Color valueColor;
+  final bool hidden;
+  final bool compact;
   final VoidCallback onTap;
 
   const _FinStat({
@@ -426,6 +463,8 @@ class _FinStat extends StatelessWidget {
     required this.value,
     required this.iconColor,
     required this.valueColor,
+    this.hidden = false,
+    this.compact = false,
     required this.onTap,
   });
 
@@ -435,7 +474,7 @@ class _FinStat extends StatelessWidget {
 
     return Expanded(
       child: Semantics(
-        label: '$label: ${formatCurrency(value)}',
+        label: '$label: ${hidden ? 'hidden' : formatCurrency(value)}',
         button: true,
         child: InkWell(
           onTap: onTap,
@@ -459,10 +498,16 @@ class _FinStat extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                AnimatedCurrency(
-                  value: value,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor),
-                ),
+                hidden
+                    ? Text(displayAmount(value, hidden: true),
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor))
+                    : compact
+                        ? Text(displayAmount(value, compact: true),
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor))
+                        : AnimatedCurrency(
+                            value: value,
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor),
+                          ),
               ],
             ),
           ),
@@ -483,7 +528,8 @@ const _typeConfig = <PaymentType, ({IconData icon, Color color})>{
 
 class _UpcomingPaymentsSection extends StatelessWidget {
   final WidgetRef ref;
-  const _UpcomingPaymentsSection({required this.ref});
+  final bool hideBalances;
+  const _UpcomingPaymentsSection({required this.ref, this.hideBalances = false});
 
   @override
   Widget build(BuildContext context) {
@@ -522,7 +568,7 @@ class _UpcomingPaymentsSection extends StatelessWidget {
                       ]),
                     ],
                   ]),
-                  Text(formatCurrency(data.totalDue),
+                  Text(displayAmount(data.totalDue, hidden: hideBalances),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
               ),
@@ -561,6 +607,7 @@ class _UpcomingPaymentsSection extends StatelessWidget {
                     urgency: urgencyLabel,
                     urgencyColor: urgencyColor,
                     showDivider: !isLast,
+                    hideAmount: hideBalances,
                     onTap: () {
                       switch (item.type) {
                         case PaymentType.bill:
@@ -606,6 +653,7 @@ class _PaymentItem extends StatelessWidget {
   final String urgency;
   final Color? urgencyColor;
   final bool showDivider;
+  final bool hideAmount;
   final VoidCallback? onTap;
 
   const _PaymentItem({
@@ -618,6 +666,7 @@ class _PaymentItem extends StatelessWidget {
     required this.urgency,
     this.urgencyColor,
     this.showDivider = true,
+    this.hideAmount = false,
     this.onTap,
   });
 
@@ -626,7 +675,7 @@ class _PaymentItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Semantics(
-      label: '$title, $subtitle, ${formatCurrency(amount)}${urgency.isNotEmpty ? ', $urgency' : ''}',
+      label: '$title, $subtitle, ${hideAmount ? 'hidden' : formatCurrency(amount)}${urgency.isNotEmpty ? ', $urgency' : ''}',
       button: onTap != null,
       child: InkWell(
       onTap: onTap,
@@ -660,7 +709,7 @@ class _PaymentItem extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(formatCurrency(amount),
+                    Text(displayAmount(amount, hidden: hideAmount),
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     if (urgency.isNotEmpty)
                       Text(urgency,

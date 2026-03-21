@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -114,6 +115,25 @@ class NotificationService {
     );
   }
 
+  /// Check if we are currently in quiet hours.
+  Future<bool> _isInQuietHours() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('quiet_hours_enabled') ?? false;
+    if (!enabled) return false;
+
+    final from = prefs.getInt('quiet_hours_from') ?? 22;
+    final to = prefs.getInt('quiet_hours_to') ?? 7;
+    final now = DateTime.now().hour;
+
+    if (from <= to) {
+      // e.g. 8 AM to 5 PM
+      return now >= from && now < to;
+    } else {
+      // e.g. 10 PM to 7 AM (wraps midnight)
+      return now >= from || now < to;
+    }
+  }
+
   /// Show an immediate notification (for budget alerts, goal completion, etc.).
   Future<void> showNotification({
     required int id,
@@ -121,6 +141,7 @@ class NotificationService {
     required String body,
   }) async {
     if (!_initialized) return;
+    if (await _isInQuietHours()) return;
 
     await _plugin.show(
       id,

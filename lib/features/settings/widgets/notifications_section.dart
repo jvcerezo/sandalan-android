@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../app.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../core/services/notification_service.dart';
 import 'settings_shared.dart';
 
-class NotificationsSection extends StatefulWidget {
+class NotificationsSection extends ConsumerStatefulWidget {
   final Widget back;
   const NotificationsSection({super.key, required this.back});
 
   @override
-  State<NotificationsSection> createState() => _NotificationsSectionState();
+  ConsumerState<NotificationsSection> createState() => _NotificationsSectionState();
 }
 
-class _NotificationsSectionState extends State<NotificationsSection> {
+class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
   bool _push = true, _morning = true, _dailyLog = true;
   bool _loaded = false;
 
@@ -67,22 +69,41 @@ class _NotificationsSectionState extends State<NotificationsSection> {
     }
   }
 
+  String _formatHour(int hour) {
+    final h = hour % 12 == 0 ? 12 : hour % 12;
+    final amPm = hour < 12 ? 'AM' : 'PM';
+    return '$h:00 $amPm';
+  }
+
+  Future<void> _pickTime(BuildContext context, int currentHour, ValueChanged<int> onPicked) async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: currentHour, minute: 0),
+    );
+    if (time != null) onPicked(time.hour);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
       return const Center(child: CircularProgressIndicator());
     }
+    final cs = Theme.of(context).colorScheme;
+    final quietEnabled = ref.watch(quietHoursEnabledProvider);
+    final quietFrom = ref.watch(quietHoursFromProvider);
+    final quietTo = ref.watch(quietHoursToProvider);
+
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
       widget.back,
       SettingsCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Icon(LucideIcons.bell, size: 18, color: Theme.of(context).colorScheme.onSurface),
+          Icon(LucideIcons.bell, size: 18, color: cs.onSurface),
           const SizedBox(width: 8),
           const Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ]),
         Text('Push notification preferences (mobile app only)',
-            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
         SettingsToggleRow(
             title: 'Push notifications',
@@ -99,6 +120,62 @@ class _NotificationsSectionState extends State<NotificationsSection> {
             sub: 'Remind you at 7:00 PM to log your expenses if you haven\'t logged any today',
             value: _dailyLog,
             onChanged: _onDailyLogChanged),
+      ])),
+      const SizedBox(height: 12),
+      // Quiet Hours
+      SettingsCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.moonStar, size: 18, color: cs.onSurface),
+          const SizedBox(width: 8),
+          const Text('Quiet Hours', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Suppress notifications during specified hours',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        SettingsToggleRow(
+            title: 'Enable quiet hours',
+            sub: 'No notifications during the quiet period',
+            value: quietEnabled,
+            onChanged: (v) => ref.read(quietHoursEnabledProvider.notifier).setEnabled(v)),
+        if (quietEnabled) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            Expanded(child: InkWell(
+              onTap: () => _pickTime(context, quietFrom, (h) => ref.read(quietHoursFromProvider.notifier).setHour(h)),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('From', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  const SizedBox(height: 2),
+                  Text(_formatHour(quietFrom), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                ]),
+              ),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: InkWell(
+              onTap: () => _pickTime(context, quietTo, (h) => ref.read(quietHoursToProvider.notifier).setHour(h)),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('To', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  const SizedBox(height: 2),
+                  Text(_formatHour(quietTo), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                ]),
+              ),
+            )),
+          ]),
+        ],
       ])),
     ]);
   }

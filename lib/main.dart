@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'core/config/env.dart';
+import 'core/router/app_router.dart';
 import 'core/services/guest_mode_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/automation_service.dart';
@@ -20,6 +21,9 @@ Future<void> main() async {
 
   // Initialize local SQLite database.
   await AppDatabase.init();
+
+  // Load default landing page before router is created.
+  await loadDefaultLandingPage();
 
   // Initialize guest mode state from SharedPreferences.
   await GuestModeService.init();

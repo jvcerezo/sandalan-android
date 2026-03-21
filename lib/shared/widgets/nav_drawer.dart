@@ -199,8 +199,9 @@ class NavDrawer extends ConsumerWidget {
                             button: true,
                             child: InkWell(
                               onTap: () {
-                                ref.read(themeModeProvider.notifier).state =
-                                    themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                                final current = ref.read(appThemeModeProvider);
+                                ref.read(appThemeModeProvider.notifier).setMode(
+                                    current == AppThemeMode.light ? AppThemeMode.dark : AppThemeMode.light);
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: Padding(

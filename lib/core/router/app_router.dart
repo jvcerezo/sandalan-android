@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/guest_mode_service.dart';
@@ -37,9 +38,18 @@ import '../../features/chat/screens/chat_screen.dart';
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Cached landing page, loaded synchronously from SharedPreferences at startup.
+String _cachedLandingPage = '/home';
+
+/// Call before creating the router to load the default landing page.
+Future<void> loadDefaultLandingPage() async {
+  final prefs = await SharedPreferences.getInstance();
+  _cachedLandingPage = prefs.getString('default_landing_page') ?? '/home';
+}
+
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/home',
+  initialLocation: _cachedLandingPage,
   redirect: (context, state) {
     final session = Supabase.instance.client.auth.currentSession;
     final isLoggedIn = session != null;

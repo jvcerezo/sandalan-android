@@ -68,6 +68,12 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_svg: ^2.2.4
 
+  # Biometric auth
+  local_auth: ^2.3.0
+
+  # Dynamic color (Material You)
+  dynamic_color: ^1.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
