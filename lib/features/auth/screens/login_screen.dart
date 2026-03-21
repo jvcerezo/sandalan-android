@@ -122,10 +122,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
 
-              // Quick login for previously authenticated users
+              // Quick login for previously authenticated users (offline with cached identity)
               Builder(builder: (context) {
+                final session = Supabase.instance.client.auth.currentSession;
                 final cachedUser = Supabase.instance.client.auth.currentUser;
-                if (cachedUser == null) return const SizedBox.shrink();
+                // Only show quick login if there's a cached user but NO active session
+                // (means they were previously logged in but are now offline or session expired)
+                if (cachedUser == null || session != null) return const SizedBox.shrink();
 
                 final name = cachedUser.userMetadata?['full_name'] as String? ?? '';
                 final email = cachedUser.email ?? '';
@@ -134,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 return Column(children: [
                   GestureDetector(
                     onTap: () {
-                      // User has a cached session — go straight to home
+                      // User has cached identity — go straight to home (offline mode)
                       context.go('/home');
                     },
                     child: Container(

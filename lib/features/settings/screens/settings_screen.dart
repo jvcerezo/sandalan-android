@@ -9,9 +9,11 @@ import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/theme/theme_color.dart';
 import '../../../core/constants/currencies.dart';
+import '../../../core/constants/legal.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/automation_service.dart';
+import '../../../core/services/data_export_service.dart';
 import '../../../app.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -696,8 +698,35 @@ class _PrivacySection extends StatefulWidget {
 
 class _PrivacySectionState extends State<_PrivacySection> {
   final _deleteCtl = TextEditingController();
+  bool _exporting = false;
   @override
   void dispose() { _deleteCtl.dispose(); super.dispose(); }
+
+  Future<void> _exportData() async {
+    setState(() => _exporting = true);
+    final path = await DataExportService.exportData(widget.ref, context);
+    if (!mounted) return;
+    setState(() => _exporting = false);
+    if (path != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Data exported to:\n$path', style: const TextStyle(fontSize: 12)),
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Export failed. Please try again.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
+  void _openLegalDocument(String title, String content) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => _LegalDocumentScreen(title: title, content: content),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -710,16 +739,22 @@ class _PrivacySectionState extends State<_PrivacySection> {
         const SizedBox(height: 14),
         const Text('Export Your Data', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        Text('Download a full copy of all your data in JSON format — transactions, accounts, budgets, goals, debts, and contributions.',
+        Text('Download a full copy of all your data in JSON format — transactions, accounts, budgets, goals, debts, bills, insurance, contributions, and tax records.',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         const SizedBox(height: 8),
-        OutlinedButton.icon(onPressed: () {}, icon: const Icon(LucideIcons.download, size: 14),
-            label: const Text('Download My Data')),
+        OutlinedButton.icon(
+          onPressed: _exporting ? null : _exportData,
+          icon: _exporting
+              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(LucideIcons.download, size: 14),
+          label: Text(_exporting ? 'Exporting...' : 'Download My Data')),
         const SizedBox(height: 16),
         const Text('Legal Documents', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
-        _LegalLink(icon: LucideIcons.externalLink, label: 'Privacy Policy'),
-        _LegalLink(icon: LucideIcons.externalLink, label: 'Terms of Service'),
+        _LegalLink(icon: LucideIcons.fileText, label: 'Privacy Policy',
+            onTap: () => _openLegalDocument('Privacy Policy', kPrivacyPolicy)),
+        _LegalLink(icon: LucideIcons.fileText, label: 'Terms of Service',
+            onTap: () => _openLegalDocument('Terms of Service', kTermsOfService)),
         const SizedBox(height: 8),
         Text('For privacy-related concerns, email privacy@sandalan.com. We will respond within 15 business days.',
             style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
@@ -767,15 +802,44 @@ class _PrivacySectionState extends State<_PrivacySection> {
 }
 
 class _LegalLink extends StatelessWidget {
-  final IconData icon; final String label;
-  const _LegalLink({required this.icon, required this.label});
+  final IconData icon; final String label; final VoidCallback onTap;
+  const _LegalLink({required this.icon, required this.label, required this.onTap});
   @override
-  Widget build(BuildContext c) => Padding(padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(children: [
-      Icon(icon, size: 12, color: Theme.of(c).colorScheme.primary),
-      const SizedBox(width: 6),
-      Text(label, style: TextStyle(fontSize: 13, color: Theme.of(c).colorScheme.primary)),
-    ]));
+  Widget build(BuildContext c) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(6),
+    child: Padding(padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Row(children: [
+        Icon(icon, size: 14, color: Theme.of(c).colorScheme.primary),
+        const SizedBox(width: 8),
+        Expanded(child: Text(label, style: TextStyle(fontSize: 13, color: Theme.of(c).colorScheme.primary, fontWeight: FontWeight.w500))),
+        Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(c).colorScheme.onSurfaceVariant),
+      ])));
+}
+
+/// Full-screen reader view for legal documents.
+class _LegalDocumentScreen extends StatelessWidget {
+  final String title;
+  final String content;
+  const _LegalDocumentScreen({required this.title, required this.content});
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: SelectableText(content,
+          style: TextStyle(fontSize: 13, height: 1.6, color: cs.onSurface)),
+      ),
+    );
+  }
 }
 
 // ─── Bug Report ────────────────────────────────────────────────────────────────
@@ -936,7 +1000,12 @@ class _AccountSection extends StatelessWidget {
               if (GuestModeService.isGuestSync()) {
                 await GuestModeService.disableGuestMode();
               }
-              await ref.read(authRepositoryProvider).signOut();
+              await NotificationService.instance.cancelAll();
+              try {
+                await ref.read(authRepositoryProvider).signOut();
+              } catch (_) {
+                // May fail offline — that's OK, local state is cleared
+              }
               if (context.mounted) context.go('/login');
             },
             icon: const Icon(LucideIcons.logOut, size: 16, color: AppColors.expense),

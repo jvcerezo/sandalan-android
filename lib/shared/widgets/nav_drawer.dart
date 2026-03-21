@@ -247,7 +247,12 @@ class NavDrawer extends ConsumerWidget {
                         onTap: () async {
                           Navigator.of(context).pop();
                           await NotificationService.instance.cancelAll();
-                          await ref.read(authRepositoryProvider).signOut();
+                          // Try sign out — may fail offline, that's OK
+                          try {
+                            await ref.read(authRepositoryProvider).signOut();
+                          } catch (_) {
+                            // Offline — clear local session manually
+                          }
                           if (context.mounted) context.go('/login');
                         },
                       ),
