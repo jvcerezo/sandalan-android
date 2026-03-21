@@ -26,6 +26,11 @@ class LocalTransactionRepository {
     return rows.map(_rowToTransaction).toList();
   }
 
+  Future<List<Transaction>> getPendingTransactions() async {
+    final rows = await _db.getPendingTransactions(_userId);
+    return rows.map(_rowToTransaction).toList();
+  }
+
   Future<List<Transaction>> getTransactions([TransactionFilters? filters]) async {
     final f = filters ?? const TransactionFilters();
     final rows = await _db.getFilteredTransactions(
@@ -54,50 +59,26 @@ class LocalTransactionRepository {
     );
   }
 
-  /// Transaction summary computed from local data.
+  /// Transaction summary computed from local data using SQL aggregation.
   /// Only counts confirmed transactions from the CURRENT MONTH
   /// (excludes pending bills/insurance, transfers, and goal funding).
   /// Balance = sum of all account balances (matches totalBalanceProvider).
   Future<TransactionsSummary> getTransactionsSummary() async {
     final now = DateTime.now();
-    final firstOfMonth = DateTime(now.year, now.month, 1);
-    final lastOfMonth = DateTime(now.year, now.month + 1, 0);
-    final startDate = firstOfMonth.toIso8601String().substring(0, 10);
-    final endDate = lastOfMonth.toIso8601String().substring(0, 10);
+    final startDate = DateTime(now.year, now.month, 1).toIso8601String().substring(0, 10);
+    final endDate = DateTime(now.year, now.month + 1, 0).toIso8601String().substring(0, 10);
 
-    final transactions = await _db.getFilteredTransactions(
+    final summary = await _db.getTransactionsSummaryAggregate(
       _userId,
       startDate: startDate,
       endDate: endDate,
-      pageSize: 100000,
     );
-    final accounts = await _db.getAllAccounts(_userId);
-
-    final nonTransfer = transactions
-        .where((t) {
-          final cat = (t['category'] as String).toLowerCase();
-          final status = t['status'] as String? ?? 'confirmed';
-          return cat != 'transfer' && cat != 'goal funding' && status == 'confirmed';
-        })
-        .toList();
-
-    final income = nonTransfer
-        .where((t) => (t['amount'] as num) > 0)
-        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble());
-
-    final expenses = nonTransfer
-        .where((t) => (t['amount'] as num) < 0)
-        .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble().abs());
-
-    final accountsTotal = accounts
-        .fold<double>(0, (sum, a) => sum + (a['balance'] as num).toDouble());
-
-    final balance = (accountsTotal * 100).roundToDouble() / 100;
+    final accountsTotal = await _db.getTotalAccountBalance(_userId);
 
     return TransactionsSummary(
-      balance: balance,
-      income: (income * 100).roundToDouble() / 100,
-      expenses: (expenses * 100).roundToDouble() / 100,
+      balance: (accountsTotal * 100).roundToDouble() / 100,
+      income: (summary['income']! * 100).roundToDouble() / 100,
+      expenses: (summary['expenses']! * 100).roundToDouble() / 100,
     );
   }
 

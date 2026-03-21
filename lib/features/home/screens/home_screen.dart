@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
@@ -98,7 +99,7 @@ class HomeScreen extends ConsumerWidget {
                 ],
               ),
               loading: () => const ShimmerStatRow(count: 3),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, __) => _ErrorRetry(onRetry: () => ref.invalidate(transactionsSummaryProvider)),
             ),
           ),
           const SizedBox(height: 18),
@@ -169,71 +170,74 @@ class _CurrentStageCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     const stageColor = StageColors.blue; // Unang Hakbang = blue
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          border: Border.all(color: colorScheme.surfaceContainerHighest),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            // Stage icon
-            Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(
-                color: stageColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+    return Semantics(
+      label: 'Current stage: Unang Hakbang, 0 of 58 steps complete',
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border.all(color: colorScheme.surfaceContainerHighest),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(
+                  color: stageColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(LucideIcons.bookOpen, size: 20, color: stageColor),
               ),
-              child: const Icon(LucideIcons.bookOpen, size: 20, color: stageColor),
-            ),
-            const SizedBox(width: 14),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('CURRENT STAGE',
-                      style: TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
-                      )),
-                  const SizedBox(height: 3),
-                  const Text('Unang Hakbang',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 140),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: 0,
-                              minHeight: 6,
-                              backgroundColor: colorScheme.surfaceContainerHighest,
-                              color: stageColor,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('CURRENT STAGE',
+                        style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
+                        )),
+                    const SizedBox(height: 3),
+                    const Text('Unang Hakbang',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            constraints: const BoxConstraints(maxWidth: 140),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: 0,
+                                minHeight: 6,
+                                backgroundColor: colorScheme.surfaceContainerHighest,
+                                color: stageColor,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('0/58',
-                          style: TextStyle(
-                            fontSize: 10, fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
-                          )),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 8),
+                        Text('0/58',
+                            style: TextStyle(
+                              fontSize: 10, fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurfaceVariant,
+                            )),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(LucideIcons.chevronRight, size: 16,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35)),
-          ],
+              Icon(LucideIcons.chevronRight, size: 16,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35)),
+            ],
+          ),
         ),
       ),
     );
@@ -264,32 +268,37 @@ class _FinStat extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border.all(color: colorScheme.surfaceContainerHighest),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 12, color: iconColor),
-                  const SizedBox(width: 4),
-                  Text(label,
-                      style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
-                ],
-              ),
-              const SizedBox(height: 4),
-              AnimatedCurrency(
-                value: value,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor),
-              ),
-            ],
+      child: Semantics(
+        label: '$label: ${formatCurrency(value)}',
+        button: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              border: Border.all(color: colorScheme.surfaceContainerHighest),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, size: 12, color: iconColor),
+                    const SizedBox(width: 4),
+                    Text(label,
+                        style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                AnimatedCurrency(
+                  value: value,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -436,85 +445,127 @@ class _PaymentItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(8),
+    return Semantics(
+      label: '$title, $subtitle, ${formatCurrency(amount)}${urgency.isNotEmpty ? ', $urgency' : ''}',
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 16, color: iconColor),
                 ),
-                child: Icon(icon, size: 16, color: iconColor),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(subtitle,
+                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(title,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text(subtitle,
-                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                    Text(formatCurrency(amount),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    if (urgency.isNotEmpty)
+                      Text(urgency,
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
+                              color: urgencyColor ?? colorScheme.onSurfaceVariant)),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(formatCurrency(amount),
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                  if (urgency.isNotEmpty)
-                    Text(urgency,
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
-                            color: urgencyColor ?? colorScheme.onSurfaceVariant)),
-                ],
-              ),
-              const SizedBox(width: 4),
-              Icon(LucideIcons.chevronRight, size: 14,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
-            ],
+                const SizedBox(width: 4),
+                Icon(LucideIcons.chevronRight, size: 14,
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
+              ],
+            ),
           ),
-        ),
-        if (showDivider)
-          Divider(height: 1, indent: 56, color: colorScheme.outline.withValues(alpha: 0.08)),
-      ],
+          if (showDivider)
+            Divider(height: 1, indent: 56, color: colorScheme.outline.withValues(alpha: 0.08)),
+        ],
+      ),
     );
   }
 }
 
 // ─── Next Steps Carousel ───────────────────────────────────────────────────────
 
-class _NextStepsSection extends StatelessWidget {
+class _NextStepsSection extends StatefulWidget {
+  @override
+  State<_NextStepsSection> createState() => _NextStepsSectionState();
+}
+
+class _NextStepsSectionState extends State<_NextStepsSection> {
+  static const _prefsKey = 'dismissed_next_steps';
+  Set<String> _dismissed = {};
+  bool _loaded = false;
+
+  // Static next steps based on guide data
+  static const _allSteps = [
+    _NextStep(
+      id: 'tin',
+      type: 'checklist',
+      title: 'Get your TIN from BIR',
+      description: 'Your Tax Identification Number is required for employment, banking, business registration,...',
+      actionLabel: 'View Guide',
+    ),
+    _NextStep(
+      id: 'sss',
+      type: 'checklist',
+      title: 'Register with SSS',
+      description: 'The Social Security System provides retirement pension, disability benefits,...',
+      actionLabel: 'View Guide',
+    ),
+    _NextStep(
+      id: 'philhealth',
+      type: 'checklist',
+      title: 'Register with PhilHealth',
+      description: 'Philippine Health Insurance Corporation provides healthcare coverage...',
+      actionLabel: 'View Guide',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDismissed();
+  }
+
+  Future<void> _loadDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_prefsKey) ?? [];
+    setState(() {
+      _dismissed = list.toSet();
+      _loaded = true;
+    });
+  }
+
+  Future<void> _dismiss(String stepId) async {
+    final prefs = await SharedPreferences.getInstance();
+    _dismissed.add(stepId);
+    await prefs.setStringList(_prefsKey, _dismissed.toList());
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    if (!_loaded) return const SizedBox.shrink();
 
-    // Static next steps based on guide data
-    final steps = [
-      _NextStep(
-        type: 'checklist',
-        title: 'Get your TIN from BIR',
-        description: 'Your Tax Identification Number is required for employment, banking, business registration,...',
-        actionLabel: 'View Guide',
-      ),
-      _NextStep(
-        type: 'checklist',
-        title: 'Register with SSS',
-        description: 'The Social Security System provides retirement pension, disability benefits,...',
-        actionLabel: 'View Guide',
-      ),
-      _NextStep(
-        type: 'checklist',
-        title: 'Register with PhilHealth',
-        description: 'Philippine Health Insurance Corporation provides healthcare coverage...',
-        actionLabel: 'View Guide',
-      ),
-    ];
+    final colorScheme = Theme.of(context).colorScheme;
+    final steps = _allSteps.where((s) => !_dismissed.contains(s.id)).toList();
+
+    if (steps.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,7 +586,10 @@ class _NextStepsSection extends StatelessWidget {
             padding: EdgeInsets.zero,
             itemCount: steps.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, i) => _NextStepCard(step: steps[i]),
+            itemBuilder: (context, i) => _NextStepCard(
+              step: steps[i],
+              onDismiss: () => _dismiss(steps[i].id),
+            ),
           ),
         ),
         const SizedBox(height: 18),
@@ -545,11 +599,13 @@ class _NextStepsSection extends StatelessWidget {
 }
 
 class _NextStep {
+  final String id;
   final String type;
   final String title;
   final String description;
   final String actionLabel;
   const _NextStep({
+    required this.id,
     required this.type,
     required this.title,
     required this.description,
@@ -557,23 +613,15 @@ class _NextStep {
   });
 }
 
-class _NextStepCard extends StatefulWidget {
+class _NextStepCard extends StatelessWidget {
   final _NextStep step;
-  const _NextStepCard({required this.step});
-
-  @override
-  State<_NextStepCard> createState() => _NextStepCardState();
-}
-
-class _NextStepCardState extends State<_NextStepCard> {
-  bool _dismissed = false;
+  final VoidCallback onDismiss;
+  const _NextStepCard({required this.step, required this.onDismiss});
 
   @override
   Widget build(BuildContext context) {
-    if (_dismissed) return const SizedBox.shrink();
-
     final colorScheme = Theme.of(context).colorScheme;
-    final isChecklist = widget.step.type == 'checklist';
+    final isChecklist = step.type == 'checklist';
     final accentColor = isChecklist ? AppColors.warning : colorScheme.primary;
 
     return Container(
@@ -612,7 +660,7 @@ class _NextStepCardState extends State<_NextStepCard> {
                 ),
               ),
               GestureDetector(
-                onTap: () => setState(() => _dismissed = true),
+                onTap: onDismiss,
                 child: Icon(LucideIcons.x, size: 14,
                     color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
               ),
@@ -620,20 +668,20 @@ class _NextStepCardState extends State<_NextStepCard> {
           ),
           const SizedBox(height: 10),
           // Title
-          Text(widget.step.title,
+          Text(step.title,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
           // Description
           Expanded(
-            child: Text(widget.step.description,
+            child: Text(step.description,
                 style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant, height: 1.3),
                 maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
           // Action
           Row(
             children: [
-              Text(widget.step.actionLabel,
+              Text(step.actionLabel,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
               const SizedBox(width: 4),
               Icon(LucideIcons.arrowRight, size: 12, color: colorScheme.primary),
@@ -641,6 +689,39 @@ class _NextStepCardState extends State<_NextStepCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Error Retry Widget ─────────────────────────────────────────────────────────
+
+class _ErrorRetry extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _ErrorRetry({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(LucideIcons.alertCircle, size: 24,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+        const SizedBox(height: 6),
+        Text('Something went wrong',
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: onRetry,
+          child: Text('Tap to retry',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+        ),
+      ]),
     );
   }
 }

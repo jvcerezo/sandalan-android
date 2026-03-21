@@ -130,8 +130,7 @@ final dueRecurringCountProvider = FutureProvider<int>((ref) async {
 
 final pendingTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
   final txnRepo = ref.read(transactionRepositoryProvider);
-  final all = await txnRepo.getTransactions();
-  return all.where((t) => t.isPending).toList();
+  return txnRepo.getPendingTransactions();
 });
 
 final pendingBillTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {

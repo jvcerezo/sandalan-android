@@ -189,6 +189,10 @@ class AppDatabase {
     // Create indexes for common queries
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_user ON local_transactions(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_sync ON local_transactions(sync_status)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_tx_date ON local_transactions(user_id, date DESC)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_tx_status ON local_transactions(user_id, status)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_tx_category ON local_transactions(user_id, category)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_tx_account ON local_transactions(user_id, account_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_accounts_user ON local_accounts(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_budgets_user ON local_budgets(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_goals_user ON local_goals(user_id)');
@@ -330,6 +334,49 @@ class AppDatabase {
   }
 
   Future<void> upsertTransaction(Map<String, dynamic> values) => _upsert('local_transactions', values);
+
+  /// Get income/expense totals using SQL aggregation (avoids loading all rows into Dart).
+  Future<Map<String, double>> getTransactionsSummaryAggregate(
+    String userId, {
+    required String startDate,
+    required String endDate,
+  }) async {
+    final results = await _db.customSelect(
+      '''SELECT
+        COALESCE(SUM(CASE WHEN amount > 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') AND status = 'confirmed' THEN amount ELSE 0 END), 0) as income,
+        COALESCE(SUM(CASE WHEN amount < 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') AND status = 'confirmed' THEN ABS(amount) ELSE 0 END), 0) as expenses
+      FROM local_transactions
+      WHERE user_id = ? AND date >= ? AND date <= ?''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString(startDate),
+        Variable.withString(endDate),
+      ],
+    ).get();
+
+    final row = results.first.data;
+    return {
+      'income': (row['income'] as num).toDouble(),
+      'expenses': (row['expenses'] as num).toDouble(),
+    };
+  }
+
+  /// Get total balance across all accounts using SQL aggregation.
+  Future<double> getTotalAccountBalance(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT COALESCE(SUM(balance), 0) as total FROM local_accounts WHERE user_id = ?',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return (results.first.data['total'] as num).toDouble();
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingTransactions(String userId) async {
+    final results = await _db.customSelect(
+      "SELECT * FROM local_transactions WHERE user_id = ? AND status = 'pending' ORDER BY date DESC, created_at DESC",
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
 
   Future<void> deleteTransaction(String id) async {
     await _db.customStatement('DELETE FROM local_transactions WHERE id = ?', [id]);

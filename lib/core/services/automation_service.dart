@@ -124,6 +124,9 @@ class AutomationService {
       final now = DateTime.now();
       final monthTag = '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
+      // Fetch all transactions once to check for duplicates (avoid N+1 queries)
+      final allTransactions = await txnRepo.getTransactions();
+
       for (final bill in bills) {
         if (!bill.isActive) continue;
 
@@ -142,8 +145,7 @@ class AutomationService {
         // Create a pending transaction for the bill
         final pendingDesc = '${bill.name} - $monthTag';
         // Check if pending transaction already exists (avoid duplicates)
-        final existing = await txnRepo.getTransactions();
-        final alreadyExists = existing.any((t) =>
+        final alreadyExists = allTransactions.any((t) =>
             t.description == pendingDesc && t.isPending && t.category == bill.category);
         if (alreadyExists) continue;
 
@@ -171,6 +173,9 @@ class AutomationService {
       final now = DateTime.now();
       final monthTag = '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
+      // Fetch all transactions once to check for duplicates (avoid N+1 queries)
+      final allTransactions = await txnRepo.getTransactions();
+
       for (final policy in policies) {
         if (!policy.isActive) continue;
 
@@ -182,8 +187,7 @@ class AutomationService {
 
         // Create a pending transaction for the insurance premium
         final pendingDesc = '${policy.name} premium - $monthTag';
-        final existing = await txnRepo.getTransactions();
-        final alreadyExists = existing.any((t) =>
+        final alreadyExists = allTransactions.any((t) =>
             t.description == pendingDesc && t.isPending && t.category == 'Insurance');
         if (alreadyExists) continue;
 
@@ -211,12 +215,14 @@ class AutomationService {
       final now = DateTime.now();
       final monthTag = '${now.year}-${now.month.toString().padLeft(2, '0')}';
 
+      // Fetch all transactions once to check for duplicates (avoid N+1 queries)
+      final allTransactions = await txnRepo.getTransactions();
+
       for (final debt in debts) {
         if (debt.isPaidOff) continue;
 
         final pendingDesc = '${debt.name} payment - $monthTag';
-        final existing = await txnRepo.getTransactions();
-        final alreadyExists = existing.any((t) =>
+        final alreadyExists = allTransactions.any((t) =>
             t.description == pendingDesc && t.isPending && t.category == 'Debt Payment');
         if (alreadyExists) continue;
 
@@ -254,45 +260,65 @@ class AutomationService {
     }
   }
 
-  // ── Bill notifications (3 days, 1 day, on the day) ────────────────────────
+  // ── Generic payment reminder scheduler ─────────────────────────────────
+
+  static Future<void> _schedulePaymentReminders({
+    required String idPrefix,
+    required String title,
+    required double amount,
+    required DateTime dueDate,
+  }) async {
+    final baseId = idPrefix.hashCode;
+
+    await NotificationService.instance.scheduleNotification(
+      id: baseId,
+      title: 'Upcoming: $title',
+      body: '$title payment of ${_fmt(amount)} due in 3 days',
+      scheduledDate: dueDate.subtract(const Duration(days: 3)),
+    );
+    await NotificationService.instance.scheduleNotification(
+      id: baseId + 1,
+      title: 'Tomorrow: $title',
+      body: '$title payment of ${_fmt(amount)} due tomorrow',
+      scheduledDate: dueDate.subtract(const Duration(days: 1)),
+    );
+    await NotificationService.instance.scheduleNotification(
+      id: baseId + 2,
+      title: 'Due Today: $title',
+      body: '$title payment of ${_fmt(amount)} is due today',
+      scheduledDate: dueDate,
+    );
+  }
+
+  /// Compute the next due date for a given due-day-of-month.
+  static DateTime _nextDueDate(int dueDay) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastDay = DateTime(now.year, now.month + 1, 0).day;
+    final clampedDay = dueDay.clamp(1, lastDay);
+    var dueDate = DateTime(now.year, now.month, clampedDay);
+    if (dueDate.isBefore(today)) {
+      final nextLastDay = DateTime(now.year, now.month + 2, 0).day;
+      dueDate = DateTime(now.year, now.month + 1, clampedDay.clamp(1, nextLastDay));
+    }
+    return dueDate;
+  }
+
+  // ── Bill notifications ────────────────────────────────────────────────────
 
   static Future<void> _scheduleBillNotifications(AppDatabase db, SupabaseClient client) async {
     try {
       final repo = LocalBillRepository(db, client);
       final bills = await repo.getBills();
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
 
       for (final bill in bills) {
         if (!bill.isActive || bill.dueDay == null) continue;
-
-        final lastDay = DateTime(now.year, now.month + 1, 0).day;
-        final dueDay = bill.dueDay!.clamp(1, lastDay);
-        var dueDate = DateTime(now.year, now.month, dueDay);
-        if (dueDate.isBefore(today)) {
-          final nextLastDay = DateTime(now.year, now.month + 2, 0).day;
-          dueDate = DateTime(now.year, now.month + 1, dueDay.clamp(1, nextLastDay));
-        }
-
-        final baseId = 'bill-${bill.id}'.hashCode;
-
-        await NotificationService.instance.scheduleNotification(
-          id: baseId,
-          title: 'Upcoming: ${bill.name}',
-          body: '${bill.name} payment of ${_fmt(bill.amount)} due in 3 days',
-          scheduledDate: dueDate.subtract(const Duration(days: 3)),
-        );
-        await NotificationService.instance.scheduleNotification(
-          id: baseId + 1,
-          title: 'Tomorrow: ${bill.name}',
-          body: '${bill.name} payment of ${_fmt(bill.amount)} due tomorrow',
-          scheduledDate: dueDate.subtract(const Duration(days: 1)),
-        );
-        await NotificationService.instance.scheduleNotification(
-          id: baseId + 2,
-          title: 'Due Today: ${bill.name}',
-          body: '${bill.name} payment of ${_fmt(bill.amount)} is due today',
-          scheduledDate: dueDate,
+        final dueDate = _nextDueDate(bill.dueDay!);
+        await _schedulePaymentReminders(
+          idPrefix: 'bill-${bill.id}',
+          title: bill.name,
+          amount: bill.amount,
+          dueDate: dueDate,
         );
       }
     } catch (e) {
@@ -300,45 +326,21 @@ class AutomationService {
     }
   }
 
-  // ── Debt notifications (3 days, 1 day, on the day) ────────────────────────
+  // ── Debt notifications ────────────────────────────────────────────────────
 
   static Future<void> _scheduleDebtNotifications(AppDatabase db, SupabaseClient client) async {
     try {
       final repo = LocalDebtRepository(db, client);
       final debts = await repo.getDebts();
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
 
       for (final debt in debts) {
         if (debt.isPaidOff || debt.dueDay == null) continue;
-
-        final lastDay = DateTime(now.year, now.month + 1, 0).day;
-        final dueDay = debt.dueDay!.clamp(1, lastDay);
-        var dueDate = DateTime(now.year, now.month, dueDay);
-        if (dueDate.isBefore(today)) {
-          final nextLastDay = DateTime(now.year, now.month + 2, 0).day;
-          dueDate = DateTime(now.year, now.month + 1, dueDay.clamp(1, nextLastDay));
-        }
-
-        final baseId = 'debt-${debt.id}'.hashCode;
-
-        await NotificationService.instance.scheduleNotification(
-          id: baseId,
-          title: 'Upcoming: ${debt.name}',
-          body: '${debt.name} payment of ${_fmt(debt.minimumPayment)} due in 3 days',
-          scheduledDate: dueDate.subtract(const Duration(days: 3)),
-        );
-        await NotificationService.instance.scheduleNotification(
-          id: baseId + 1,
-          title: 'Tomorrow: ${debt.name}',
-          body: '${debt.name} payment of ${_fmt(debt.minimumPayment)} due tomorrow',
-          scheduledDate: dueDate.subtract(const Duration(days: 1)),
-        );
-        await NotificationService.instance.scheduleNotification(
-          id: baseId + 2,
-          title: 'Due Today: ${debt.name}',
-          body: '${debt.name} payment of ${_fmt(debt.minimumPayment)} is due today',
-          scheduledDate: dueDate,
+        final dueDate = _nextDueDate(debt.dueDay!);
+        await _schedulePaymentReminders(
+          idPrefix: 'debt-${debt.id}',
+          title: debt.name,
+          amount: debt.minimumPayment,
+          dueDate: dueDate,
         );
       }
     } catch (e) {
@@ -346,7 +348,7 @@ class AutomationService {
     }
   }
 
-  // ── Insurance notifications (3 days, 1 day, on the day) ───────────────────
+  // ── Insurance notifications ───────────────────────────────────────────────
 
   static Future<void> _scheduleInsuranceNotifications(AppDatabase db, SupabaseClient client) async {
     try {
@@ -364,25 +366,11 @@ class AutomationService {
         final daysUntil = renewal.difference(today).inDays;
         if (daysUntil < -1 || daysUntil > 30) continue;
 
-        final baseId = 'insurance-${policy.id}'.hashCode;
-
-        await NotificationService.instance.scheduleNotification(
-          id: baseId,
-          title: 'Upcoming: ${policy.name}',
-          body: '${policy.name} premium of ${_fmt(policy.premiumAmount)} due in 3 days',
-          scheduledDate: renewal.subtract(const Duration(days: 3)),
-        );
-        await NotificationService.instance.scheduleNotification(
-          id: baseId + 1,
-          title: 'Tomorrow: ${policy.name}',
-          body: '${policy.name} premium of ${_fmt(policy.premiumAmount)} due tomorrow',
-          scheduledDate: renewal.subtract(const Duration(days: 1)),
-        );
-        await NotificationService.instance.scheduleNotification(
-          id: baseId + 2,
-          title: 'Due Today: ${policy.name}',
-          body: '${policy.name} premium of ${_fmt(policy.premiumAmount)} is due today',
-          scheduledDate: renewal,
+        await _schedulePaymentReminders(
+          idPrefix: 'insurance-${policy.id}',
+          title: policy.name,
+          amount: policy.premiumAmount,
+          dueDate: renewal,
         );
       }
     } catch (e) {

@@ -36,10 +36,32 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 
   void _applyFilters() {
+    DateTime? startDate;
+    DateTime? endDate;
+    final now = DateTime.now();
+
+    switch (_dateRange) {
+      case 'month':
+        startDate = DateTime(now.year, now.month, 1);
+        endDate = DateTime(now.year, now.month + 1, 0);
+      case 'lastMonth':
+        startDate = DateTime(now.year, now.month - 1, 1);
+        endDate = DateTime(now.year, now.month, 0);
+      case '3months':
+        startDate = DateTime(now.year, now.month - 2, 1);
+        endDate = DateTime(now.year, now.month + 1, 0);
+      case 'all':
+      default:
+        startDate = null;
+        endDate = null;
+    }
+
     ref.read(transactionFiltersProvider.notifier).state = TransactionFilters(
       type: _selectedTypeTab == 0 ? null : (_selectedTypeTab == 1 ? 'income' : 'expense'),
       category: _categoryFilter == 'All' ? null : _categoryFilter,
       search: _searchController.text.isEmpty ? null : _searchController.text,
+      startDate: startDate,
+      endDate: endDate,
     );
   }
 
@@ -146,38 +168,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               ),
             )),
           ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Attach receipt coming soon')),
-                );
-              },
-              icon: const Icon(LucideIcons.paperclip, size: 16),
-              label: const Text('Attach Receipt'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            )),
-            const SizedBox(width: 8),
-            Expanded(child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Split transaction coming soon')),
-                );
-              },
-              icon: const Icon(LucideIcons.gitBranch, size: 16),
-              label: const Text('Split'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            )),
-          ]),
         ]),
       ),
     );
@@ -244,20 +234,6 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ),
           ]),
         ]),
-        const SizedBox(height: 14),
-
-        // Import CSV button
-        OutlinedButton.icon(
-          onPressed: () {
-            // TODO: CSV import
-          },
-          icon: const Icon(LucideIcons.upload, size: 16),
-          label: const Text('Import CSV'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        ),
         const SizedBox(height: 14),
 
         // All / Income / Expenses tabs

@@ -92,13 +92,13 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/guide/:stageSlug',
-          pageBuilder: (context, state) => NoTransitionPage(
+          pageBuilder: (context, state) => MaterialPage(
             child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
           ),
         ),
         GoRoute(
           path: '/guide/:stageSlug/checklist/:itemId',
-          pageBuilder: (context, state) => NoTransitionPage(
+          pageBuilder: (context, state) => MaterialPage(
             child: ChecklistDetailScreen(
               stageSlug: state.pathParameters['stageSlug']!,
               itemId: state.pathParameters['itemId']!,
@@ -107,7 +107,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/guide/:stageSlug/:guideSlug',
-          pageBuilder: (context, state) => NoTransitionPage(
+          pageBuilder: (context, state) => MaterialPage(
             child: ArticleScreen(
               stageSlug: state.pathParameters['stageSlug']!,
               guideSlug: state.pathParameters['guideSlug']!,
@@ -152,53 +152,53 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/tools/contributions',
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => const MaterialPage(
             child: ContributionsScreen(),
           ),
         ),
         GoRoute(
           path: '/tools/13th-month',
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => const MaterialPage(
             child: ThirteenthMonthScreen(),
           ),
         ),
         GoRoute(
           path: '/tools/retirement',
-          pageBuilder: (context, state) => const NoTransitionPage(child: RetirementScreen()),
+          pageBuilder: (context, state) => const MaterialPage(child: RetirementScreen()),
         ),
         GoRoute(
           path: '/tools/rent-vs-buy',
-          pageBuilder: (context, state) => const NoTransitionPage(child: RentVsBuyScreen()),
+          pageBuilder: (context, state) => const MaterialPage(child: RentVsBuyScreen()),
         ),
         GoRoute(
           path: '/tools/panganay',
-          pageBuilder: (context, state) => const NoTransitionPage(child: PanganayModeScreen()),
+          pageBuilder: (context, state) => const MaterialPage(child: PanganayModeScreen()),
         ),
         GoRoute(
           path: '/tools/calculators',
-          pageBuilder: (context, state) => const NoTransitionPage(child: CalculatorsScreen()),
+          pageBuilder: (context, state) => const MaterialPage(child: CalculatorsScreen()),
         ),
         GoRoute(
           path: '/tools/insurance',
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => const MaterialPage(
             child: InsuranceScreen(),
           ),
         ),
         GoRoute(
           path: '/tools/bills',
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => const MaterialPage(
             child: BillsScreen(),
           ),
         ),
         GoRoute(
           path: '/tools/debts',
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => const MaterialPage(
             child: DebtManagerScreen(),
           ),
         ),
         GoRoute(
           path: '/tools/taxes',
-          pageBuilder: (context, state) => const NoTransitionPage(
+          pageBuilder: (context, state) => const MaterialPage(
             child: TaxTrackerScreen(),
           ),
         ),
