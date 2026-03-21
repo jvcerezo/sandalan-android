@@ -13,7 +13,10 @@ final monthlyReportProvider =
     FutureProvider.family<MonthlyReport, ({int year, int month})>(
   (ref, params) async {
     final service = ref.read(monthlyReportServiceProvider);
-    return service.generateReport(params.year, params.month);
+    final report = await service.generateReport(params.year, params.month);
+    // Invalidate the all-reports list so it picks up the new/cached report
+    ref.invalidate(allReportsProvider);
+    return report;
   },
 );
 

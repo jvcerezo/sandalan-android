@@ -18,7 +18,13 @@ class MonthlyReportService {
   }
 
   /// Generate a report for the given month. Computes all data from local DB.
-  Future<MonthlyReport> generateReport(int year, int month) async {
+  Future<MonthlyReport> generateReport(int year, int month, {bool forceRegenerate = false}) async {
+    // Return cached report if available (unless forced)
+    if (!forceRegenerate) {
+      final cached = await _getCachedReport(year, month);
+      if (cached != null) return cached;
+    }
+
     final userId = _userId;
     final startDate = '$year-${month.toString().padLeft(2, '0')}-01';
     final lastDay = DateTime(year, month + 1, 0).day;
