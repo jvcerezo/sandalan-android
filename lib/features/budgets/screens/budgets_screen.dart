@@ -35,16 +35,23 @@ class BudgetsScreen extends ConsumerWidget {
         ]),
         const SizedBox(height: 12),
 
-        // Period tabs
+        // Monthly label + copy from last month
         Row(children: [
-          _PeriodTab(label: 'Monthly', isSelected: period == 'monthly',
-              onTap: () => ref.read(budgetPeriodProvider.notifier).state = 'monthly'),
-          const SizedBox(width: 6),
-          _PeriodTab(label: 'Weekly', isSelected: period == 'weekly',
-              onTap: () => ref.read(budgetPeriodProvider.notifier).state = 'weekly'),
-          const SizedBox(width: 6),
-          _PeriodTab(label: 'Quarterly', isSelected: period == 'quarterly',
-              onTap: () => ref.read(budgetPeriodProvider.notifier).state = 'quarterly'),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text('Monthly', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: () => _copyFromLastMonth(context, ref, month),
+            icon: Icon(LucideIcons.copy, size: 14, color: colorScheme.primary),
+            label: Text('Copy last month', style: TextStyle(fontSize: 12, color: colorScheme.primary)),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+          ),
         ]),
         const SizedBox(height: 12),
 
@@ -111,6 +118,62 @@ class BudgetsScreen extends ConsumerWidget {
       useSafeArea: true,
       builder: (_) => const AddBudgetDialog(),
     ).then((_) => ref.invalidate(budgetsProvider));
+  }
+
+  Future<void> _copyFromLastMonth(BuildContext context, WidgetRef ref, DateTime currentMonth) async {
+    final lastMonth = DateTime(currentMonth.year, currentMonth.month - 1, 1);
+    final repo = ref.read(budgetRepositoryProvider);
+
+    // Get last month's budgets
+    final lastMonthBudgets = await repo.getBudgets(lastMonth, 'monthly');
+
+    if (!context.mounted) return;
+
+    if (lastMonthBudgets.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No budgets found for ${DateFormat('MMMM yyyy').format(lastMonth)}')),
+      );
+      return;
+    }
+
+    // Confirm
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Copy Budgets'),
+        content: Text('Copy ${lastMonthBudgets.length} budget${lastMonthBudgets.length == 1 ? '' : 's'} '
+            'from ${DateFormat('MMMM').format(lastMonth)} to ${DateFormat('MMMM').format(currentMonth)}?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Copy')),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    // Copy each budget
+    int copied = 0;
+    for (final budget in lastMonthBudgets) {
+      try {
+        await repo.createBudget(
+          category: budget.category,
+          amount: budget.amount,
+          month: currentMonth,
+          period: 'monthly',
+        );
+        copied++;
+      } catch (_) {
+        // Skip duplicates
+      }
+    }
+
+    ref.invalidate(budgetsProvider);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Copied $copied budget${copied == 1 ? '' : 's'} from ${DateFormat('MMMM').format(lastMonth)}')),
+      );
+    }
   }
 }
 
