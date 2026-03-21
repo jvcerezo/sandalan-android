@@ -56,6 +56,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final summary = ref.watch(transactionsSummaryProvider);
     final totalBalance = ref.watch(totalBalanceProvider);
+    final hideBalances = ref.watch(hideBalancesProvider);
+    String fc(double v) => hideBalances ? '••••' : formatCurrency(v);
 
     return RefreshIndicator(
       onRefresh: _onRefresh,
@@ -97,7 +99,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final netWorth = totalBalance + totalGoalSavings - totalDebt;
 
             return Semantics(
-              label: 'Net worth: ${formatCurrency(netWorth)}',
+              label: 'Net worth: ${fc(netWorth)}',
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -124,9 +126,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Text('NET WORTH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
                             letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
                         const SizedBox(height: 6),
-                        AnimatedCurrency(value: netWorth,
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
-                                color: colorScheme.primary)),
+                        hideBalances
+                            ? Text('••••', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
+                                color: colorScheme.primary))
+                            : AnimatedCurrency(value: netWorth,
+                                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
+                                    color: colorScheme.primary)),
                         const SizedBox(height: 12),
                         summary.when(
                           data: (s) {
@@ -138,7 +143,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Row(children: [
                                   Icon(LucideIcons.trendingUp, size: 12, color: AppColors.income),
                                   const SizedBox(width: 3),
-                                  Flexible(child: Text(formatCurrency(s.income),
+                                  Flexible(child: Text(fc(s.income),
                                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income),
                                       overflow: TextOverflow.ellipsis)),
                                 ]),
@@ -149,7 +154,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Row(children: [
                                   Icon(LucideIcons.trendingDown, size: 12, color: AppColors.expense),
                                   const SizedBox(width: 3),
-                                  Flexible(child: Text(formatCurrency(s.expenses),
+                                  Flexible(child: Text(fc(s.expenses),
                                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense),
                                       overflow: TextOverflow.ellipsis)),
                                 ]),
@@ -160,7 +165,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Row(children: [
                                   Icon(LucideIcons.piggyBank, size: 12, color: saved >= 0 ? AppColors.income : AppColors.expense),
                                   const SizedBox(width: 3),
-                                  Flexible(child: Text(formatCurrency(saved.abs()),
+                                  Flexible(child: Text(fc(saved.abs()),
                                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
                                           color: saved >= 0 ? AppColors.income : AppColors.expense),
                                       overflow: TextOverflow.ellipsis)),
@@ -195,17 +200,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             return Row(children: [
               QuickStat(icon: LucideIcons.landmark,
                   label: 'Accounts',
-                  value: formatCurrency(totalBalance),
+                  value: fc(totalBalance),
                   subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
               const SizedBox(width: 8),
               QuickStat(icon: LucideIcons.target,
                   label: 'Goals',
-                  value: formatCurrency(goalSaved),
+                  value: fc(goalSaved),
                   subtitle: '$activeGoals active'),
               const SizedBox(width: 8),
               QuickStat(icon: LucideIcons.creditCard,
                   label: 'Debts',
-                  value: formatCurrency(totalDebt),
+                  value: fc(totalDebt),
                   subtitle: '$activeDebts active'),
             ]);
           }),
@@ -255,7 +260,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     income > 0
                         ? (saved >= 0
                             ? 'You saved $pct% of your income this month'
-                            : 'You\'ve spent ${formatCurrency(expenses)} of ${formatCurrency(income)} income')
+                            : 'You\'ve spent ${fc(expenses)} of ${fc(income)} income')
                         : 'No income recorded this month',
                     style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                   ),

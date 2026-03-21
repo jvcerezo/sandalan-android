@@ -91,7 +91,36 @@ final appRouter = GoRouter(
       builder: (context, state) => const ChatScreen(),
     ),
 
-    // ─── App routes (with bottom nav shell) ───────────────────────────
+    // ─── Guide sub-pages (full-screen push, no shell) ───────────────
+    GoRoute(
+      path: '/guide/:stageSlug',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => MaterialPage(
+        child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
+      ),
+    ),
+    GoRoute(
+      path: '/guide/:stageSlug/checklist/:itemId',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => MaterialPage(
+        child: ChecklistDetailScreen(
+          stageSlug: state.pathParameters['stageSlug']!,
+          itemId: state.pathParameters['itemId']!,
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/guide/:stageSlug/:guideSlug',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => MaterialPage(
+        child: ArticleScreen(
+          stageSlug: state.pathParameters['stageSlug']!,
+          guideSlug: state.pathParameters['guideSlug']!,
+        ),
+      ),
+    ),
+
+    // ─── App routes (with shell) ─────────────────────────────────────
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => AppScaffold(child: child),
@@ -106,30 +135,6 @@ final appRouter = GoRouter(
           path: '/guide',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: GuideScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/guide/:stageSlug',
-          pageBuilder: (context, state) => MaterialPage(
-            child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
-          ),
-        ),
-        GoRoute(
-          path: '/guide/:stageSlug/checklist/:itemId',
-          pageBuilder: (context, state) => MaterialPage(
-            child: ChecklistDetailScreen(
-              stageSlug: state.pathParameters['stageSlug']!,
-              itemId: state.pathParameters['itemId']!,
-            ),
-          ),
-        ),
-        GoRoute(
-          path: '/guide/:stageSlug/:guideSlug',
-          pageBuilder: (context, state) => MaterialPage(
-            child: ArticleScreen(
-              stageSlug: state.pathParameters['stageSlug']!,
-              guideSlug: state.pathParameters['guideSlug']!,
-            ),
           ),
         ),
         GoRoute(
