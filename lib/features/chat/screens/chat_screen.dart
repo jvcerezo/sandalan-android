@@ -6,6 +6,7 @@ import '../providers/chat_providers.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/confirmation_card.dart';
 import '../widgets/category_picker_inline.dart';
+import 'ai_setup_screen.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -19,6 +20,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   bool _showWelcome = true;
+  bool _checkingSetup = true;
+  String _assistantName = 'Sandalan AI';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSetup();
+  }
+
+  Future<void> _checkSetup() async {
+    final isComplete = await AiSetupScreen.isSetupComplete();
+    if (!isComplete && mounted) {
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const AiSetupScreen()),
+      );
+      // If user dismissed without completing, still show the chat
+      if (result != true && mounted) {
+        // Use defaults
+      }
+    }
+    if (mounted) {
+      final name = await AiSetupScreen.getAssistantName();
+      setState(() {
+        _assistantName = name;
+        _checkingSetup = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -51,6 +80,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_checkingSetup) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Sandalan AI')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final chatState = ref.watch(chatStateProvider);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -62,11 +98,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sandalan AI'),
+        title: Text(_assistantName),
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.settings2, size: 20),
+            onPressed: () async {
+              await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => const AiSetupScreen()),
+              );
+              if (mounted) {
+                final name = await AiSetupScreen.getAssistantName();
+                setState(() => _assistantName = name);
+              }
+            },
+            tooltip: 'AI Settings',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -120,7 +171,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           children: [
             Icon(LucideIcons.messageCircle, size: 48, color: cs.primary.withValues(alpha: 0.5)),
             const SizedBox(height: 16),
-            Text('Sandalan AI', style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            Text(_assistantName, style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
               'Log transactions or ask about your finances using natural language.',
@@ -137,6 +188,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 _QuickChip(label: 'net worth ko', onTap: () => _quickSend('net worth ko')),
                 _QuickChip(label: 'gastos ko', onTap: () => _quickSend('gastos ko')),
                 _QuickChip(label: 'salary 30k', onTap: () => _quickSend('salary 30k')),
+                _QuickChip(label: 'payo naman', onTap: () => _quickSend('payo naman')),
+                _QuickChip(label: 'hello', onTap: () => _quickSend('hello')),
               ],
             ),
           ],

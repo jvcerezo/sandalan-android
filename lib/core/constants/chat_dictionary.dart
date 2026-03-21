@@ -3,7 +3,7 @@
 /// chat engine's NLP parsing pipeline.
 
 // ═══════════════════════════════════════════════════════════════════════
-// CATEGORY DICTIONARY — keyword → transaction category
+// CATEGORY DICTIONARY — keyword -> transaction category
 // ═══════════════════════════════════════════════════════════════════════
 
 const Map<String, String> kCategoryDictionary = {
@@ -267,7 +267,7 @@ const List<(String pattern, String category)> kCompoundPatterns = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
-// FILIPINO VERB MAP — conjugated verbs → category
+// FILIPINO VERB MAP — conjugated verbs -> category
 // ═══════════════════════════════════════════════════════════════════════
 
 const Map<String, String> kVerbCategories = {
@@ -294,6 +294,10 @@ const Map<String, String> kVerbCategories = {
   // Family
   'pinadala': 'Family Support', 'ibinigay': 'Family Support',
   'pinadalhan': 'Family Support', 'nagpadala': 'Family Support',
+
+  // Withdraw / transfer
+  'nagwithdraw': 'Other', 'nagtransfer': 'Other',
+  'nagcashin': 'Other', 'nagcashout': 'Other',
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -313,6 +317,7 @@ const Set<String> kIncomeKeywords = {
   'benta', 'sale', 'sold',
   'tip', 'tips', 'pabuya',
   'natanggap', 'tinanggap', 'received',
+  'may pumasok', 'pumasok',
 };
 
 const Set<String> kAmbiguousIncomeKeywords = {
@@ -328,6 +333,7 @@ const Set<String> kFillerWords = {
   'nung', 'din', 'rin', 'daw', 'raw', 'pala', 'na',
   'worth', 'around', 'about', 'just', 'only',
   'for', 'the', 'a', 'an', 'my', 'i',
+  'ako', 'ko', 'nag', 'ng',
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -343,6 +349,7 @@ const Set<String> kQueryWords = {
   'summary', 'report', 'status',
   'recent', 'history', 'last',
   'remaining', 'left', 'available',
+  'compare', 'versus', 'vs',
 
   // Filipino
   'magkano', 'ilan', 'gaano', 'ano', 'nasaan', 'saan', 'kailan',
@@ -351,6 +358,8 @@ const Set<String> kQueryWords = {
   'kita', 'kinita',
   'utang', 'natitirang', 'natitira',
   'bayarin',
+  'pinaka', 'pinakamalaki', 'pinakamaliit',
+  'saan napupunta', 'napupunta',
 };
 
 /// Words that force QUERY intent even when an amount is present.
@@ -373,12 +382,134 @@ const Set<String> kTransferWords = {
 const Set<String> kHelpTriggers = {
   'help', 'tulong', 'commands', 'what can you do',
   'ano magagawa mo', 'paano', 'how to use',
+  'ano kaya mo',
 };
 
 const Set<String> kFamilyWords = {
   'mama', 'papa', 'nanay', 'tatay', 'parents', 'magulang',
   'kapatid', 'lola', 'lolo', 'anak', 'pamilya', 'family',
   'tita', 'tito', 'ninong', 'ninang', 'inaanak', 'asawa',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// GREETING / SMALL TALK DETECTION
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kGreetingWords = {
+  'hello', 'hi', 'hey', 'kumusta', 'kamusta', 'uy', 'oi',
+  'good morning', 'good afternoon', 'good evening',
+  'magandang umaga', 'magandang hapon', 'magandang gabi',
+  'musta', 'sup', 'yo',
+};
+
+const Set<String> kFarewellWords = {
+  'bye', 'goodbye', 'paalam', 'sige', 'see you', 'see ya',
+  'later', 'salamat bye', 'bye bye',
+};
+
+const Set<String> kThankYouWords = {
+  'thank you', 'thanks', 'salamat', 'maraming salamat',
+  'thank u', 'ty', 'tnx', 'thankyou',
+};
+
+const Set<String> kWhoAreYouWords = {
+  'who are you', 'sino ka', 'sino ka ba', 'anong pangalan mo',
+  'what is your name', 'what\'s your name',
+};
+
+const Set<String> kWhatCanYouDoWords = {
+  'what can you do', 'ano kaya mo', 'ano magagawa mo',
+  'what are your features', 'capabilities',
+};
+
+const Set<String> kHowAreYouWords = {
+  'how are you', 'kamusta ka', 'kumusta ka', 'musta ka',
+  'how r u', 'how are u',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// FINANCIAL ADVICE TRIGGERS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kAdviceTriggers = {
+  'give me a tip', 'tip naman', 'payo', 'payo naman',
+  'any advice', 'advice', 'suggestion', 'suggest',
+  'paano mag-ipon', 'paano mag ipon', 'how to save',
+  'how to save more', 'save more', 'mag-ipon',
+  'should i invest', 'mag-invest', 'mag invest',
+  'invest ba ako', 'investing',
+  'compound interest', 'ano compound interest',
+  'explain sss', 'sss pension', 'paano pension',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONTRIBUTION / TAX QUERY TRIGGERS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kContributionTriggers = {
+  'sss', 'philhealth', 'pag-ibig', 'pagibig', 'hdmf',
+  'contributions', 'contribution', 'mga contribution',
+  'compute tax', 'compute my tax', 'tax ko',
+  '13th month', '13th month pay', 'magkano 13th month',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// APP NAVIGATION TRIGGERS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Map<String, String> kNavigationTriggers = {
+  'open dashboard': '/dashboard',
+  'go to dashboard': '/dashboard',
+  'dashboard': '/dashboard',
+  'show transactions': '/transactions',
+  'transactions': '/transactions',
+  'transactions ko': '/transactions',
+  'open settings': '/settings',
+  'settings': '/settings',
+  'open accounts': '/accounts',
+  'accounts': '/accounts',
+  'mga account ko': '/accounts',
+  'scan receipt': '/scan',
+  'scan resibo': '/scan',
+  'open budgets': '/budgets',
+  'budgets': '/budgets',
+  'budget ko': '/budgets',
+  'open goals': '/goals',
+  'goals': '/goals',
+  'open bills': '/bills',
+  'bills ko': '/bills',
+  'open debts': '/debts',
+  'debts ko': '/debts',
+  'utang ko': '/debts',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// TRANSACTION VERB PATTERNS — expanded
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Words that signal an explicit add-expense action.
+const Set<String> kExpenseActionWords = {
+  'add', 'spent', 'gastos', 'bayad', 'paid',
+  'bought', 'bumili', 'binili', 'purchased',
+  'nagbayad', 'binayaran', 'nagastos',
+  'add expense', 'log expense',
+};
+
+/// Words that signal an explicit add-income action.
+const Set<String> kIncomeActionWords = {
+  'add income', 'log income', 'received',
+  'sahod', 'sweldo', 'salary',
+  'may pumasok', 'pumasok',
+  'natanggap', 'tinanggap',
+};
+
+/// Words that signal a transfer action.
+const Set<String> kTransferActionWords = {
+  'transfer', 'transferred', 'nagtransfer',
+  'withdraw', 'withdrew', 'nagwithdraw', 'nag-withdraw',
+  'cash in', 'cashin', 'nagcashin', 'nag-cash-in',
+  'cash out', 'cashout', 'nagcashout', 'nag-cash-out',
+  'padala', 'send money', 'nagpadala',
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -439,7 +570,7 @@ final List<RegExp> kPromoPatterns = [
 /// K-suffix amount multiplier pattern: 30k, 1.5K, etc.
 final RegExp kAmountKSuffix = RegExp(r'^(\d+\.?\d*)[kK]$');
 
-/// Peso-prefixed amount: ₱250, P300, php250, Php 300
+/// Peso-prefixed amount: peso250, P300, php250, Php 300
 final RegExp kPesoPrefix = RegExp(
   r'(?:₱|[Pp][Hh][Pp]?\s*|[Pp])(\d[\d,]*\.?\d*)',
 );

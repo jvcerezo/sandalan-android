@@ -1,3 +1,6 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../data/chat/personality_templates.dart';
 import '../../data/models/chat_models.dart';
 import '../../data/repositories/learned_keyword_repository.dart';
 import '../constants/chat_dictionary.dart';
@@ -17,42 +20,81 @@ class ChatEngine {
   final LearnedKeywordRepository _learnedRepo;
   final Future<List<AccountInfo>> Function() _getAccounts;
 
+  // Personality state (loaded from SharedPreferences)
+  AiPersonality _personality = AiPersonality.chillBestFriend;
+  String _assistantName = 'Sandalan AI';
+  bool _personalityLoaded = false;
+
+  // Session context for "add another one" style inputs
+  ChatIntent? _lastIntent;
+  String? _lastCategory;
+  String? _lastAccountId;
+
   ChatEngine(this._learnedRepo, this._getAccounts);
+
+  /// Load personality from SharedPreferences.
+  Future<void> _ensurePersonalityLoaded() async {
+    if (_personalityLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = prefs.getString('ai_personality') ?? 'chill_best_friend';
+      _personality = AiPersonalityX.fromKey(key);
+      _assistantName = prefs.getString('ai_assistant_name') ?? 'Sandalan AI';
+    } catch (_) {
+      // Fallback to defaults on error
+    }
+    _personalityLoaded = true;
+  }
+
+  /// Get a personality-flavored response.
+  String _pr(ResponseCategory category, {Map<String, String>? data}) {
+    return getPersonalityResponse(_personality, category, _assistantName, data: data);
+  }
 
   /// Main entry point: parse raw user input into a structured result.
   Future<ParseResult> parse(String rawInput) async {
+    await _ensurePersonalityLoaded();
+
     // ─── 1. Sanitize ─────────────────────────────────────────────────
     final sanitized = _sanitize(rawInput);
     if (sanitized == null) {
-      return const ParseResult(
+      return ParseResult(
         intent: ChatIntent.unknown,
-        message: "Type a transaction like 'lunch 250' or ask me something like 'net worth ko'",
+        message: _pr(ResponseCategory.didntUnderstand),
       );
     }
 
     final lower = sanitized.toLowerCase();
 
-    // ─── 2. Check help ───────────────────────────────────────────────
+    // ─── 2. Greetings & small talk ────────────────────────────────────
+    final smallTalkResult = _checkSmallTalk(lower);
+    if (smallTalkResult != null) return smallTalkResult;
+
+    // ─── 3. Check help ───────────────────────────────────────────────
     if (_isHelp(lower)) {
-      return const ParseResult(
+      return ParseResult(
         intent: ChatIntent.help,
-        message: "I can help you with:\n"
-            "• Log expenses: 'lunch 250', 'grab 150 gcash'\n"
-            "• Log income: 'salary 30k', 'freelance 5000'\n"
-            "• Check net worth: 'net worth ko'\n"
-            "• Check spending: 'gastos ko this month'\n"
-            "• Check budgets: 'budget status'\n"
-            "• Check goals: 'goal progress'\n"
-            "• Check debts: 'utang ko'\n"
-            "• Check bills: 'bayarin ko'",
+        message: _pr(ResponseCategory.whatCanYouDo) + "\n\n"
+            "Try:\n"
+            "  'lunch 250' — log expense\n"
+            "  'sahod 30k' — log income\n"
+            "  'net worth ko' — check balance\n"
+            "  'gastos ko this month' — spending summary\n"
+            "  'budget status' — check budgets\n"
+            "  'bayarin ko' — upcoming bills\n"
+            "  'payo naman' — financial tip",
       );
     }
 
-    // ─── 3. Check negation ───────────────────────────────────────────
+    // ─── 4. Check financial advice triggers ──────────────────────────
+    final adviceResult = _checkAdvice(lower);
+    if (adviceResult != null) return adviceResult;
+
+    // ─── 5. Check negation ───────────────────────────────────────────
     final negationResult = _checkNegation(lower);
     if (negationResult != null) return negationResult;
 
-    // ─── 4. Check libre ──────────────────────────────────────────────
+    // ─── 6. Check libre ──────────────────────────────────────────────
     if (_containsWord(lower, 'libre')) {
       final amount = _extractSingleAmount(lower);
       if (amount != null) {
@@ -68,7 +110,7 @@ class ChatEngine {
       );
     }
 
-    // ─── 5. Check utang ──────────────────────────────────────────────
+    // ─── 7. Check utang ──────────────────────────────────────────────
     if (_containsWord(lower, 'utang') && !_isQuery(lower)) {
       final amount = _extractSingleAmount(lower);
       if (amount != null) {
@@ -86,11 +128,15 @@ class ChatEngine {
       );
     }
 
-    // ─── 6. Query override ───────────────────────────────────────────
+    // ─── 8. Query override ───────────────────────────────────────────
     final queryResult = _checkQuery(lower);
     if (queryResult != null) return queryResult;
 
-    // ─── 7. Extract amount ───────────────────────────────────────────
+    // ─── 9. Check session context ("add another one", "isa pa") ──────
+    final contextResult = _checkSessionContext(lower);
+    if (contextResult != null) return contextResult;
+
+    // ─── 10. Extract amount ──────────────────────────────────────────
     final amountExtraction = _extractAmount(lower);
 
     if (amountExtraction.amounts.isEmpty) {
@@ -104,9 +150,9 @@ class ChatEngine {
           message: '',
         );
       }
-      return const ParseResult(
+      return ParseResult(
         intent: ChatIntent.unknown,
-        message: "I need an amount. Try something like 'lunch 250' or ask 'gastos ko'",
+        message: _pr(ResponseCategory.needAmount),
       );
     }
 
@@ -120,7 +166,7 @@ class ChatEngine {
 
     final amount = amountExtraction.amounts.first;
 
-    // ─── 8. Validate amount ──────────────────────────────────────────
+    // ─── 11. Validate amount ─────────────────────────────────────────
     if (amount < 1) {
       return const ParseResult(
         intent: ChatIntent.unknown,
@@ -130,11 +176,11 @@ class ChatEngine {
 
     final needsConfirmation = amount > 100000;
 
-    // ─── 9. Extract account ──────────────────────────────────────────
+    // ─── 12. Extract account ─────────────────────────────────────────
     final accounts = await _getAccounts();
     final accountMatch = _extractAccount(lower, accounts);
 
-    // ─── 10. Build description ───────────────────────────────────────
+    // ─── 13. Build description ───────────────────────────────────────
     final description = _cleanDescription(
       sanitized,
       amountExtraction.matchedTokens,
@@ -167,7 +213,7 @@ class ChatEngine {
       );
     }
 
-    // ─── 11. Check income vs expense ─────────────────────────────────
+    // ─── 14. Check income vs expense ─────────────────────────────────
     final incomeCheck = _checkIncome(lower, description.toLowerCase());
 
     if (incomeCheck == _IncomeResult.ambiguous) {
@@ -183,10 +229,15 @@ class ChatEngine {
 
     final isIncome = incomeCheck == _IncomeResult.income;
 
-    // ─── 12. Resolve category ────────────────────────────────────────
+    // ─── 15. Resolve category ────────────────────────────────────────
     final categoryResult = await _resolveCategory(description.toLowerCase(), lower);
 
     final intent = isIncome ? ChatIntent.logIncome : ChatIntent.logExpense;
+
+    // Save to session context
+    _lastIntent = intent;
+    _lastCategory = categoryResult?.category;
+    _lastAccountId = accountMatch?.accountId;
 
     return ParseResult(
       intent: intent,
@@ -222,6 +273,145 @@ class ChatEngine {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // SMALL TALK
+  // ═══════════════════════════════════════════════════════════════════════
+
+  ParseResult? _checkSmallTalk(String lower) {
+    // Greetings
+    for (final g in kGreetingWords) {
+      if (lower == g || lower.startsWith('$g ') || lower.startsWith('$g!') || lower.startsWith('$g,')) {
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: _pr(ResponseCategory.greeting),
+        );
+      }
+    }
+
+    // Farewell
+    for (final f in kFarewellWords) {
+      if (lower == f || lower.startsWith('$f ') || lower.startsWith('$f!')) {
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: _pr(ResponseCategory.farewell),
+        );
+      }
+    }
+
+    // Thank you
+    for (final t in kThankYouWords) {
+      if (lower == t || lower.startsWith('$t ') || lower.startsWith('$t!')) {
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: _pr(ResponseCategory.thankYou),
+        );
+      }
+    }
+
+    // Who are you
+    for (final w in kWhoAreYouWords) {
+      if (lower.contains(w)) {
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: _pr(ResponseCategory.whoAreYou),
+        );
+      }
+    }
+
+    // What can you do
+    for (final w in kWhatCanYouDoWords) {
+      if (lower.contains(w)) {
+        return ParseResult(
+          intent: ChatIntent.help,
+          message: _pr(ResponseCategory.whatCanYouDo),
+        );
+      }
+    }
+
+    // How are you
+    for (final h in kHowAreYouWords) {
+      if (lower.contains(h)) {
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: _pr(ResponseCategory.howAreYou),
+        );
+      }
+    }
+
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // FINANCIAL ADVICE
+  // ═══════════════════════════════════════════════════════════════════════
+
+  ParseResult? _checkAdvice(String lower) {
+    for (final trigger in kAdviceTriggers) {
+      if (lower.contains(trigger)) {
+        // Investment advice
+        if (lower.contains('invest')) {
+          return ParseResult(
+            intent: ChatIntent.unknown,
+            message: _pr(ResponseCategory.investmentAdvice),
+          );
+        }
+        // Budget advice
+        if (lower.contains('budget')) {
+          return ParseResult(
+            intent: ChatIntent.unknown,
+            message: _pr(ResponseCategory.budgetAdvice),
+          );
+        }
+        // Generic saving tip
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: _pr(ResponseCategory.savingTip),
+        );
+      }
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SESSION CONTEXT
+  // ═══════════════════════════════════════════════════════════════════════
+
+  ParseResult? _checkSessionContext(String lower) {
+    final contextPhrases = [
+      'add another', 'isa pa', 'another one', 'one more',
+      'dagdag pa', 'ulit', 'again', 'same',
+    ];
+
+    for (final phrase in contextPhrases) {
+      if (lower.contains(phrase)) {
+        // Check if we have context from a previous action
+        if (_lastIntent != null) {
+          // Try to extract amount from this message
+          final amountExtraction = _extractAmount(lower);
+          if (amountExtraction.amounts.length == 1) {
+            final amount = amountExtraction.amounts.first;
+            return ParseResult(
+              intent: _lastIntent!,
+              amount: _roundAmount(amount),
+              category: _lastCategory,
+              description: 'Same as previous',
+              accountId: _lastAccountId,
+              isIncome: _lastIntent == ChatIntent.logIncome,
+              categorySource: _lastCategory != null ? 'context' : null,
+            );
+          }
+          // No amount — ask for it
+          return ParseResult(
+            intent: ChatIntent.unknown,
+            message: "Sure, same as before! How much this time?",
+          );
+        }
+        break;
+      }
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // HELP
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -240,7 +430,7 @@ class ChatEngine {
     final words = lower.split(' ');
     if (words.isEmpty) return null;
 
-    // "hindi pa bayad X" → query about unpaid
+    // "hindi pa bayad X" -> query about unpaid
     if (lower.contains('hindi pa bayad') || lower.contains('di pa bayad')) {
       return const ParseResult(
         intent: ChatIntent.query,
@@ -287,23 +477,49 @@ class ChatEngine {
     if (!isQuestionForm && !hasQueryKeyword) return null;
 
     // Determine query type
-    if (_containsAny(lower, ['net worth', 'networth', 'pera ko', 'total balance', 'total money'])) {
+    if (_containsAny(lower, ['net worth', 'networth', 'pera ko', 'total balance', 'total money',
+        'magkano pera ko', 'how much do i have'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.netWorth, message: '');
     }
-    if (_containsAny(lower, ['budget', 'over budget'])) {
+    if (_containsAny(lower, ['show my accounts', 'mga account ko', 'account ko'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.accountBalance, message: '');
+    }
+    if (_containsAny(lower, ['budget', 'over budget', 'kumusta budget', 'how\'s my budget',
+        'lumagpas', 'magkano pa pwede', 'how much can i still spend'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.budgetStatus, message: '');
     }
-    if (_containsAny(lower, ['goal', 'goals', 'savings progress', 'ipon'])) {
+    if (_containsAny(lower, ['goal', 'goals', 'savings progress', 'ipon',
+        'kumusta goals', 'how are my goals', 'gaano na kalaki', 'how close'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.goalProgress, message: '');
     }
-    if (_containsAny(lower, ['utang', 'debt', 'debts', 'owe', 'naiutang'])) {
+    if (_containsAny(lower, ['utang', 'debt', 'debts', 'owe', 'naiutang',
+        'magkano utang', 'how much do i owe'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.debtSummary, message: '');
     }
-    if (_containsAny(lower, ['bill', 'bills', 'bayarin', 'due'])) {
+    if (_containsAny(lower, ['bill', 'bills', 'bayarin', 'due', 'upcoming bills',
+        'anong bills', 'what bills', 'when is', 'kailan due'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.billsDue, message: '');
     }
     if (_containsAny(lower, ['recent', 'last', 'history', 'huling'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.recentTransactions, message: '');
+    }
+    if (_containsAny(lower, ['compare', 'versus', 'vs', 'last month', 'compare sa'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary, message: '');
+    }
+    if (_containsAny(lower, ['saan napupunta', 'where does my money go', 'top expenses',
+        'pinaka malaki', 'pinakamalaki'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary, message: '');
+    }
+
+    // Contribution / tax queries
+    for (final trigger in kContributionTriggers) {
+      if (lower.contains(trigger)) {
+        return const ParseResult(
+          intent: ChatIntent.query,
+          queryType: QueryType.spendingSummary,
+          message: 'Check your contribution details in the Government Contributions tool.',
+        );
+      }
     }
 
     // Check for specific category spending query
@@ -332,7 +548,8 @@ class ChatEngine {
     }
 
     // Generic spending query
-    if (_containsAny(lower, ['gastos', 'ginastos', 'nagastos', 'spent', 'spending', 'expenses'])) {
+    if (_containsAny(lower, ['gastos', 'ginastos', 'nagastos', 'spent', 'spending', 'expenses',
+        'magkano gastos', 'how much did i spend', 'spending this week'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary, message: '');
     }
 
@@ -357,7 +574,6 @@ class ChatEngine {
 
   _AmountExtraction _extractAmount(String lower) {
     final tokens = lower.split(' ');
-    final amounts = <double>[];
     final matchedTokens = <String>[];
 
     // Phase 1: Check peso-prefixed amounts first (highest priority)
@@ -422,7 +638,7 @@ class ChatEngine {
       final a = filteredTokens[0];
       final b = filteredTokens[1];
 
-      // If one is ≤ 10 and other > 10, smaller is likely quantity
+      // If one is <=10 and other > 10, smaller is likely quantity
       if (a.value <= 10 && b.value > 10) {
         return _AmountExtraction([b.value], [b.token]);
       }
@@ -564,6 +780,14 @@ class ChatEngine {
     // Remove question particles
     words = words.where((w) => !kQuestionParticles.contains(w.toLowerCase().replaceAll('?', ''))).toList();
 
+    // Remove action words
+    words = words.where((w) {
+      final wl = w.toLowerCase();
+      return !kExpenseActionWords.contains(wl) &&
+          !kIncomeActionWords.contains(wl) &&
+          wl != 'add' && wl != 'log' && wl != 'expense' && wl != 'income';
+    }).toList();
+
     // Strip dangling prepositions at start/end
     while (words.isNotEmpty && kDanglingPrepositions.contains(words.first.toLowerCase())) {
       words.removeAt(0);
@@ -598,6 +822,11 @@ class ChatEngine {
 
     // "binigay sa akin" / "natanggap" = income
     if (lower.contains('sa akin') || lower.contains('natanggap') || lower.contains('tinanggap')) {
+      return _IncomeResult.income;
+    }
+
+    // "may pumasok" = income
+    if (lower.contains('may pumasok') || lower.contains('pumasok')) {
       return _IncomeResult.income;
     }
 

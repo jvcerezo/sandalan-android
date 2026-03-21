@@ -66,6 +66,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   String? _selectedAccountId;
+  String? _selectedDestAccountId; // For transfers
   String _category = 'Other';
   DateTime _date = DateTime.now();
   bool _saving = false;
@@ -144,31 +145,73 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         _amountController.text = '';
       }
 
-      // Build note from store + items
+      // Build note from receipt data
       final noteParts = <String>[];
-      if (receipt.storeName != null) noteParts.add(receipt.storeName!);
-      if (receipt.items.isNotEmpty) {
-        final itemSummary = receipt.items
-            .take(5)
-            .map((i) => i.name)
-            .join(', ');
-        noteParts.add(itemSummary);
+      switch (receipt.receiptType) {
+        case ReceiptType.atmWithdrawal:
+          noteParts.add('ATM Withdrawal');
+          if (receipt.bankName != null) noteParts.add(receipt.bankName!);
+          if (receipt.maskedCardNumber != null) noteParts.add('Card: ${receipt.maskedCardNumber}');
+        case ReceiptType.bankTransfer:
+          noteParts.add(receipt.transferType ?? 'Fund Transfer');
+          if (receipt.sourceAccount != null) noteParts.add('From: ${receipt.sourceAccount}');
+          if (receipt.destinationAccount != null) noteParts.add('To: ${receipt.destinationAccount}');
+        case ReceiptType.billPayment:
+          noteParts.add('Bill Payment');
+          if (receipt.billerName != null) noteParts.add(receipt.billerName!);
+          if (receipt.accountNumber != null) noteParts.add('Acct: ${receipt.accountNumber}');
+        case ReceiptType.digitalWallet:
+          noteParts.add(receipt.walletName ?? 'Digital Wallet');
+          if (receipt.walletAction != null) {
+            switch (receipt.walletAction!) {
+              case DigitalWalletAction.cashIn:
+                noteParts.add('Cash In');
+              case DigitalWalletAction.cashOut:
+                noteParts.add('Cash Out');
+              case DigitalWalletAction.sendMoney:
+                noteParts.add('Send Money');
+              case DigitalWalletAction.payQr:
+                noteParts.add('QR Payment');
+              case DigitalWalletAction.unknown:
+                break;
+            }
+          }
+          if (receipt.merchantName != null) noteParts.add(receipt.merchantName!);
+        case ReceiptType.purchase:
+        case ReceiptType.unknown:
+          if (receipt.storeName != null) noteParts.add(receipt.storeName!);
+          if (receipt.items.isNotEmpty) {
+            final itemSummary = receipt.items
+                .take(5)
+                .map((i) => i.name)
+                .join(', ');
+            noteParts.add(itemSummary);
+          }
       }
       _noteController.text = noteParts.join(' - ');
 
       // Set date
       _date = receipt.date ?? DateTime.now();
 
-      // Match category from merchant database
-      String matchedCategory = 'Other';
-      if (receipt.storeName != null) {
-        final learned = await LearnedMerchants.matchWithLearned(receipt.storeName!);
-        if (learned != null) {
-          matchedCategory = learned;
+      // Match category from merchant database (for purchases/bills)
+      if (receipt.receiptType == ReceiptType.purchase ||
+          receipt.receiptType == ReceiptType.unknown) {
+        String matchedCategory = 'Other';
+        if (receipt.storeName != null) {
+          final learned = await LearnedMerchants.matchWithLearned(receipt.storeName!);
+          if (learned != null) {
+            matchedCategory = learned;
+          }
         }
+        _category = matchedCategory;
+        _originalCategory = matchedCategory;
+      } else if (receipt.receiptType == ReceiptType.billPayment) {
+        _category = 'Housing'; // Utilities are under Housing
+        _originalCategory = 'Housing';
+      } else {
+        _category = 'Transfer';
+        _originalCategory = 'Transfer';
       }
-      _category = matchedCategory;
-      _originalCategory = matchedCategory;
 
       setState(() {
         _receipt = receipt;
@@ -187,6 +230,20 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  bool get _isTransferReceipt {
+    if (_receipt == null) return false;
+    final type = _receipt!.receiptType;
+    if (type == ReceiptType.atmWithdrawal || type == ReceiptType.bankTransfer) {
+      return true;
+    }
+    if (type == ReceiptType.digitalWallet) {
+      final action = _receipt!.walletAction;
+      return action == DigitalWalletAction.cashIn ||
+          action == DigitalWalletAction.cashOut;
+    }
+    return false;
   }
 
   Future<void> _handleSave() async {
@@ -209,39 +266,77 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       return;
     }
 
-    // Insufficient balance check (non-credit-card)
-    final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
-    if (selectedAccount != null && selectedAccount.type != 'credit_card' && amount > selectedAccount.balance) {
-      _showError('Insufficient balance in ${selectedAccount.name}');
-      return;
-    }
-
     setState(() => _saving = true);
 
     try {
       final repo = ref.read(transactionRepositoryProvider);
-      await repo.createTransaction(
-        amount: -amount,
-        category: _category,
-        description: InputSanitizer.sanitize(_noteController.text),
-        date: _date,
-        accountId: _selectedAccountId,
-        tags: ['receipt-scan'],
-      );
 
-      // Learn merchant correction if user changed the category
-      if (_category != _originalCategory && _storeNameController.text.trim().isNotEmpty) {
-        await LearnedMerchants.learn(_storeNameController.text.trim(), _category);
-      }
+      if (_isTransferReceipt && _selectedDestAccountId != null) {
+        // Create transfer: deduct from source, add to destination
+        final description = InputSanitizer.sanitize(_noteController.text);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense added from receipt!'),
-            backgroundColor: Colors.green,
-          ),
+        // Deduct from source
+        await repo.createTransaction(
+          amount: -amount,
+          category: 'Transfer',
+          description: description,
+          date: _date,
+          accountId: _selectedAccountId,
+          tags: ['receipt-scan', 'transfer'],
         );
-        Navigator.of(context).pop(true);
+
+        // Add to destination
+        await repo.createTransaction(
+          amount: amount,
+          category: 'Transfer',
+          description: description,
+          date: _date,
+          accountId: _selectedDestAccountId,
+          tags: ['receipt-scan', 'transfer'],
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Transfer recorded from receipt!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } else {
+        // Regular expense
+        // Insufficient balance check (non-credit-card)
+        final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
+        if (selectedAccount != null && selectedAccount.type != 'credit_card' && amount > selectedAccount.balance) {
+          setState(() => _saving = false);
+          _showError('Insufficient balance in ${selectedAccount.name}');
+          return;
+        }
+
+        await repo.createTransaction(
+          amount: -amount,
+          category: _category,
+          description: InputSanitizer.sanitize(_noteController.text),
+          date: _date,
+          accountId: _selectedAccountId,
+          tags: ['receipt-scan'],
+        );
+
+        // Learn merchant correction if user changed the category
+        if (_category != _originalCategory && _storeNameController.text.trim().isNotEmpty) {
+          await LearnedMerchants.learn(_storeNameController.text.trim(), _category);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Expense added from receipt!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
       }
     } catch (e) {
       setState(() => _saving = false);
@@ -263,6 +358,28 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       case 'Education': return LucideIcons.graduationCap;
       case 'Family Support': return LucideIcons.moreHorizontal;
       default: return LucideIcons.moreHorizontal;
+    }
+  }
+
+  IconData _receiptTypeIcon(ReceiptType type) {
+    switch (type) {
+      case ReceiptType.purchase: return LucideIcons.shoppingBag;
+      case ReceiptType.atmWithdrawal: return LucideIcons.banknote;
+      case ReceiptType.bankTransfer: return LucideIcons.arrowLeftRight;
+      case ReceiptType.billPayment: return LucideIcons.fileText;
+      case ReceiptType.digitalWallet: return LucideIcons.smartphone;
+      case ReceiptType.unknown: return LucideIcons.scanLine;
+    }
+  }
+
+  Color _receiptTypeBadgeColor(ReceiptType type, ColorScheme cs) {
+    switch (type) {
+      case ReceiptType.purchase: return cs.primary;
+      case ReceiptType.atmWithdrawal: return Colors.orange;
+      case ReceiptType.bankTransfer: return Colors.blue;
+      case ReceiptType.billPayment: return Colors.purple;
+      case ReceiptType.digitalWallet: return Colors.teal;
+      case ReceiptType.unknown: return cs.onSurfaceVariant;
     }
   }
 
@@ -304,6 +421,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
                     _receipt = null;
                     _imagePath = null;
                     _errorMessage = null;
+                    _selectedDestAccountId = null;
                   }),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(LucideIcons.refreshCw, size: 14, color: cs.primary),
@@ -314,19 +432,25 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
             ]),
             const SizedBox(height: 4),
 
-            // Scanned badge
-            if (_scanState == _ScanState.review)
+            // Receipt type badge
+            if (_scanState == _ScanState.review && _receipt != null)
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.08),
+                  color: _receiptTypeBadgeColor(_receipt!.receiptType, cs).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(LucideIcons.scanLine, size: 12, color: cs.primary),
+                  Icon(_receiptTypeIcon(_receipt!.receiptType), size: 12,
+                      color: _receiptTypeBadgeColor(_receipt!.receiptType, cs)),
                   const SizedBox(width: 4),
-                  Text('Scanned from receipt', style: TextStyle(fontSize: 11, color: cs.primary, fontWeight: FontWeight.w500)),
+                  Text(
+                    ReceiptParser.receiptTypeLabel(_receipt!.receiptType),
+                    style: TextStyle(fontSize: 11,
+                        color: _receiptTypeBadgeColor(_receipt!.receiptType, cs),
+                        fontWeight: FontWeight.w500),
+                  ),
                 ]),
               ),
 
@@ -365,10 +489,10 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       // Illustration
       Icon(LucideIcons.scanLine, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
       const SizedBox(height: 16),
-      Text('Scan a receipt to add an expense',
+      Text('Scan a receipt to add a transaction',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
       const SizedBox(height: 6),
-      Text('Take a photo or pick from gallery',
+      Text('Purchases, ATM, transfers, bills, GCash & more',
           style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
       const SizedBox(height: 32),
 
@@ -484,6 +608,14 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           ),
         ),
 
+      // ATM/Transfer details card
+      if (_receipt != null && _isTransferReceipt)
+        _buildTransferDetails(cs),
+
+      // Bill payment details
+      if (_receipt != null && _receipt!.receiptType == ReceiptType.billPayment)
+        _buildBillDetails(cs),
+
       // No accounts
       if (accounts.isEmpty) ...[
         const SizedBox(height: 16),
@@ -493,7 +625,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           Text('Create an account first',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface)),
           const SizedBox(height: 6),
-          Text('You need at least one account to add expenses.',
+          Text('You need at least one account to add transactions.',
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -512,40 +644,42 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         ])),
       ] else ...[
 
-      // Store name
-      _FieldLabel(
-        label: 'Store Name',
-        detected: _receipt?.storeName != null,
-        notDetected: _receipt?.storeName == null,
-      ),
-      const SizedBox(height: 6),
-      TextField(
-        controller: _storeNameController,
-        decoration: InputDecoration(
-          hintText: 'Could not detect store name',
-          hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: _receipt?.storeName != null
-                ? cs.primary.withValues(alpha: 0.3)
-                : cs.outline.withValues(alpha: 0.15)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: _receipt?.storeName != null
-                ? cs.primary.withValues(alpha: 0.3)
-                : cs.outline.withValues(alpha: 0.15)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: cs.primary),
-          ),
+      // Store name (for purchases)
+      if (!_isTransferReceipt) ...[
+        _FieldLabel(
+          label: 'Store Name',
+          detected: _receipt?.storeName != null,
+          notDetected: _receipt?.storeName == null,
         ),
-        style: const TextStyle(fontSize: 13),
-      ),
-      const SizedBox(height: 14),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _storeNameController,
+          decoration: InputDecoration(
+            hintText: 'Could not detect store name',
+            hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _receipt?.storeName != null
+                  ? cs.primary.withValues(alpha: 0.3)
+                  : cs.outline.withValues(alpha: 0.15)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: _receipt?.storeName != null
+                  ? cs.primary.withValues(alpha: 0.3)
+                  : cs.outline.withValues(alpha: 0.15)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: cs.primary),
+            ),
+          ),
+          style: const TextStyle(fontSize: 13),
+        ),
+        const SizedBox(height: 14),
+      ],
 
       // Amount
       _FieldLabel(
@@ -577,68 +711,33 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       ]),
       const SizedBox(height: 14),
 
-      // Account selector
-      Text('Account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      // Source account selector
+      Text(_isTransferReceipt ? 'From Account' : 'Account',
+          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
       const SizedBox(height: 6),
-      PopupMenuButton<String>(
+      _buildAccountSelector(
+        cs: cs,
+        accounts: accounts,
+        selectedId: _selectedAccountId,
+        selectedAccount: selectedAccount,
         onSelected: (id) => setState(() => _selectedAccountId = id),
-        itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
-          value: a.id,
-          child: Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Text(a.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(a.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
-                ),
-              ]),
-              const SizedBox(height: 2),
-              Text(a.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-            ])),
-            Text(formatCurrency(a.balance, currencyCode: a.currency),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
-            if (a.id == _selectedAccountId) ...[
-              const SizedBox(width: 8),
-              Icon(Icons.check, size: 16, color: cs.primary),
-            ],
-          ]),
-        )).toList(),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Text(selectedAccount?.name ?? 'Select account',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            const SizedBox(width: 4),
-            if (selectedAccount != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(selectedAccount.currency,
-                    style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
-              ),
-              const SizedBox(width: 6),
-              Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
-            ],
-            const SizedBox(width: 4),
-            Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
-          ]),
-        ),
       ),
       const SizedBox(height: 14),
+
+      // Destination account (for transfers)
+      if (_isTransferReceipt) ...[
+        Text('To Account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 6),
+        _buildAccountSelector(
+          cs: cs,
+          accounts: accounts,
+          selectedId: _selectedDestAccountId,
+          selectedAccount: accounts.where((a) => a.id == _selectedDestAccountId).firstOrNull,
+          onSelected: (id) => setState(() => _selectedDestAccountId = id),
+          hintText: 'Select destination account',
+        ),
+        const SizedBox(height: 14),
+      ],
 
       // Date
       _FieldLabel(
@@ -673,31 +772,33 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       ),
       const SizedBox(height: 14),
 
-      // Category
-      Text('Category', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-      const SizedBox(height: 8),
-      Wrap(spacing: 6, runSpacing: 4, children: kExpenseCategories.map((c) {
-        final selected = _category == c;
-        return GestureDetector(
-          onTap: () => setState(() => _category = c),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-              border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
-              borderRadius: BorderRadius.circular(14),
+      // Category (only for non-transfer receipts)
+      if (!_isTransferReceipt) ...[
+        Text('Category', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 6, runSpacing: 4, children: kExpenseCategories.map((c) {
+          final selected = _category == c;
+          return GestureDetector(
+            onTap: () => setState(() => _category = c),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
+                border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(_categoryIcon(c), size: 12,
+                    color: selected ? cs.primary : cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                    color: selected ? cs.primary : cs.onSurfaceVariant)),
+              ]),
             ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(_categoryIcon(c), size: 12,
-                  color: selected ? cs.primary : cs.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                  color: selected ? cs.primary : cs.onSurfaceVariant)),
-            ]),
-          ),
-        );
-      }).toList()),
-      const SizedBox(height: 14),
+          );
+        }).toList()),
+        const SizedBox(height: 14),
+      ],
 
       // Note
       Text('Note', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
@@ -727,10 +828,168 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         child: _saving
             ? const SizedBox(height: 18, width: 18,
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : const Text('Add as Expense'),
+            : Text(_isTransferReceipt ? 'Record Transfer' : 'Add as Expense'),
       ),
       ], // end else (has accounts)
     ]);
+  }
+
+  Widget _buildAccountSelector({
+    required ColorScheme cs,
+    required List accounts,
+    required String? selectedId,
+    required dynamic selectedAccount,
+    required void Function(String) onSelected,
+    String hintText = 'Select account',
+  }) {
+    return PopupMenuButton<String>(
+      onSelected: onSelected,
+      itemBuilder: (_) => accounts.map<PopupMenuEntry<String>>((a) => PopupMenuItem(
+        value: a.id,
+        child: Row(children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text(a.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(a.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
+              ),
+            ]),
+            const SizedBox(height: 2),
+            Text(a.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+          ])),
+          Text(formatCurrency(a.balance, currencyCode: a.currency),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
+          if (a.id == selectedId) ...[
+            const SizedBox(width: 8),
+            Icon(Icons.check, size: 16, color: cs.primary),
+          ],
+        ]),
+      )).toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(selectedAccount?.name ?? hintText,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          const SizedBox(width: 4),
+          if (selectedAccount != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(selectedAccount.currency,
+                  style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
+            ),
+            const SizedBox(width: 6),
+            Text(formatCurrency(selectedAccount.balance, currencyCode: selectedAccount.currency),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
+          ],
+          const SizedBox(width: 4),
+          Icon(LucideIcons.chevronDown, size: 14, color: cs.onSurfaceVariant),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildTransferDetails(ColorScheme cs) {
+    final receipt = _receipt!;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.arrowLeftRight, size: 14, color: Colors.blue),
+          const SizedBox(width: 6),
+          Text('Transfer Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue)),
+        ]),
+        const SizedBox(height: 8),
+        if (receipt.receiptType == ReceiptType.atmWithdrawal) ...[
+          if (receipt.bankName != null)
+            _detailRow('Bank', receipt.bankName!, cs),
+          if (receipt.maskedCardNumber != null)
+            _detailRow('Card', receipt.maskedCardNumber!, cs),
+          if (receipt.availableBalance != null)
+            _detailRow('Remaining', '\u20B1${receipt.availableBalance!.toStringAsFixed(2)}', cs),
+        ],
+        if (receipt.receiptType == ReceiptType.bankTransfer) ...[
+          if (receipt.transferType != null)
+            _detailRow('Type', receipt.transferType!, cs),
+          if (receipt.sourceAccount != null)
+            _detailRow('From', receipt.sourceAccount!, cs),
+          if (receipt.destinationAccount != null)
+            _detailRow('To', receipt.destinationAccount!, cs),
+        ],
+        if (receipt.receiptType == ReceiptType.digitalWallet) ...[
+          if (receipt.walletName != null)
+            _detailRow('Wallet', receipt.walletName!, cs),
+          if (receipt.walletAction != null)
+            _detailRow('Action', _walletActionLabel(receipt.walletAction!), cs),
+        ],
+      ]),
+    );
+  }
+
+  Widget _buildBillDetails(ColorScheme cs) {
+    final receipt = _receipt!;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.purple.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.purple.withValues(alpha: 0.15)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.fileText, size: 14, color: Colors.purple),
+          const SizedBox(width: 6),
+          Text('Bill Payment', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.purple)),
+        ]),
+        const SizedBox(height: 8),
+        if (receipt.billerName != null)
+          _detailRow('Biller', receipt.billerName!, cs),
+        if (receipt.accountNumber != null)
+          _detailRow('Account', receipt.accountNumber!, cs),
+      ]),
+    );
+  }
+
+  Widget _detailRow(String label, String value, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(children: [
+        SizedBox(width: 80, child: Text(label,
+            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant))),
+        Expanded(child: Text(value,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+      ]),
+    );
+  }
+
+  String _walletActionLabel(DigitalWalletAction action) {
+    switch (action) {
+      case DigitalWalletAction.cashIn: return 'Cash In';
+      case DigitalWalletAction.cashOut: return 'Cash Out';
+      case DigitalWalletAction.sendMoney: return 'Send Money';
+      case DigitalWalletAction.payQr: return 'QR Payment';
+      case DigitalWalletAction.unknown: return 'Transaction';
+    }
   }
 
   void _showFullImage(ColorScheme cs) {
