@@ -68,6 +68,10 @@ dependencies:
   cached_network_image: ^3.4.1
   flutter_svg: ^2.2.4
 
+  # OCR / Receipt scanning
+  google_mlkit_text_recognition: ^0.14.0
+  image_picker: ^1.1.2
+
   # Biometric auth
   local_auth: ^2.3.0
 

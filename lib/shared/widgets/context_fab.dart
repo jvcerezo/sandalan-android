@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
+import '../../features/transactions/screens/receipt_scanner_screen.dart';
 import '../../features/accounts/widgets/add_account_dialog.dart';
 import '../../features/budgets/widgets/add_budget_dialog.dart';
 import '../../features/goals/widgets/add_goal_dialog.dart';
@@ -108,6 +109,12 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
             label: 'Sandalan AI',
             icon: LucideIcons.messageCircle,
             onTap: () { _close(); context.push('/chat'); },
+          ),
+          const SizedBox(height: 8),
+          _FabMenuItem(
+            label: 'Scan Receipt',
+            icon: LucideIcons.scanLine,
+            onTap: () => _openSheet(context, const ReceiptScannerScreen()),
           ),
           const SizedBox(height: 8),
           _FabMenuItem(
