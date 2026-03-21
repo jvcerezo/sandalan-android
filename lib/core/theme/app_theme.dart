@@ -8,10 +8,19 @@ class AppTheme {
   // Default primary green: oklch(0.55 0.14 155) ≈ #2D8B5E
   static const _defaultPrimaryColor = Color(0xFF2D8B5E);
 
+  /// Strip underline decoration from all text styles (fixes Android 16+ default).
+  static ThemeData _stripUnderlines(ThemeData theme) {
+    return theme.copyWith(
+      textTheme: theme.textTheme.apply(decoration: TextDecoration.none),
+      primaryTextTheme: theme.primaryTextTheme.apply(decoration: TextDecoration.none),
+    );
+  }
+
   /// Build a theme from a dynamic color scheme (Material You).
   static ThemeData fromDynamicScheme(ColorScheme scheme) {
     final isDark = scheme.brightness == Brightness.dark;
-    return isDark ? _buildDarkTheme(scheme) : _buildLightTheme(scheme);
+    final theme = isDark ? _buildDarkTheme(scheme) : _buildLightTheme(scheme);
+    return _stripUnderlines(theme);
   }
 
   static ThemeData _buildLightTheme(ColorScheme colorScheme) {
@@ -237,7 +246,7 @@ class AppTheme {
       error: const Color(0xFFDC2626),
     );
 
-    return ThemeData(
+    return _stripUnderlines(ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
@@ -337,16 +346,16 @@ class AppTheme {
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-    );
+    ));
   }
 
   static ThemeData dark([ThemeColor? themeColor]) {
-    return _darkVariant(themeColor, amoled: false);
+    return _stripUnderlines(_darkVariant(themeColor, amoled: false));
   }
 
   /// AMOLED dark theme — true black backgrounds for OLED displays.
   static ThemeData amoledDark([ThemeColor? themeColor]) {
-    return _darkVariant(themeColor, amoled: true);
+    return _stripUnderlines(_darkVariant(themeColor, amoled: true));
   }
 
   static ThemeData _darkVariant(ThemeColor? themeColor, {required bool amoled}) {
