@@ -9,6 +9,8 @@ import '../../data/repositories/local_insurance_repository.dart';
 import '../../data/repositories/local_transaction_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import 'notification_service.dart';
+import 'streak_service.dart';
+import 'weekly_recap_service.dart';
 
 /// Preference keys for automation toggles.
 class AutomationKeys {
@@ -74,6 +76,9 @@ class AutomationService {
     if (prefs.getBool(AutomationKeys.dailyLogReminder) ?? true) {
       await _scheduleDailyLogReminder(db, client);
     }
+
+    // ── Schedule weekly recap notification (Sunday 10 AM) ─────────────────
+    await _scheduleWeeklyRecap(db, client);
   }
 
   // ── Contributions ──────────────────────────────────────────────────────────
@@ -449,16 +454,65 @@ class AutomationService {
       // Only schedule if 7 PM hasn't passed yet
       if (target.isAfter(now)) {
         final notifId = 'daily-log-$todayStr'.hashCode;
+
+        // Include streak info in the notification body
+        final streak = await StreakService.instance.getStreak();
+        String body;
+        if (streak >= 3) {
+          body = "You're on a $streak-day streak! Don't break it. Log your expenses now.";
+        } else if (streak == 0) {
+          body = "Start a new streak today! Log your expenses to stay on top of your finances.";
+        } else {
+          body = "Don't forget to log your expenses! Track your spending to stay on top of your finances.";
+        }
+
         await NotificationService.instance.scheduleNotification(
           id: notifId,
           title: 'Log Your Expenses',
-          body: "Don't forget to log your expenses! Track your spending to stay on top of your finances.",
+          body: body,
           scheduledDate: target,
         );
       }
     } catch (e) {
       if (kDebugMode) debugPrint('AutomationService: daily log reminder failed: $e');
     }
+  }
+
+  // ── Weekly Recap notification (Sunday 10 AM Manila time) ─────────────────
+
+  static Future<void> _scheduleWeeklyRecap(AppDatabase db, SupabaseClient client) async {
+    try {
+      final now = DateTime.now();
+      // Find next Sunday
+      final daysUntilSunday = (DateTime.sunday - now.weekday) % 7;
+      final nextSunday = DateTime(now.year, now.month, now.day + daysUntilSunday, 10, 0);
+
+      // Only schedule if it's in the future
+      if (nextSunday.isBefore(now)) return;
+
+      final recap = await WeeklyRecapService.instance.getWeeklyRecap();
+      if (recap == null) return;
+
+      final net = recap.saved;
+      final body = net >= 0
+          ? 'You saved ${_fmt(net)} this week!'
+          : 'You spent ${_fmt(net.abs())} more than you earned this week.';
+
+      final notifId = 'weekly-recap-${now.year}-${_weekNumber(now)}'.hashCode;
+      await NotificationService.instance.scheduleNotification(
+        id: notifId,
+        title: 'Your Week in Review',
+        body: body,
+        scheduledDate: nextSunday,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('AutomationService: weekly recap notification failed: $e');
+    }
+  }
+
+  static int _weekNumber(DateTime d) {
+    final dayOfYear = d.difference(DateTime(d.year, 1, 1)).inDays;
+    return ((dayOfYear - d.weekday + 10) / 7).floor();
   }
 
   static String _fmt(double amount) => 'PHP ${amount.toStringAsFixed(2)}';

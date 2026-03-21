@@ -4,8 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/streak_service.dart';
+import '../../../core/services/tip_service.dart';
+import '../../../core/services/weekly_recap_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../data/tips/daily_tips.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
@@ -13,9 +17,68 @@ import '../../auth/providers/auth_provider.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../providers/upcoming_payments_provider.dart';
+import '../widgets/streak_detail_sheet.dart';
+import '../widgets/tip_of_day_card.dart';
+import '../widgets/weekly_recap_card.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // Streak state
+  int _streak = 0;
+  int _bestStreak = 0;
+  List<bool> _weekHistory = List.filled(7, false);
+
+  // Tip state
+  DailyTip? _todaysTip;
+  bool _tipDismissed = false;
+
+  // Recap state
+  WeeklyRecap? _weeklyRecap;
+  bool _recapVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initRetentionFeatures();
+  }
+
+  Future<void> _initRetentionFeatures() async {
+    // Record streak visit
+    await StreakService.instance.recordVisit();
+
+    final streak = await StreakService.instance.getStreak();
+    final best = await StreakService.instance.getBestStreak();
+    final history = await StreakService.instance.getWeekHistory();
+
+    // Load tip
+    final tip = await TipService.instance.getTodaysTip();
+    final tipDismissed = await TipService.instance.isDismissedToday();
+
+    // Load recap
+    final recapVisible = await WeeklyRecapService.instance.isRecapVisible();
+    WeeklyRecap? recap;
+    if (recapVisible) {
+      recap = await WeeklyRecapService.instance.getWeeklyRecap();
+    }
+
+    if (mounted) {
+      setState(() {
+        _streak = streak;
+        _bestStreak = best;
+        _weekHistory = history;
+        _todaysTip = tip;
+        _tipDismissed = tipDismissed;
+        _weeklyRecap = recap;
+        _recapVisible = recapVisible && recap != null;
+      });
+    }
+  }
 
   Future<void> _onRefresh(WidgetRef ref) async {
     HapticFeedback.mediumImpact();
@@ -24,10 +87,75 @@ class HomeScreen extends ConsumerWidget {
     ref.invalidate(billsSummaryProvider);
     ref.invalidate(debtSummaryProvider);
     await ref.read(transactionsSummaryProvider.future);
+    await _initRetentionFeatures();
+  }
+
+  void _showStreakDetail() {
+    StreakDetailSheet.show(
+      context,
+      streak: _streak,
+      bestStreak: _bestStreak,
+      weekHistory: _weekHistory,
+    );
+  }
+
+  Future<void> _dismissTip() async {
+    await TipService.instance.dismissTip();
+    if (mounted) setState(() => _tipDismissed = true);
+  }
+
+  Future<void> _dismissRecap() async {
+    await WeeklyRecapService.instance.dismissRecap();
+    if (mounted) setState(() => _recapVisible = false);
+  }
+
+  Color _flameColor(int s) {
+    if (s >= 100) return const Color(0xFFEF4444); // red
+    if (s >= 30) return const Color(0xFFF97316);  // orange
+    if (s >= 7) return const Color(0xFFF59E0B);   // amber
+    return const Color(0xFF9CA3AF);                // gray
+  }
+
+  /// Tier 2 contextual card slot logic:
+  /// 1. Sun-Tue AND recap not dismissed -> WeeklyRecapCard
+  /// 2. Else if tip not dismissed today (Wed-Sat) -> TipOfDayCard
+  /// 3. Else -> nothing
+  Widget _buildContextualCard() {
+    final weekday = DateTime.now().weekday; // 1=Mon, 7=Sun
+
+    // Weekly recap takes priority on Sun-Tue
+    if ((weekday == 7 || weekday == 1 || weekday == 2) && _recapVisible && _weeklyRecap != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: WeeklyRecapCard(
+          recap: _weeklyRecap!,
+          onDismiss: _dismissRecap,
+        ),
+      );
+    }
+
+    // Tip of the day on Wed-Sat (or when recap is dismissed)
+    if (!_tipDismissed && _todaysTip != null) {
+      // Only show Wed-Sat when recap isn't showing
+      final showTip = weekday >= 3 && weekday <= 6 ||
+          // Also show on Sun-Tue if recap was dismissed
+          ((weekday == 7 || weekday == 1 || weekday == 2) && !_recapVisible);
+      if (showTip) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: TipOfDayCard(
+            tip: _todaysTip!,
+            onDismiss: _dismissTip,
+          ),
+        );
+      }
+    }
+
+    return const SizedBox.shrink();
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final profile = ref.watch(profileProvider);
     final firstName = profile.valueOrNull?.firstName ?? 'there';
@@ -39,12 +167,44 @@ class HomeScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          // ─── Greeting ────────────────────────────────────────────
+          // ─── Greeting + Streak Badge ──────────────────────────────
           StaggeredFadeIn(
             index: 0,
-            child: Text(
-              '${getTimeGreeting()}, $firstName',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${getTimeGreeting()}, $firstName',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+                  ),
+                ),
+                if (_streak > 0)
+                  GestureDetector(
+                    onTap: _showStreakDetail,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.flame, size: 16, color: _flameColor(_streak)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$_streak',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: 2),
@@ -102,24 +262,30 @@ class HomeScreen extends ConsumerWidget {
               error: (_, __) => _ErrorRetry(onRetry: () => ref.invalidate(transactionsSummaryProvider)),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
+
+          // ─── Tier 2: Contextual Card (Recap or Tip) ───────────────
+          StaggeredFadeIn(
+            index: 3,
+            child: _buildContextualCard(),
+          ),
 
           // ─── Upcoming Payments ───────────────────────────────────
           StaggeredFadeIn(
-            index: 3,
+            index: 4,
             child: _UpcomingPaymentsSection(ref: ref),
           ),
 
           // ─── Next Steps Carousel ─────────────────────────────────
           StaggeredFadeIn(
-            index: 4,
+            index: 5,
             child: _NextStepsSection(),
           ),
 
           // ─── Quick Navigation ────────────────────────────────────
           const SizedBox(height: 6),
           StaggeredFadeIn(
-            index: 5,
+            index: 6,
             child: _NavRow(
               icon: LucideIcons.bookOpen,
               iconBg: colorScheme.primary.withValues(alpha: 0.1),
@@ -131,7 +297,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           StaggeredFadeIn(
-            index: 6,
+            index: 7,
             child: _NavRow(
               icon: LucideIcons.wrench,
               iconBg: AppColors.warning.withValues(alpha: 0.1),
@@ -143,7 +309,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           StaggeredFadeIn(
-            index: 7,
+            index: 8,
             child: _NavRow(
               icon: LucideIcons.wallet,
               iconBg: AppColors.toolEmerald.withValues(alpha: 0.1),

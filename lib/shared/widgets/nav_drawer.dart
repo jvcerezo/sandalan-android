@@ -13,6 +13,7 @@ import '../../core/services/guest_mode_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../app.dart';
 import '../../features/auth/providers/auth_provider.dart';
+import '../../features/achievements/providers/milestone_providers.dart';
 import 'brand_mark.dart';
 import 'tour_overlay.dart';
 
@@ -20,7 +21,8 @@ class _NavItem {
   final String label;
   final IconData icon;
   final String path;
-  const _NavItem({required this.label, required this.icon, required this.path});
+  final bool showBadge;
+  const _NavItem({required this.label, required this.icon, required this.path, this.showBadge = false});
 }
 
 class _NavGroup {
@@ -53,6 +55,11 @@ final _navGroups = [
     _NavItem(label: 'Taxes', icon: LucideIcons.receipt, path: '/tools/taxes'),
     _NavItem(label: 'Retirement', icon: LucideIcons.piggyBank, path: '/tools/retirement'),
     _NavItem(label: 'Rent vs Buy', icon: LucideIcons.home, path: '/tools/rent-vs-buy'),
+  ]),
+  // Insights
+  const _NavGroup(label: 'INSIGHTS', items: [
+    _NavItem(label: 'Achievements', icon: LucideIcons.award, path: '/achievements'),
+    _NavItem(label: 'Reports', icon: LucideIcons.barChart3, path: '/reports'),
   ]),
 ];
 
@@ -119,6 +126,7 @@ class NavDrawer extends ConsumerWidget {
                       item: item,
                       isActive: location == item.path ||
                           (item.path != '/' && location.startsWith(item.path) && item.path.length > 1),
+                      showBadge: item.path == '/achievements' && (ref.watch(hasNewMilestonesProvider).valueOrNull ?? false),
                     ),
                 ],
               ],
@@ -284,8 +292,9 @@ class NavDrawer extends ConsumerWidget {
 class _DrawerNavItem extends StatelessWidget {
   final _NavItem item;
   final bool isActive;
+  final bool showBadge;
 
-  const _DrawerNavItem({required this.item, required this.isActive});
+  const _DrawerNavItem({required this.item, required this.isActive, this.showBadge = false});
 
   @override
   Widget build(BuildContext context) {
@@ -312,10 +321,28 @@ class _DrawerNavItem extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  item.icon,
-                  size: 18,
-                  color: isActive ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.65),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      item.icon,
+                      size: 18,
+                      color: isActive ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.65),
+                    ),
+                    if (showBadge)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 Text(

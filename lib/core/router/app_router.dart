@@ -26,6 +26,9 @@ import '../../features/tools/screens/rent_vs_buy_screen.dart';
 import '../../features/tools/screens/panganay_mode_screen.dart';
 import '../../features/tools/screens/calculators_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/achievements/screens/achievements_screen.dart';
+import '../../features/reports/screens/reports_list_screen.dart';
+import '../../features/reports/screens/monthly_report_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
@@ -200,6 +203,27 @@ final appRouter = GoRouter(
           path: '/tools/taxes',
           pageBuilder: (context, state) => const MaterialPage(
             child: TaxTrackerScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/achievements',
+          pageBuilder: (context, state) => const MaterialPage(
+            child: AchievementsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/reports',
+          pageBuilder: (context, state) => const MaterialPage(
+            child: ReportsListScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/reports/:year/:month',
+          pageBuilder: (context, state) => MaterialPage(
+            child: MonthlyReportScreen(
+              year: int.parse(state.pathParameters['year']!),
+              month: int.parse(state.pathParameters['month']!),
+            ),
           ),
         ),
         GoRoute(
