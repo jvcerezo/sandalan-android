@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../app.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
@@ -63,8 +64,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
           // ── Header ──────────────────────────────────────────────
-          const Text('Dashboard',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
+          Row(children: [
+            const Expanded(child: Text('Dashboard',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3))),
+            Consumer(builder: (context, ref, _) {
+              final hidden = ref.watch(hideBalancesProvider);
+              return IconButton(
+                onPressed: () => ref.read(hideBalancesProvider.notifier).state = !hidden,
+                icon: Icon(hidden ? LucideIcons.eyeOff : LucideIcons.eye, size: 18),
+                tooltip: hidden ? 'Show balances' : 'Hide balances',
+                style: IconButton.styleFrom(
+                  foregroundColor: colorScheme.onSurfaceVariant,
+                ),
+              );
+            }),
+          ]),
           const SizedBox(height: 2),
           Text('Your finances at a glance',
               style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),

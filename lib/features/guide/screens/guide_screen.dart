@@ -213,7 +213,7 @@ class _JourneyNode extends StatelessWidget {
         GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
-            context.go('/guide/${_stages[index].id}');
+            context.push('/guide/${_stages[index].id}');
           },
           child: SizedBox(
             width: 160,
