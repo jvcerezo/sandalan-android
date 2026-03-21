@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/chat_dictionary.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/services/chat_engine.dart';
+import '../../../data/chat/personality_templates.dart';
 import '../../../data/models/chat_models.dart';
 import '../../../data/repositories/chat_report_repository.dart';
 import '../../../data/repositories/learned_keyword_repository.dart';
@@ -106,14 +107,25 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     invalidateProviders();
 
     final formatted = _formatAmount(amount);
-    final typeLabel = pending.isIncome ? 'Income' : 'Expense';
     final catLabel = pending.category ?? 'Other';
-    final accLabel = pending.accountName ?? 'default account';
+
+    // Use personality-flavored response for the confirmation message
+    await engine.ensurePersonalityLoaded();
+    final responseCategory = pending.isIncome
+        ? ResponseCategory.incomeLogged
+        : engine.contextualExpenseCategory(amount, catLabel);
+    final personalityMsg = getPersonalityResponse(
+      engine.personality,
+      responseCategory,
+      engine.assistantName,
+      data: {'amount': formatted, 'category': catLabel},
+      addFiller: false,
+    );
 
     _addMessage(ChatMessage(
       id: _nextId(),
       type: ChatMessageType.bot,
-      text: "Logged PHP $formatted $typeLabel '$catLabel' — ${pending.description ?? ''} from $accLabel",
+      text: personalityMsg,
       timestamp: DateTime.now(),
       transactionId: tx.id,
       reportable: true,

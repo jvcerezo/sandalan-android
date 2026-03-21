@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/chat/personality_templates.dart';
@@ -47,8 +49,44 @@ class ChatEngine {
   }
 
   /// Get a personality-flavored response.
-  String _pr(ResponseCategory category, {Map<String, String>? data}) {
-    return getPersonalityResponse(_personality, category, _assistantName, data: data);
+  String _pr(ResponseCategory category, {Map<String, String>? data, bool addFiller = false}) {
+    return getPersonalityResponse(_personality, category, _assistantName, data: data, addFiller: addFiller);
+  }
+
+  /// Get personality and assistant name for external callers.
+  AiPersonality get personality => _personality;
+  String get assistantName => _assistantName;
+
+  /// Ensure personality is loaded (for external callers).
+  Future<void> ensurePersonalityLoaded() => _ensurePersonalityLoaded();
+
+  /// Determine the best ResponseCategory for an expense based on context.
+  ResponseCategory contextualExpenseCategory(double amount, String category) {
+    final random = Random();
+
+    // Amount-based categories take priority
+    if (amount >= 5000) return ResponseCategory.hugeExpense;
+    if (amount < 100) return ResponseCategory.smallExpense;
+
+    // 30% chance of using a more specific time-aware category
+    final roll = random.nextInt(10);
+    if (roll < 3) {
+      final hour = DateTime.now().hour;
+      if (hour >= 23 || hour < 5) return ResponseCategory.nightOwl;
+      if (hour < 7) return ResponseCategory.earlyBird;
+      final weekday = DateTime.now().weekday;
+      if (weekday == DateTime.saturday || weekday == DateTime.sunday) {
+        return ResponseCategory.weekendSpending;
+      }
+    }
+
+    // Medium expense range (100-999)
+    if (amount >= 100 && amount < 1000) return ResponseCategory.mediumExpense;
+
+    // Large purchase range (1000-4999)
+    if (amount >= 1000) return ResponseCategory.largePurchase;
+
+    return ResponseCategory.expenseLogged;
   }
 
   /// Main entry point: parse raw user input into a structured result.

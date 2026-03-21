@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sandalan Marketing Assets Generator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 20px; }
+  h1 { margin-bottom: 10px; }
+  p.info { color: #888; margin-bottom: 30px; font-size: 14px; }
+  .section { margin-bottom: 40px; }
+  .section h2 { margin-bottom: 15px; color: #3DB676; }
+  .assets { display: flex; flex-wrap: wrap; gap: 20px; }
+  canvas { border: 1px solid #333; cursor: pointer; max-width: 100%; height: auto; }
+  canvas:hover { border-color: #3DB676; }
+  .label { font-size: 12px; color: #888; margin-top: 4px; margin-bottom: 10px; }
+  button { background: #3DB676; color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 5px; }
+  button:hover { background: #2D8B5E; }
+</style>
+</head>
+<body>
+
+<h1>Sandalan Marketing Assets</h1>
+<p class="info">Right-click any image → "Save image as..." to download. Or click "Download All" below.</p>
+<button onclick="downloadAll()">Download All Assets</button>
+
+<div class="section" id="feature-section">
+  <h2>Feature Graphic (1024×500)</h2>
+  <div class="assets"><canvas id="feature" width="1024" height="500"></canvas></div>
+  <div class="label">feature_graphic.png</div>
+</div>
+
+<div class="section" id="phone-section">
+  <h2>Phone Screenshots (1080×1920)</h2>
+  <div class="assets" id="phone-assets"></div>
+</div>
+
+<div class="section" id="tablet7-section">
+  <h2>7" Tablet Screenshots (1200×1920)</h2>
+  <div class="assets" id="tablet7-assets"></div>
+</div>
+
+<div class="section" id="tablet10-section">
+  <h2>10" Tablet Screenshots (1600×2560)</h2>
+  <div class="assets" id="tablet10-assets"></div>
+</div>
+
+<div class="section">
+  <h2>App Icon (512×512)</h2>
+  <div class="assets"><canvas id="appicon" width="512" height="512"></canvas></div>
+  <div class="label">app_icon_512.png</div>
+</div>
+
+<script>
+// ─── Colors ───────────────────────────────────────────────────────────
+const PRIMARY = '#2D8B5E';
+const PRIMARY_DARK = '#3DB676';
+const BG_DARK = '#0A1410';
+const CARD_DARK = '#142018';
+const TEXT = '#F3F6F4';
+const MUTED = '#8A948D';
+const INCOME_GREEN = '#22C55E';
+const EXPENSE_SLATE = '#64748B';
+
+// ─── Screenshot Data ──────────────────────────────────────────────────
+const screenshots = [
+  {
+    id: '01_home',
+    headline: 'Your Filipino\nAdulting Companion',
+    subline: 'Track finances and level up through life',
+    accent: PRIMARY,
+    mockupItems: [
+      { type: 'greeting', text: 'Good evening, Jet', sub: "Here's your snapshot for today." },
+      { type: 'stage', text: 'Unang Hakbang', sub: 'First Steps', progress: 0.15 },
+      { type: 'stats', items: [
+        { label: 'Balance', value: '₱108,700', color: TEXT },
+        { label: 'Income', value: '₱110,500', color: INCOME_GREEN },
+        { label: 'Expenses', value: '₱7,350', color: EXPENSE_SLATE },
+      ]},
+      { type: 'streak', count: 12 },
+    ]
+  },
+  {
+    id: '02_dashboard',
+    headline: 'Know Where Your\nMoney Goes',
+    subline: 'Smart dashboard with real-time insights',
+    accent: '#3B82F6',
+    mockupItems: [
+      { type: 'hero', label: 'NET WORTH', value: '₱104,100', color: PRIMARY_DARK },
+      { type: 'quickstats', items: [
+        { icon: '🏦', label: 'Accounts', value: '₱108.7K', sub: '3 accounts' },
+        { icon: '🎯', label: 'Goals', value: '₱0', sub: '0 active' },
+        { icon: '💳', label: 'Debts', value: '₱4.6K', sub: '1 active' },
+      ]},
+      { type: 'bar', label: 'You saved 93% of your income this month', pct: 0.93 },
+    ]
+  },
+  {
+    id: '03_guide',
+    headline: 'Step-by-Step\nAdulting Guides',
+    subline: 'From first job to retirement',
+    accent: '#8B5CF6',
+    mockupItems: [
+      { type: 'journey', stages: [
+        { name: 'Unang Hakbang', color: '#3B82F6', progress: '2/14' },
+        { name: 'Pundasyon', color: '#10B981', progress: '0/19' },
+        { name: 'Tahanan', color: '#8B5CF6', progress: '0/19' },
+        { name: 'Tugatog', color: '#F59E0B', progress: '0/16' },
+      ]}
+    ]
+  },
+  {
+    id: '04_transactions',
+    headline: 'Track Every Peso',
+    subline: 'All your transactions in one place',
+    accent: INCOME_GREEN,
+    mockupItems: [
+      { type: 'txlist', items: [
+        { name: 'Jollibee', cat: 'Food', amount: '-₱350', color: EXPENSE_SLATE },
+        { name: 'Salary', cat: 'Income', amount: '+₱25,000', color: INCOME_GREEN },
+        { name: 'Meralco', cat: 'Electricity', amount: '-₱2,500', color: EXPENSE_SLATE },
+        { name: 'GCash Transfer', cat: 'Transfer', amount: '₱1,000', color: '#6366F1' },
+        { name: 'Grab', cat: 'Transportation', amount: '-₱180', color: EXPENSE_SLATE },
+      ]}
+    ]
+  },
+  {
+    id: '05_tools',
+    headline: 'SSS, PhilHealth,\nBIR & More',
+    subline: 'All the tools a Filipino adult needs',
+    accent: '#F97316',
+    mockupItems: [
+      { type: 'tools', items: [
+        { icon: '🏛️', name: 'Contributions', color: '#3B82F6' },
+        { icon: '📋', name: 'BIR Tax', color: '#F97316' },
+        { icon: '💰', name: '13th Month', color: '#22C55E' },
+        { icon: '💳', name: 'Debts', color: '#EF4444' },
+        { icon: '📄', name: 'Bills', color: '#6366F1' },
+        { icon: '🛡️', name: 'Insurance', color: '#14B8A6' },
+        { icon: '👴', name: 'Retirement', color: '#F59E0B' },
+        { icon: '🏠', name: 'Rent vs Buy', color: '#EC4899' },
+      ]}
+    ]
+  },
+  {
+    id: '06_scanner',
+    headline: 'Scan Receipts\nInstantly',
+    subline: 'AI-powered OCR for Filipino receipts',
+    accent: '#14B8A6',
+    mockupItems: [
+      { type: 'scanner', store: 'SM Supermarket', amount: '₱1,234.50', category: 'Food', date: 'Mar 21, 2026' },
+    ]
+  },
+  {
+    id: '07_ai',
+    headline: 'Your Personal\nFinance Buddy',
+    subline: 'Chat in Taglish, get instant answers',
+    accent: '#A855F7',
+    mockupItems: [
+      { type: 'chat', messages: [
+        { from: 'user', text: 'Magkano gastos ko today?' },
+        { from: 'ai', text: 'You spent ₱850 today! Top category: Food (₱500). Tuloy-tuloy lang! 💪', name: 'Aling Nena' },
+        { from: 'user', text: 'Add 500 expense food' },
+        { from: 'ai', text: 'Done! Added ₱500 expense for Food from your Cash account. Balance: ₱1,200.', name: 'Aling Nena' },
+      ]}
+    ]
+  },
+  {
+    id: '08_goals',
+    headline: 'Set Goals,\nTrack Progress',
+    subline: 'Monthly reports with letter grades',
+    accent: '#EAB308',
+    mockupItems: [
+      { type: 'report', grade: 'B+', month: 'March 2026', stats: [
+        { label: 'Savings Rate', value: '93%' },
+        { label: 'Days Active', value: '21/31' },
+        { label: 'Health Score', value: '72' },
+      ]},
+    ]
+  },
+];
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawCard(ctx, x, y, w, h, color = CARD_DARK) {
+  roundRect(ctx, x, y, w, h, 12);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function drawText(ctx, text, x, y, { size = 14, weight = '400', color = TEXT, align = 'left', maxWidth } = {}) {
+  ctx.font = `${weight} ${size}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  if (maxWidth) {
+    ctx.fillText(text, x, y, maxWidth);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
+
+function drawBahayKubo(ctx, cx, cy, size, color = '#fff') {
+  ctx.save();
+  ctx.translate(cx, cy);
+  const s = size / 100;
+
+  // Roof (green X shape)
+  ctx.strokeStyle = PRIMARY_DARK;
+  ctx.lineWidth = 6 * s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-45 * s, 0);
+  ctx.lineTo(0, -40 * s);
+  ctx.lineTo(45 * s, 0);
+  ctx.stroke();
+
+  // House body
+  ctx.fillStyle = color;
+  ctx.fillRect(-35 * s, 0, 70 * s, 45 * s);
+
+  // Door
+  ctx.fillStyle = BG_DARK;
+  ctx.fillRect(-8 * s, 15 * s, 16 * s, 30 * s);
+
+  // Windows
+  ctx.fillStyle = BG_DARK;
+  ctx.fillRect(-28 * s, 10 * s, 14 * s, 12 * s);
+  ctx.fillRect(14 * s, 10 * s, 14 * s, 12 * s);
+
+  // Stilts
+  ctx.fillStyle = color;
+  ctx.fillRect(-30 * s, 45 * s, 6 * s, 15 * s);
+  ctx.fillRect(24 * s, 45 * s, 6 * s, 15 * s);
+  ctx.fillRect(-5 * s, 45 * s, 6 * s, 15 * s);
+
+  // Platform
+  ctx.fillRect(-35 * s, 44 * s, 70 * s, 4 * s);
+
+  ctx.restore();
+}
+
+// ─── Feature Graphic ──────────────────────────────────────────────────
+
+function drawFeatureGraphic() {
+  const c = document.getElementById('feature');
+  const ctx = c.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 1024, 500);
+  grad.addColorStop(0, BG_DARK);
+  grad.addColorStop(0.5, '#0F1F17');
+  grad.addColorStop(1, '#162E21');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1024, 500);
+
+  // Subtle grid pattern
+  ctx.strokeStyle = 'rgba(61,182,118,0.03)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 1024; i += 40) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 500); ctx.stroke();
+  }
+  for (let i = 0; i < 500; i += 40) {
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(1024, i); ctx.stroke();
+  }
+
+  // Bahay kubo
+  drawBahayKubo(ctx, 280, 250, 180, '#1A3D2A');
+
+  // App name
+  drawText(ctx, 'Sandal', 500, 200, { size: 72, weight: '700', color: TEXT });
+  const sandalWidth = ctx.measureText('Sandal').width;
+  drawText(ctx, 'an', 500 + sandalWidth, 200, { size: 72, weight: '700', color: PRIMARY_DARK });
+
+  // Tagline
+  drawText(ctx, 'Your Filipino Adulting Companion', 500, 250, { size: 24, weight: '400', color: MUTED });
+
+  // Feature pills
+  const pills = ['Finance Tracker', 'Adulting Guide', 'AI Assistant', 'Receipt Scanner'];
+  let px = 500;
+  pills.forEach((pill, i) => {
+    const pw = ctx.measureText(pill).width + 24;
+    roundRect(ctx, px, 280, pw + 12, 32, 16);
+    ctx.fillStyle = 'rgba(61,182,118,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(61,182,118,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    drawText(ctx, pill, px + 18, 301, { size: 13, weight: '500', color: PRIMARY_DARK });
+    px += pw + 20;
+  });
+
+  // Flag colors accent at bottom
+  const flagColors = ['#0038A8', '#CE1126', '#FCD116'];
+  flagColors.forEach((c, i) => {
+    ctx.fillStyle = c;
+    ctx.globalAlpha = 0.6;
+    ctx.fillRect(i * 342, 496, 342, 4);
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ─── Screenshot Generator ─────────────────────────────────────────────
+
+function drawScreenshot(canvas, data, width, height) {
+  const ctx = canvas.getContext('2d');
+  const scale = width / 1080;
+  const s = (v) => v * scale;
+
+  // Background
+  ctx.fillStyle = BG_DARK;
+  ctx.fillRect(0, 0, width, height);
+
+  // Top section with gradient accent
+  const topGrad = ctx.createLinearGradient(0, 0, width, s(600));
+  topGrad.addColorStop(0, data.accent + '15');
+  topGrad.addColorStop(1, BG_DARK);
+  ctx.fillStyle = topGrad;
+  ctx.fillRect(0, 0, width, s(600));
+
+  // Headline
+  const lines = data.headline.split('\n');
+  lines.forEach((line, i) => {
+    drawText(ctx, line, s(60), s(120 + i * 70), { size: s(52), weight: '800', color: TEXT });
+  });
+
+  // Subline
+  drawText(ctx, data.subline, s(60), s(120 + lines.length * 70 + 20), { size: s(20), weight: '400', color: MUTED });
+
+  // Phone frame area
+  const frameY = s(120 + lines.length * 70 + 80);
+  const frameX = s(80);
+  const frameW = width - s(160);
+  const frameH = height - frameY - s(40);
+
+  // Phone bezel
+  roundRect(ctx, frameX - s(8), frameY - s(8), frameW + s(16), frameH + s(16), s(24));
+  ctx.fillStyle = '#222';
+  ctx.fill();
+
+  // Screen area
+  roundRect(ctx, frameX, frameY, frameW, frameH, s(16));
+  ctx.fillStyle = BG_DARK;
+  ctx.fill();
+
+  // Draw mockup content
+  let contentY = frameY + s(30);
+  const contentX = frameX + s(24);
+  const contentW = frameW - s(48);
+
+  data.mockupItems.forEach(item => {
+    switch (item.type) {
+      case 'greeting':
+        drawText(ctx, item.text, contentX, contentY + s(24), { size: s(22), weight: '700', color: TEXT });
+        drawText(ctx, item.sub, contentX, contentY + s(48), { size: s(13), weight: '400', color: MUTED });
+        contentY += s(70);
+        break;
+
+      case 'streak':
+        // Draw streak badge in top-right of greeting area
+        roundRect(ctx, frameX + frameW - s(100), frameY + s(20), s(70), s(28), s(14));
+        ctx.fillStyle = PRIMARY + '20';
+        ctx.fill();
+        drawText(ctx, '🔥 ' + item.count, frameX + frameW - s(85), frameY + s(40), { size: s(14), weight: '700', color: '#F59E0B' });
+        break;
+
+      case 'stage':
+        drawCard(ctx, contentX, contentY, contentW, s(60));
+        drawText(ctx, 'CURRENT STAGE', contentX + s(16), contentY + s(18), { size: s(9), weight: '600', color: MUTED });
+        drawText(ctx, item.text, contentX + s(16), contentY + s(38), { size: s(16), weight: '700', color: TEXT });
+        // Progress bar
+        roundRect(ctx, contentX + s(16), contentY + s(45), contentW - s(32), s(4), s(2));
+        ctx.fillStyle = '#1C2D24';
+        ctx.fill();
+        roundRect(ctx, contentX + s(16), contentY + s(45), (contentW - s(32)) * item.progress, s(4), s(2));
+        ctx.fillStyle = PRIMARY_DARK;
+        ctx.fill();
+        contentY += s(75);
+        break;
+
+      case 'stats':
+        const statW = (contentW - s(16)) / 3;
+        item.items.forEach((stat, i) => {
+          const sx = contentX + i * (statW + s(8));
+          drawCard(ctx, sx, contentY, statW, s(55));
+          drawText(ctx, stat.label, sx + s(10), contentY + s(16), { size: s(9), weight: '500', color: MUTED });
+          drawText(ctx, stat.value, sx + s(10), contentY + s(38), { size: s(14), weight: '700', color: stat.color });
+        });
+        contentY += s(70);
+        break;
+
+      case 'hero':
+        drawCard(ctx, contentX, contentY, contentW, s(90));
+        // Left accent bar
+        roundRect(ctx, contentX, contentY, s(4), s(90), s(2));
+        ctx.fillStyle = item.color;
+        ctx.fill();
+        drawText(ctx, item.label, contentX + s(20), contentY + s(22), { size: s(10), weight: '600', color: MUTED });
+        drawText(ctx, item.value, contentX + s(20), contentY + s(55), { size: s(28), weight: '800', color: item.color });
+        contentY += s(105);
+        break;
+
+      case 'quickstats':
+        const qw = (contentW - s(16)) / 3;
+        item.items.forEach((q, i) => {
+          const qx = contentX + i * (qw + s(8));
+          drawCard(ctx, qx, contentY, qw, s(70));
+          drawText(ctx, q.icon + ' ' + q.label, qx + s(10), contentY + s(18), { size: s(9), weight: '600', color: MUTED });
+          drawText(ctx, q.value, qx + s(10), contentY + s(42), { size: s(15), weight: '700', color: TEXT });
+          drawText(ctx, q.sub, qx + s(10), contentY + s(58), { size: s(9), weight: '400', color: MUTED });
+        });
+        contentY += s(85);
+        break;
+
+      case 'bar':
+        drawCard(ctx, contentX, contentY, contentW, s(50));
+        // Stacked bar
+        roundRect(ctx, contentX + s(14), contentY + s(14), contentW - s(28), s(8), s(4));
+        ctx.fillStyle = EXPENSE_SLATE + '40';
+        ctx.fill();
+        roundRect(ctx, contentX + s(14), contentY + s(14), (contentW - s(28)) * item.pct, s(8), s(4));
+        ctx.fillStyle = INCOME_GREEN;
+        ctx.fill();
+        drawText(ctx, item.label, contentX + s(14), contentY + s(40), { size: s(10), weight: '500', color: MUTED });
+        contentY += s(65);
+        break;
+
+      case 'journey':
+        item.stages.forEach((stage, i) => {
+          const isLeft = i % 2 === 0;
+          const nx = isLeft ? contentX + s(20) : contentX + contentW - s(100);
+          const ny = contentY + i * s(90);
+          // Circle
+          ctx.beginPath();
+          ctx.arc(nx + s(25), ny + s(25), s(25), 0, Math.PI * 2);
+          ctx.fillStyle = stage.color;
+          ctx.fill();
+          drawText(ctx, '✓', nx + s(25), ny + s(32), { size: s(20), weight: '700', color: '#fff', align: 'center' });
+          // Name
+          drawText(ctx, stage.name, nx - (isLeft ? 0 : s(60)), ny + s(65), { size: s(13), weight: '600', color: TEXT });
+          drawText(ctx, stage.progress, nx - (isLeft ? 0 : s(60)), ny + s(80), { size: s(11), weight: '600', color: stage.color });
+          // Connector
+          if (i < item.stages.length - 1) {
+            ctx.setLineDash([s(4), s(4)]);
+            ctx.strokeStyle = stage.color + '60';
+            ctx.lineWidth = s(2);
+            ctx.beginPath();
+            ctx.moveTo(nx + s(25), ny + s(50));
+            const nextX = (i + 1) % 2 === 0 ? contentX + s(45) : contentX + contentW - s(75);
+            ctx.quadraticCurveTo(contentX + contentW / 2, ny + s(90), nextX, ny + s(90) + s(25));
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        });
+        contentY += item.stages.length * s(90);
+        break;
+
+      case 'txlist':
+        item.items.forEach((tx, i) => {
+          const ty = contentY + i * s(56);
+          drawCard(ctx, contentX, ty, contentW, s(50));
+          drawText(ctx, tx.name, contentX + s(16), ty + s(22), { size: s(14), weight: '600', color: TEXT });
+          drawText(ctx, tx.cat, contentX + s(16), ty + s(38), { size: s(10), weight: '400', color: MUTED });
+          drawText(ctx, tx.amount, contentX + contentW - s(16), ty + s(28), { size: s(14), weight: '600', color: tx.color, align: 'right' });
+        });
+        contentY += item.items.length * s(56) + s(10);
+        break;
+
+      case 'tools':
+        const tw = (contentW - s(12)) / 2;
+        item.items.forEach((tool, i) => {
+          const tx = contentX + (i % 2) * (tw + s(12));
+          const ty = contentY + Math.floor(i / 2) * s(56);
+          drawCard(ctx, tx, ty, tw, s(50));
+          drawText(ctx, tool.icon + '  ' + tool.name, tx + s(14), ty + s(30), { size: s(13), weight: '600', color: TEXT });
+        });
+        contentY += Math.ceil(item.items.length / 2) * s(56) + s(10);
+        break;
+
+      case 'scanner':
+        // Receipt card
+        drawCard(ctx, contentX, contentY, contentW, s(200), '#1A2A1F');
+        drawText(ctx, '📷  Receipt Scanned', contentX + s(16), contentY + s(28), { size: s(14), weight: '700', color: PRIMARY_DARK });
+        // Receipt type badge
+        roundRect(ctx, contentX + s(16), contentY + s(40), s(80), s(22), s(11));
+        ctx.fillStyle = '#14B8A6' + '30';
+        ctx.fill();
+        drawText(ctx, 'Purchase', contentX + s(28), contentY + s(55), { size: s(10), weight: '600', color: '#14B8A6' });
+        // Fields
+        const fields = [
+          { label: 'Store', value: item.store, icon: '✅' },
+          { label: 'Amount', value: item.amount, icon: '✅' },
+          { label: 'Category', value: item.category, icon: '✅' },
+          { label: 'Date', value: item.date, icon: '✅' },
+        ];
+        fields.forEach((f, i) => {
+          const fy = contentY + s(75) + i * s(28);
+          drawText(ctx, f.icon + ' ' + f.label, contentX + s(16), fy, { size: s(11), weight: '500', color: MUTED });
+          drawText(ctx, f.value, contentX + contentW - s(16), fy, { size: s(12), weight: '600', color: TEXT, align: 'right' });
+        });
+        // Button
+        roundRect(ctx, contentX + s(16), contentY + s(175), contentW - s(32), s(36), s(8));
+        ctx.fillStyle = PRIMARY;
+        ctx.fill();
+        drawText(ctx, 'Add as Expense', contentX + contentW / 2, contentY + s(198), { size: s(13), weight: '600', color: '#fff', align: 'center' });
+        contentY += s(220);
+        break;
+
+      case 'chat':
+        item.messages.forEach((msg, i) => {
+          const my = contentY + i * s(70);
+          if (msg.from === 'user') {
+            const bw = s(250);
+            roundRect(ctx, contentX + contentW - bw, my, bw, s(55), s(12));
+            ctx.fillStyle = PRIMARY + '25';
+            ctx.fill();
+            drawText(ctx, msg.text, contentX + contentW - bw + s(14), my + s(32), { size: s(12), weight: '500', color: TEXT, maxWidth: bw - s(28) });
+          } else {
+            const bw = s(300);
+            roundRect(ctx, contentX, my, bw, s(55), s(12));
+            ctx.fillStyle = CARD_DARK;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.stroke();
+            drawText(ctx, msg.name, contentX + s(14), my + s(16), { size: s(9), weight: '600', color: PRIMARY_DARK });
+            drawText(ctx, msg.text, contentX + s(14), my + s(36), { size: s(11), weight: '400', color: TEXT, maxWidth: bw - s(28) });
+          }
+        });
+        contentY += item.messages.length * s(70);
+        break;
+
+      case 'report':
+        drawCard(ctx, contentX, contentY, contentW, s(200), PRIMARY);
+        drawText(ctx, item.month, contentX + s(20), contentY + s(28), { size: s(12), weight: '500', color: 'rgba(255,255,255,0.7)' });
+        drawText(ctx, 'Monthly Report Card', contentX + s(20), contentY + s(48), { size: s(14), weight: '500', color: 'rgba(255,255,255,0.8)' });
+        drawText(ctx, item.grade, contentX + contentW / 2, contentY + s(120), { size: s(64), weight: '800', color: '#fff', align: 'center' });
+        drawText(ctx, 'Good progress!', contentX + contentW / 2, contentY + s(150), { size: s(13), weight: '400', color: 'rgba(255,255,255,0.7)', align: 'center' });
+        contentY += s(215);
+        // Stats
+        const sw = (contentW - s(16)) / 3;
+        item.stats.forEach((st, i) => {
+          const sx = contentX + i * (sw + s(8));
+          drawCard(ctx, sx, contentY, sw, s(60));
+          drawText(ctx, st.label, sx + s(10), contentY + s(18), { size: s(9), weight: '500', color: MUTED });
+          drawText(ctx, st.value, sx + s(10), contentY + s(42), { size: s(18), weight: '700', color: INCOME_GREEN });
+        });
+        contentY += s(75);
+        break;
+    }
+  });
+
+  // Status bar mockup at top of phone frame
+  drawText(ctx, '9:41', frameX + s(14), frameY + s(18), { size: s(11), weight: '600', color: TEXT });
+}
+
+// ─── Generate All ─────────────────────────────────────────────────────
+
+function generateAll() {
+  // Feature graphic
+  drawFeatureGraphic();
+
+  // App icon
+  const iconCtx = document.getElementById('appicon').getContext('2d');
+  roundRect(iconCtx, 0, 0, 512, 512, 100);
+  const iconGrad = iconCtx.createLinearGradient(0, 0, 512, 512);
+  iconGrad.addColorStop(0, '#0F2318');
+  iconGrad.addColorStop(1, '#1A3D2A');
+  iconCtx.fillStyle = iconGrad;
+  iconCtx.fill();
+  drawBahayKubo(iconCtx, 256, 230, 280, TEXT);
+  drawText(iconCtx, 'Sandal', 256, 430, { size: 52, weight: '700', color: TEXT, align: 'center' });
+  const sw = iconCtx.measureText('Sandal').width;
+  drawText(iconCtx, 'an', 256 + sw / 2, 430, { size: 52, weight: '700', color: PRIMARY_DARK, align: 'left' });
+
+  // Phone screenshots (1080×1920)
+  const phoneContainer = document.getElementById('phone-assets');
+  screenshots.forEach(data => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080; canvas.height = 1920;
+    canvas.style.width = '270px';
+    canvas.title = data.id + '_phone.png';
+    phoneContainer.appendChild(canvas);
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = data.id + '_phone.png';
+    phoneContainer.appendChild(label);
+    drawScreenshot(canvas, data, 1080, 1920);
+  });
+
+  // 7" tablet (1200×1920)
+  const t7Container = document.getElementById('tablet7-assets');
+  screenshots.forEach(data => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200; canvas.height = 1920;
+    canvas.style.width = '200px';
+    canvas.title = data.id + '_tablet7.png';
+    t7Container.appendChild(canvas);
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = data.id + '_tablet7.png';
+    t7Container.appendChild(label);
+    drawScreenshot(canvas, data, 1200, 1920);
+  });
+
+  // 10" tablet (1600×2560)
+  const t10Container = document.getElementById('tablet10-assets');
+  screenshots.forEach(data => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1600; canvas.height = 2560;
+    canvas.style.width = '160px';
+    canvas.title = data.id + '_tablet10.png';
+    t10Container.appendChild(canvas);
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = data.id + '_tablet10.png';
+    t10Container.appendChild(label);
+    drawScreenshot(canvas, data, 1600, 2560);
+  });
+}
+
+// ─── Download All ─────────────────────────────────────────────────────
+
+function downloadAll() {
+  const canvases = document.querySelectorAll('canvas');
+  canvases.forEach(canvas => {
+    const name = canvas.title || canvas.id || 'asset';
+    const link = document.createElement('a');
+    link.download = name.endsWith('.png') ? name : name + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+
+// Generate on load
+window.addEventListener('load', generateAll);
+</script>
+</body>
+</html>
