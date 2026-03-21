@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../app.dart';
@@ -246,13 +248,18 @@ class NavDrawer extends ConsumerWidget {
                         label: 'Sign Out',
                         onTap: () async {
                           Navigator.of(context).pop();
+                          // Cache user info for quick login before clearing session
+                          final user = Supabase.instance.client.auth.currentUser;
+                          if (user != null) {
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setString('last_user_name', user.userMetadata?['full_name'] as String? ?? '');
+                            await prefs.setString('last_user_email', user.email ?? '');
+                            await prefs.setString('last_user_avatar', user.userMetadata?['avatar_url'] as String? ?? '');
+                          }
                           await NotificationService.instance.cancelAll();
-                          // Try sign out — may fail offline, that's OK
                           try {
                             await ref.read(authRepositoryProvider).signOut();
-                          } catch (_) {
-                            // Offline — clear local session manually
-                          }
+                          } catch (_) {}
                           if (context.mounted) context.go('/login');
                         },
                       ),

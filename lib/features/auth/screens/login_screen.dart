@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
@@ -122,17 +123,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
 
-              // Quick login for previously authenticated users (offline with cached identity)
-              Builder(builder: (context) {
-                final session = Supabase.instance.client.auth.currentSession;
-                final cachedUser = Supabase.instance.client.auth.currentUser;
-                // Only show quick login if there's a cached user but NO active session
-                // (means they were previously logged in but are now offline or session expired)
-                if (cachedUser == null || session != null) return const SizedBox.shrink();
+              // Quick login for previously authenticated users
+              FutureBuilder<SharedPreferences>(
+                future: SharedPreferences.getInstance(),
+                builder: (context, snap) {
+                  if (!snap.hasData) return const SizedBox.shrink();
+                  final prefs = snap.data!;
+                  final name = prefs.getString('last_user_name') ?? '';
+                  final email = prefs.getString('last_user_email') ?? '';
+                  final avatarUrl = prefs.getString('last_user_avatar');
 
-                final name = cachedUser.userMetadata?['full_name'] as String? ?? '';
-                final email = cachedUser.email ?? '';
-                final avatarUrl = cachedUser.userMetadata?['avatar_url'] as String?;
+                  // No cached user info — don't show quick login
+                  if (email.isEmpty) return const SizedBox.shrink();
 
                 return Column(children: [
                   GestureDetector(
@@ -185,7 +187,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ]),
                   const SizedBox(height: 16),
                 ]);
-              }),
+                },
+              ),
 
               // Error
               if (_error != null)
