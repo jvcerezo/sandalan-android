@@ -9,6 +9,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
+import '../../accounts/providers/account_providers.dart';
 import '../providers/goal_providers.dart';
 import '../widgets/add_goal_dialog.dart';
 
@@ -164,12 +165,12 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-class _GoalCard extends StatelessWidget {
+class _GoalCard extends ConsumerWidget {
   final Goal goal;
   const _GoalCard({required this.goal});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final progress = goal.progressPercent / 100;
     final color = goal.isCompleted ? AppColors.income : colorScheme.primary;
@@ -228,7 +229,219 @@ class _GoalCard extends StatelessWidget {
                   style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
             ]),
           ],
+          // Action buttons
+          if (!goal.isCompleted) ...[
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showAddFundsDialog(context, ref),
+                  icon: const Icon(LucideIcons.plus, size: 14),
+                  label: const Text('Add Funds'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+              if (goal.currentAmount > 0) ...[
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () => _showReleaseFundsDialog(context, ref),
+                  icon: const Icon(LucideIcons.arrowDownLeft, size: 14),
+                  label: const Text('Release'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.onSurfaceVariant,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ]),
+          ],
         ]),
+      ),
+    );
+  }
+
+  void _showAddFundsDialog(BuildContext context, WidgetRef ref) {
+    final amountCtl = TextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
+    final remaining = goal.targetAmount - goal.currentAmount;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(
+              color: colorScheme.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Text('Add Funds to ${goal.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Remaining: ${formatCurrency(remaining)}',
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountCtl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              decoration: InputDecoration(
+                prefixText: '₱ ',
+                hintText: '0.00',
+                labelText: 'Amount',
+                helperText: goal.accountId != null ? 'Will be deducted from linked account' : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountCtl.text.replaceAll(',', ''));
+                  if (amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Enter a valid amount')));
+                    return;
+                  }
+                  if (amount > remaining) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Amount exceeds remaining (${formatCurrency(remaining)})')));
+                    return;
+                  }
+                  // Need an account to deduct from
+                  final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+                  final accountId = goal.accountId ?? (accounts.isNotEmpty ? accounts.first.id : null);
+                  if (accountId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No account available to deduct from')));
+                    return;
+                  }
+                  Navigator.pop(context);
+                  try {
+                    await ref.read(goalRepositoryProvider).addFunds(
+                      goalId: goal.id,
+                      accountId: accountId,
+                      amount: amount,
+                    );
+                    ref.invalidate(goalsProvider);
+                    ref.invalidate(accountsProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Added ${formatCurrency(amount)} to ${goal.name}')));
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed: $e')));
+                    }
+                  }
+                },
+                child: const Text('Add Funds'),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  void _showReleaseFundsDialog(BuildContext context, WidgetRef ref) {
+    final amountCtl = TextEditingController();
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(
+              color: colorScheme.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Text('Release Funds from ${goal.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text('Available: ${formatCurrency(goal.currentAmount)}',
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountCtl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              decoration: InputDecoration(
+                prefixText: '₱ ',
+                hintText: '0.00',
+                labelText: 'Amount',
+                helperText: goal.accountId != null ? 'Will be returned to linked account' : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final amount = double.tryParse(amountCtl.text.replaceAll(',', ''));
+                  if (amount == null || amount <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Enter a valid amount')));
+                    return;
+                  }
+                  if (amount > goal.currentAmount) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Amount exceeds available (${formatCurrency(goal.currentAmount)})')));
+                    return;
+                  }
+                  final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+                  final accountId = goal.accountId ?? (accounts.isNotEmpty ? accounts.first.id : null);
+                  if (accountId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No account available to return funds to')));
+                    return;
+                  }
+                  Navigator.pop(context);
+                  try {
+                    await ref.read(goalRepositoryProvider).releaseFunds(
+                      goalId: goal.id,
+                      accountId: accountId,
+                      amount: amount,
+                    );
+                    ref.invalidate(goalsProvider);
+                    ref.invalidate(accountsProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Released ${formatCurrency(amount)} from ${goal.name}')));
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed: $e')));
+                    }
+                  }
+                },
+                style: FilledButton.styleFrom(backgroundColor: colorScheme.onSurfaceVariant),
+                child: const Text('Release Funds'),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }
