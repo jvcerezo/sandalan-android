@@ -14,3 +14,7 @@
 
 # Keep SQLite native libs
 -keep class io.requery.android.database.** { *; }
+
+# Google Play Core (required by Flutter deferred components)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
