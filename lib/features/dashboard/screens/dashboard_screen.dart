@@ -118,21 +118,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           data: (s) {
                             final saved = s.income - s.expenses;
                             return Row(children: [
-                              Icon(LucideIcons.trendingUp, size: 13, color: AppColors.income),
-                              const SizedBox(width: 3),
-                              Text(formatCurrency(s.income),
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
-                              const SizedBox(width: 12),
-                              Icon(LucideIcons.trendingDown, size: 13, color: AppColors.expense),
-                              const SizedBox(width: 3),
-                              Text(formatCurrency(s.expenses),
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.expense)),
-                              const SizedBox(width: 12),
-                              Icon(LucideIcons.piggyBank, size: 13, color: saved >= 0 ? AppColors.income : AppColors.expense),
-                              const SizedBox(width: 3),
-                              Text(formatCurrency(saved.abs()),
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                                      color: saved >= 0 ? AppColors.income : AppColors.expense)),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text('Income', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                                const SizedBox(height: 2),
+                                Row(children: [
+                                  Icon(LucideIcons.trendingUp, size: 12, color: AppColors.income),
+                                  const SizedBox(width: 3),
+                                  Flexible(child: Text(formatCurrency(s.income),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income),
+                                      overflow: TextOverflow.ellipsis)),
+                                ]),
+                              ])),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text('Expenses', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                                const SizedBox(height: 2),
+                                Row(children: [
+                                  Icon(LucideIcons.trendingDown, size: 12, color: AppColors.expense),
+                                  const SizedBox(width: 3),
+                                  Flexible(child: Text(formatCurrency(s.expenses),
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense),
+                                      overflow: TextOverflow.ellipsis)),
+                                ]),
+                              ])),
+                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text('Saved', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+                                const SizedBox(height: 2),
+                                Row(children: [
+                                  Icon(LucideIcons.piggyBank, size: 12, color: saved >= 0 ? AppColors.income : AppColors.expense),
+                                  const SizedBox(width: 3),
+                                  Flexible(child: Text(formatCurrency(saved.abs()),
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                                          color: saved >= 0 ? AppColors.income : AppColors.expense),
+                                      overflow: TextOverflow.ellipsis)),
+                                ]),
+                              ])),
                             ]);
                           },
                           loading: () => const ShimmerLoading(height: 16),
@@ -161,14 +180,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             return Row(children: [
               QuickStat(icon: LucideIcons.landmark,
+                  label: 'Accounts',
                   value: formatCurrency(totalBalance),
                   subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
               const SizedBox(width: 8),
               QuickStat(icon: LucideIcons.target,
+                  label: 'Goals',
                   value: formatCurrency(goalSaved),
                   subtitle: '$activeGoals active'),
               const SizedBox(width: 8),
               QuickStat(icon: LucideIcons.creditCard,
+                  label: 'Debts',
                   value: formatCurrency(totalDebt),
                   subtitle: '$activeDebts active'),
             ]);

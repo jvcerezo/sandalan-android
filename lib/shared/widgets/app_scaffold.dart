@@ -20,12 +20,44 @@ class AppScaffold extends StatelessWidget {
 
   const AppScaffold({super.key, required this.child});
 
+  /// Root tab paths — back button on these should not pop (they're top-level).
+  static const _rootPaths = ['/home', '/guide', '/dashboard', '/tools', '/settings'];
+
+  bool _isRootPath(String location) {
+    return _rootPaths.any((p) => location == p);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
 
-    return TourHost(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_isRootPath(location)) {
+          // On root tab, go to /home or let system handle
+          if (location != '/home') {
+            context.go('/home');
+          }
+          // On /home, do nothing — don't close app
+        } else {
+          // On sub-page, navigate back
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            // Fallback: go to parent route
+            final segments = location.split('/');
+            if (segments.length > 2) {
+              context.go(segments.sublist(0, segments.length - 1).join('/'));
+            } else {
+              context.go('/home');
+            }
+          }
+        }
+      },
+      child: TourHost(
       child: Scaffold(
         key: _scaffoldKey,
         drawer: const NavDrawer(),
@@ -88,6 +120,7 @@ class AppScaffold extends StatelessWidget {
           child: ContextFAB(currentPath: location),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      ),
       ),
     );
   }

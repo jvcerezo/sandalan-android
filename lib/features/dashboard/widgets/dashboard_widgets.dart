@@ -83,9 +83,10 @@ class OverviewCard extends StatelessWidget {
 
 class QuickStat extends StatelessWidget {
   final IconData icon;
+  final String? label;
   final String value;
   final String subtitle;
-  const QuickStat({super.key, required this.icon, required this.value, required this.subtitle});
+  const QuickStat({super.key, required this.icon, this.label, required this.value, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +100,15 @@ class QuickStat extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, size: 16, color: colorScheme.primary),
-          const SizedBox(height: 8),
+          Row(children: [
+            Icon(icon, size: 14, color: colorScheme.primary),
+            if (label != null) ...[
+              const SizedBox(width: 5),
+              Text(label!, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5, color: colorScheme.onSurfaceVariant)),
+            ],
+          ]),
+          const SizedBox(height: 6),
           Text(value,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               maxLines: 1,

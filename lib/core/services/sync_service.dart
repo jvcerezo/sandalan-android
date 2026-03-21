@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/local/app_database.dart';
+import '../../data/repositories/chat_report_repository.dart';
 
 /// Background sync service: pulls from Supabase into local DB, pushes pending
 /// local changes back to Supabase. Uses last-write-wins conflict resolution
@@ -77,6 +78,10 @@ class SyncService with WidgetsBindingObserver {
     try {
       await pullFromSupabase();
       await pushToSupabase();
+      // Sync chat error reports
+      try {
+        await ChatReportRepository(_db, _client).syncPendingReports();
+      } catch (_) {}
     } catch (_) {
       // Silently fail — we'll retry next cycle
     } finally {

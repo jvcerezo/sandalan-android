@@ -50,8 +50,35 @@ class LocalContributionRepository {
     String employmentType = 'employed',
     String? notes,
   }) async {
-    final id = _generateId();
     final now = AppDatabase.now();
+
+    // Check if a record already exists for this type+period
+    final existing = await getContributions(period: period);
+    final match = existing.where((c) => c.type == type).firstOrNull;
+
+    if (match != null) {
+      // Update existing record instead of creating duplicate
+      final updated = <String, dynamic>{
+        'id': match.id,
+        'user_id': _userId,
+        'type': type,
+        'period': period,
+        'monthly_salary': monthlySalary,
+        'employee_share': employeeShare,
+        'employer_share': employerShare,
+        'total_contribution': totalContribution,
+        'is_paid': match.isPaid ? 1 : 0,
+        'employment_type': employmentType,
+        'notes': notes,
+        'sync_status': 'pending',
+        'created_at': match.createdAt,
+        'updated_at': now,
+      };
+      await _db.upsertContribution(updated);
+      return _rowToContribution(updated);
+    }
+
+    final id = _generateId();
     final row = <String, dynamic>{
       'id': id,
       'user_id': _userId,

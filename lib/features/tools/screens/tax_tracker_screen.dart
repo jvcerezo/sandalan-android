@@ -218,13 +218,39 @@ class _TaxTrackerScreenState extends ConsumerState<TaxTrackerScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Tax Year', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
-                  borderRadius: BorderRadius.circular(8),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Select Tax Year'),
+                      content: SizedBox(
+                        width: 200, height: 200,
+                        child: YearPicker(
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(DateTime.now().year + 1),
+                          selectedDate: DateTime(_taxYear),
+                          onChanged: (date) {
+                            setState(() => _taxYear = date.year);
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('$_taxYear', style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronDown, size: 12, color: colorScheme.onSurfaceVariant),
+                  ]),
                 ),
-                child: Text('$_taxYear', style: const TextStyle(fontSize: 13)),
               ),
             ]),
           ),

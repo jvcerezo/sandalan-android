@@ -561,6 +561,18 @@ class _UpcomingPaymentsSection extends StatelessWidget {
                     urgency: urgencyLabel,
                     urgencyColor: urgencyColor,
                     showDivider: !isLast,
+                    onTap: () {
+                      switch (item.type) {
+                        case PaymentType.bill:
+                          context.go('/tools/bills');
+                        case PaymentType.debt:
+                          context.go('/tools/debts');
+                        case PaymentType.insurance:
+                          context.go('/tools/insurance');
+                        case PaymentType.contribution:
+                          context.go('/tools/contributions');
+                      }
+                    },
                   );
                 }).toList(),
               ),
@@ -594,6 +606,7 @@ class _PaymentItem extends StatelessWidget {
   final String urgency;
   final Color? urgencyColor;
   final bool showDivider;
+  final VoidCallback? onTap;
 
   const _PaymentItem({
     required this.icon,
@@ -605,6 +618,7 @@ class _PaymentItem extends StatelessWidget {
     required this.urgency,
     this.urgencyColor,
     this.showDivider = true,
+    this.onTap,
   });
 
   @override
@@ -613,6 +627,9 @@ class _PaymentItem extends StatelessWidget {
 
     return Semantics(
       label: '$title, $subtitle, ${formatCurrency(amount)}${urgency.isNotEmpty ? ', $urgency' : ''}',
+      button: onTap != null,
+      child: InkWell(
+      onTap: onTap,
       child: Column(
         children: [
           Padding(
@@ -660,6 +677,7 @@ class _PaymentItem extends StatelessWidget {
           if (showDivider)
             Divider(height: 1, indent: 56, color: colorScheme.outline.withValues(alpha: 0.08)),
         ],
+      ),
       ),
     );
   }
@@ -790,7 +808,9 @@ class _NextStepCard extends StatelessWidget {
     final isChecklist = step.type == 'checklist';
     final accentColor = isChecklist ? AppColors.warning : colorScheme.primary;
 
-    return Container(
+    return GestureDetector(
+      onTap: () => context.go('/guide/unang-hakbang'),
+      child: Container(
       width: 260,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -866,6 +886,7 @@ class _NextStepCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

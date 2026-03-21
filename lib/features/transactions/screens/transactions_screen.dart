@@ -371,6 +371,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
 
         // Transaction list
         transactions.when(
+          skipLoadingOnRefresh: true,
+          skipLoadingOnReload: true,
           data: (txns) {
             if (txns.isEmpty) {
               return Padding(

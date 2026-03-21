@@ -1,0 +1,598 @@
+import 'dart:ui' show VoidCallback;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/chat_dictionary.dart';
+import '../../../core/constants/categories.dart';
+import '../../../core/services/chat_engine.dart';
+import '../../../data/models/chat_models.dart';
+import '../../../data/repositories/chat_report_repository.dart';
+import '../../../data/repositories/learned_keyword_repository.dart';
+import '../../../data/repositories/local_account_repository.dart';
+import '../../../data/repositories/local_transaction_repository.dart';
+
+class ChatNotifier extends StateNotifier<ChatUiState> {
+  final ChatEngine engine;
+  final LocalTransactionRepository transactionRepo;
+  final LocalAccountRepository accountRepo;
+  final LearnedKeywordRepository learnedRepo;
+  final ChatReportRepository reportRepo;
+  final VoidCallback invalidateProviders;
+
+  ChatNotifier({
+    required this.engine,
+    required this.transactionRepo,
+    required this.accountRepo,
+    required this.learnedRepo,
+    required this.reportRepo,
+    required this.invalidateProviders,
+  }) : super(const ChatUiState());
+
+  int _idCounter = 0;
+  String _nextId() => 'msg-${DateTime.now().millisecondsSinceEpoch}-${_idCounter++}';
+
+  // ─── Public API ────────────────────────────────────────────────────────
+
+  Future<void> sendMessage(String text) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+
+    // Add user message
+    _addMessage(ChatMessage(
+      id: _nextId(),
+      type: ChatMessageType.user,
+      text: trimmed,
+      timestamp: DateTime.now(),
+    ));
+
+    // Check conversation state first
+    switch (state.conversationState) {
+      case ChatConversationState.pendingConfirmation:
+        await _handleConfirmationResponse(trimmed);
+        return;
+      case ChatConversationState.pendingCategory:
+        await _handleCategoryResponse(trimmed);
+        return;
+      case ChatConversationState.pendingClarification:
+        await _handleClarificationResponse(trimmed);
+        return;
+      case ChatConversationState.pendingAmountConfirmation:
+        await _handleAmountConfirmationResponse(trimmed);
+        return;
+      case ChatConversationState.pendingIncomeConfirmation:
+        await _handleIncomeConfirmationResponse(trimmed);
+        return;
+      case ChatConversationState.idle:
+        break;
+    }
+
+    // Parse new input
+    state = state.copyWith(isProcessing: true);
+    final result = await engine.parse(trimmed);
+    state = state.copyWith(isProcessing: false);
+
+    await _handleParseResult(result, trimmed);
+  }
+
+  void selectCategory(String category) {
+    final pending = state.pendingResult;
+    if (pending == null) return;
+
+    final updated = pending.copyWith(category: category, categorySource: 'user_pick');
+
+    // Learn this keyword → category mapping
+    final desc = pending.description?.toLowerCase().trim();
+    if (desc != null && desc.isNotEmpty) {
+      learnedRepo.learn(desc, category, source: 'user_pick');
+    }
+
+    // Show confirmation
+    _showConfirmation(updated, state.pendingRawInput ?? '');
+  }
+
+  Future<void> confirmTransaction() async {
+    final pending = state.pendingResult;
+    if (pending == null) return;
+
+    final amount = pending.amount!;
+    final signedAmount = pending.isIncome ? amount.abs() : -amount.abs();
+
+    final tx = await transactionRepo.createTransaction(
+      amount: signedAmount,
+      category: pending.category ?? 'Other',
+      description: pending.description ?? '',
+      date: DateTime.now(),
+      accountId: pending.accountId,
+    );
+
+    invalidateProviders();
+
+    final formatted = _formatAmount(amount);
+    final typeLabel = pending.isIncome ? 'Income' : 'Expense';
+    final catLabel = pending.category ?? 'Other';
+    final accLabel = pending.accountName ?? 'default account';
+
+    _addMessage(ChatMessage(
+      id: _nextId(),
+      type: ChatMessageType.bot,
+      text: "Logged PHP $formatted $typeLabel '$catLabel' — ${pending.description ?? ''} from $accLabel",
+      timestamp: DateTime.now(),
+      transactionId: tx.id,
+      reportable: true,
+      rawUserInput: state.pendingRawInput,
+      parseResult: pending,
+    ));
+
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+  }
+
+  void cancelTransaction() {
+    _addBotMessage("Cancelled.");
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+  }
+
+  /// Report an error on a committed transaction.
+  Future<void> reportError({
+    required String messageId,
+    required CorrectionType errorType,
+    String? correctedCategory,
+    double? correctedAmount,
+    String? correctedAccount,
+    String? correctedType, // 'income' or 'expense'
+    String? userComment,
+  }) async {
+    // Find the message
+    final msg = state.messages.firstWhere((m) => m.id == messageId);
+    final pr = msg.parseResult;
+    final txId = msg.transactionId;
+
+    // 1. Correct the transaction locally
+    if (txId != null) {
+      switch (errorType) {
+        case CorrectionType.category:
+          if (correctedCategory != null) {
+            await transactionRepo.updateTransaction(id: txId, category: correctedCategory);
+            // Learn the correction
+            final desc = pr?.description?.toLowerCase().trim();
+            if (desc != null && desc.isNotEmpty) {
+              await learnedRepo.learn(desc, correctedCategory, source: 'correction');
+            }
+          }
+          break;
+        case CorrectionType.amount:
+          if (correctedAmount != null) {
+            final signed = (pr?.isIncome ?? false) ? correctedAmount.abs() : -correctedAmount.abs();
+            await transactionRepo.updateTransaction(id: txId, amount: signed);
+          }
+          break;
+        case CorrectionType.account:
+          if (correctedAccount != null) {
+            await transactionRepo.updateTransaction(id: txId, accountId: correctedAccount);
+          }
+          break;
+        case CorrectionType.type:
+          if (pr != null) {
+            // Flip the sign
+            final currentAmount = pr.amount ?? 0;
+            final flipped = pr.isIncome ? -currentAmount.abs() : currentAmount.abs();
+            await transactionRepo.updateTransaction(id: txId, amount: flipped);
+          }
+          break;
+        case CorrectionType.other:
+          break;
+      }
+      invalidateProviders();
+    }
+
+    // 2. Queue report for sync
+    await reportRepo.queueReport(
+      userInput: msg.rawUserInput ?? '',
+      parsedIntent: pr?.intent.name ?? 'unknown',
+      parsedAmount: pr?.amount,
+      parsedCategory: pr?.category,
+      parsedDescription: pr?.description,
+      parsedAccount: pr?.accountName,
+      parsedType: (pr?.isIncome ?? false) ? 'income' : 'expense',
+      categorySource: pr?.categorySource,
+      errorType: errorType.name,
+      correctedCategory: correctedCategory,
+      correctedAmount: correctedAmount,
+      correctedAccount: correctedAccount,
+      correctedType: correctedType,
+      userComment: userComment,
+    );
+
+    _addBotMessage("Got it! Fixed. I'll remember that for next time.");
+  }
+
+  // ─── Query Execution ──────────────────────────────────────────────────
+
+  Future<void> _executeQuery(ParseResult result) async {
+    try {
+      switch (result.queryType) {
+        case QueryType.netWorth:
+          await _queryNetWorth();
+          break;
+        case QueryType.spendingSummary:
+          await _querySpendingSummary();
+          break;
+        case QueryType.spendingByCategory:
+          await _querySpendingByCategory(result.queryCategory ?? 'Food');
+          break;
+        case QueryType.budgetStatus:
+          await _queryBudgetStatus();
+          break;
+        case QueryType.goalProgress:
+          await _queryGoalProgress();
+          break;
+        case QueryType.debtSummary:
+          await _queryDebtSummary();
+          break;
+        case QueryType.billsDue:
+          await _queryBillsDue();
+          break;
+        case QueryType.recentTransactions:
+          await _queryRecentTransactions();
+          break;
+        case QueryType.accountBalance:
+          await _queryNetWorth(); // same data, different framing
+          break;
+        case null:
+          _addBotMessage("I'm not sure what to look up. Try 'net worth' or 'gastos ko'");
+      }
+    } catch (e) {
+      _addBotMessage("Something went wrong looking that up. Try again?");
+    }
+  }
+
+  Future<void> _queryNetWorth() async {
+    final accounts = await accountRepo.getAccounts();
+    if (accounts.isEmpty) {
+      _addBotMessage("You don't have any accounts yet. Add one in the Accounts tab.");
+      return;
+    }
+    final total = accounts.fold<double>(0, (sum, a) => sum + a.balance);
+    final lines = accounts.map((a) => "  ${a.name} — PHP ${_formatAmount(a.balance)}").join('\n');
+    _addBotMessage("Your net worth is PHP ${_formatAmount(total)} across ${accounts.length} account${accounts.length == 1 ? '' : 's'}:\n$lines");
+  }
+
+  Future<void> _querySpendingSummary() async {
+    final summary = await transactionRepo.getTransactionsSummary();
+    final txns = await transactionRepo.getCurrentMonthTransactions();
+    final expenses = txns.where((t) => t.isExpense && t.category != 'Transfer');
+
+    // Group by category
+    final catTotals = <String, double>{};
+    for (final t in expenses) {
+      catTotals[t.category] = (catTotals[t.category] ?? 0) + t.amount.abs();
+    }
+
+    if (catTotals.isEmpty) {
+      _addBotMessage("No expenses this month yet.");
+      return;
+    }
+
+    final sorted = catTotals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final totalExpenses = summary.expenses;
+    final lines = sorted.map((e) {
+      final pct = totalExpenses > 0 ? (e.value / totalExpenses * 100).round() : 0;
+      return "  ${e.key} — PHP ${_formatAmount(e.value)} ($pct%)";
+    }).join('\n');
+
+    final savingsRate = summary.income > 0
+        ? ((summary.income - summary.expenses) / summary.income * 100).round()
+        : 0;
+
+    _addBotMessage(
+      "This month you've spent PHP ${_formatAmount(summary.expenses)}:\n$lines\n\n"
+      "Income: PHP ${_formatAmount(summary.income)} | Savings rate: $savingsRate%",
+    );
+  }
+
+  Future<void> _querySpendingByCategory(String category) async {
+    final txns = await transactionRepo.getCurrentMonthTransactions();
+    final catTxns = txns.where((t) => t.isExpense && t.category == category);
+    final total = catTxns.fold<double>(0, (sum, t) => sum + t.amount.abs());
+
+    if (total == 0) {
+      _addBotMessage("No $category expenses this month.");
+      return;
+    }
+
+    _addBotMessage("You've spent PHP ${_formatAmount(total)} on $category this month (${catTxns.length} transaction${catTxns.length == 1 ? '' : 's'}).");
+  }
+
+  Future<void> _queryBudgetStatus() async {
+    _addBotMessage("Check your budget status in the Budgets tab for detailed tracking.");
+  }
+
+  Future<void> _queryGoalProgress() async {
+    _addBotMessage("Check your goals progress in the Goals tab for detailed tracking.");
+  }
+
+  Future<void> _queryDebtSummary() async {
+    _addBotMessage("Check your debts in the Debts tool for detailed tracking.");
+  }
+
+  Future<void> _queryBillsDue() async {
+    _addBotMessage("Check your upcoming bills in the Bills tool for due dates.");
+  }
+
+  Future<void> _queryRecentTransactions() async {
+    final txns = await transactionRepo.getRecentTransactions();
+    if (txns.isEmpty) {
+      _addBotMessage("No transactions yet.");
+      return;
+    }
+    final lines = txns.take(5).map((t) {
+      final sign = t.isIncome ? '+' : '-';
+      return "  $sign PHP ${_formatAmount(t.amount.abs())} ${t.category} — ${t.description} (${t.date})";
+    }).join('\n');
+    _addBotMessage("Recent transactions:\n$lines");
+  }
+
+  // ─── State Machine Handlers ────────────────────────────────────────────
+
+  Future<void> _handleParseResult(ParseResult result, String rawInput) async {
+    switch (result.intent) {
+      case ChatIntent.help:
+      case ChatIntent.unknown:
+      case ChatIntent.transfer:
+        _addBotMessage(result.message ?? "I didn't understand that. Try 'lunch 250' or 'net worth ko'");
+        break;
+
+      case ChatIntent.query:
+        await _executeQuery(result);
+        break;
+
+      case ChatIntent.logExpense:
+      case ChatIntent.logIncome:
+        if (result.needsAmountConfirmation) {
+          state = state.copyWith(
+            conversationState: ChatConversationState.pendingAmountConfirmation,
+            pendingResult: result,
+            pendingRawInput: rawInput,
+          );
+          _addBotMessage("That's PHP ${_formatAmount(result.amount!)} — is that right?");
+          return;
+        }
+
+        if (result.category == null) {
+          // Need category from user
+          state = state.copyWith(
+            conversationState: ChatConversationState.pendingCategory,
+            pendingResult: result,
+            pendingRawInput: rawInput,
+          );
+          _addBotMessage("What category for '${result.description}'?");
+          _addMessage(ChatMessage(
+            id: _nextId(),
+            type: ChatMessageType.categoryPicker,
+            text: '',
+            timestamp: DateTime.now(),
+          ));
+          return;
+        }
+
+        _showConfirmation(result, rawInput);
+        break;
+    }
+  }
+
+  Future<void> _handleConfirmationResponse(String text) async {
+    final lower = text.toLowerCase().trim();
+
+    if (kAffirmativeWords.contains(lower)) {
+      await confirmTransaction();
+      return;
+    }
+
+    if (kNegativeWords.contains(lower)) {
+      cancelTransaction();
+      return;
+    }
+
+    if (lower == 'edit' || lower == 'baguhin' || lower == 'palitan') {
+      _addBotMessage("Use the Edit button to modify the details.");
+      return;
+    }
+
+    // New input — discard pending, process new
+    _addBotMessage("Previous entry discarded.");
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+    state = state.copyWith(isProcessing: true);
+    final result = await engine.parse(text);
+    state = state.copyWith(isProcessing: false);
+    await _handleParseResult(result, text);
+  }
+
+  Future<void> _handleCategoryResponse(String text) async {
+    final lower = text.toLowerCase().trim();
+
+    // Check if user typed a category name
+    for (final cat in kCategories) {
+      if (lower == cat.toLowerCase() || lower.startsWith(cat.toLowerCase())) {
+        selectCategory(cat);
+        return;
+      }
+    }
+
+    // Common abbreviations
+    final abbrevMap = {
+      'transpo': 'Transportation',
+      'entertain': 'Entertainment',
+      'health': 'Healthcare',
+      'educ': 'Education',
+      'fam': 'Family Support',
+    };
+    for (final entry in abbrevMap.entries) {
+      if (lower.startsWith(entry.key)) {
+        selectCategory(entry.value);
+        return;
+      }
+    }
+
+    // Doesn't match a category — might be new input
+    _addBotMessage("Previous entry discarded.");
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+    state = state.copyWith(isProcessing: true);
+    final result = await engine.parse(text);
+    state = state.copyWith(isProcessing: false);
+    await _handleParseResult(result, text);
+  }
+
+  Future<void> _handleClarificationResponse(String text) async {
+    final lower = text.toLowerCase().trim();
+    final pending = state.pendingResult;
+
+    if (pending?.ambiguousAmounts != null) {
+      final parsed = double.tryParse(lower.replaceAll(',', ''));
+      if (parsed != null) {
+        final updated = pending!.copyWith(amount: parsed, ambiguousAmounts: null);
+        state = state.copyWith(
+          conversationState: ChatConversationState.idle,
+          clearPending: true,
+        );
+        await _handleParseResult(updated, state.pendingRawInput ?? text);
+        return;
+      }
+    }
+
+    // Unrecognized — discard and process as new input
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+    state = state.copyWith(isProcessing: true);
+    final result = await engine.parse(text);
+    state = state.copyWith(isProcessing: false);
+    await _handleParseResult(result, text);
+  }
+
+  Future<void> _handleAmountConfirmationResponse(String text) async {
+    final lower = text.toLowerCase().trim();
+    final pending = state.pendingResult;
+    if (pending == null) return;
+
+    if (kAffirmativeWords.contains(lower)) {
+      // Amount confirmed, continue with flow
+      state = state.copyWith(conversationState: ChatConversationState.idle);
+      final result = pending.copyWith(needsAmountConfirmation: false);
+      await _handleParseResult(result, state.pendingRawInput ?? text);
+      return;
+    }
+
+    if (kNegativeWords.contains(lower)) {
+      cancelTransaction();
+      return;
+    }
+
+    // They might have typed the correct amount
+    final corrected = double.tryParse(lower.replaceAll(',', ''));
+    if (corrected != null) {
+      state = state.copyWith(conversationState: ChatConversationState.idle);
+      final result = pending.copyWith(amount: corrected, needsAmountConfirmation: false);
+      await _handleParseResult(result, state.pendingRawInput ?? text);
+      return;
+    }
+
+    // New input
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+    state = state.copyWith(isProcessing: true);
+    final result = await engine.parse(text);
+    state = state.copyWith(isProcessing: false);
+    await _handleParseResult(result, text);
+  }
+
+  Future<void> _handleIncomeConfirmationResponse(String text) async {
+    final lower = text.toLowerCase().trim();
+    final pending = state.pendingResult;
+    if (pending == null) return;
+
+    if (kAffirmativeWords.contains(lower) || lower == 'income' || lower == 'yes income') {
+      state = state.copyWith(conversationState: ChatConversationState.idle);
+      final result = pending.copyWith(intent: ChatIntent.logIncome, isIncome: true);
+      await _handleParseResult(result, state.pendingRawInput ?? text);
+      return;
+    }
+
+    if (lower == 'expense' || lower == 'no' || lower == 'hindi') {
+      state = state.copyWith(conversationState: ChatConversationState.idle);
+      final result = pending.copyWith(intent: ChatIntent.logExpense, isIncome: false);
+      await _handleParseResult(result, state.pendingRawInput ?? text);
+      return;
+    }
+
+    // New input
+    state = state.copyWith(
+      conversationState: ChatConversationState.idle,
+      clearPending: true,
+    );
+    state = state.copyWith(isProcessing: true);
+    final result = await engine.parse(text);
+    state = state.copyWith(isProcessing: false);
+    await _handleParseResult(result, text);
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────
+
+  void _showConfirmation(ParseResult result, String rawInput) {
+    state = state.copyWith(
+      conversationState: ChatConversationState.pendingConfirmation,
+      pendingResult: result,
+      pendingRawInput: rawInput,
+    );
+
+    _addMessage(ChatMessage(
+      id: _nextId(),
+      type: ChatMessageType.confirmation,
+      text: '',
+      timestamp: DateTime.now(),
+      parseResult: result,
+    ));
+  }
+
+  void _addBotMessage(String text) {
+    _addMessage(ChatMessage(
+      id: _nextId(),
+      type: ChatMessageType.bot,
+      text: text,
+      timestamp: DateTime.now(),
+    ));
+  }
+
+  void _addMessage(ChatMessage msg) {
+    state = state.copyWith(messages: [...state.messages, msg]);
+  }
+
+  String _formatAmount(double amount) {
+    if (amount == amount.roundToDouble()) {
+      return _formatWithCommas(amount.toInt().toString());
+    }
+    final parts = amount.toStringAsFixed(2).split('.');
+    return '${_formatWithCommas(parts[0])}.${parts[1]}';
+  }
+
+  String _formatWithCommas(String number) {
+    final result = StringBuffer();
+    final len = number.length;
+    for (var i = 0; i < len; i++) {
+      if (i > 0 && (len - i) % 3 == 0) result.write(',');
+      result.write(number[i]);
+    }
+    return result.toString();
+  }
+}

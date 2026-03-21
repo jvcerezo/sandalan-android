@@ -186,6 +186,43 @@ class AppDatabase {
       )
     ''');
 
+    // ─── Chat AI tables ───────────────────────────────────────────────────
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS learned_keywords (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        keyword TEXT NOT NULL UNIQUE,
+        category TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT 'user_pick',
+        correction_count INTEGER NOT NULL DEFAULT 0,
+        usage_count INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT '',
+        updated_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS chat_report_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_input TEXT NOT NULL,
+        parsed_intent TEXT NOT NULL,
+        parsed_amount REAL,
+        parsed_category TEXT,
+        parsed_description TEXT,
+        parsed_account TEXT,
+        parsed_type TEXT,
+        category_source TEXT,
+        tflite_confidence REAL,
+        error_type TEXT NOT NULL,
+        corrected_category TEXT,
+        corrected_amount REAL,
+        corrected_account TEXT,
+        corrected_type TEXT,
+        corrected_description TEXT,
+        user_comment TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'pending',
+        created_at TEXT NOT NULL DEFAULT ''
+      )
+    ''');
+
     // Create indexes for common queries
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_user ON local_transactions(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_transactions_sync ON local_transactions(sync_status)');
@@ -200,6 +237,8 @@ class AppDatabase {
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bills_user ON local_bills(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_debts_user ON local_debts(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_learned_keyword ON learned_keywords(keyword)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_chat_report_sync ON chat_report_queue(sync_status)');
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -524,6 +563,75 @@ class AppDatabase {
 
   Future<void> deleteInsurance(String id) async {
     await _db.customStatement('DELETE FROM local_insurance WHERE id = ?', [id]);
+  }
+
+  // ─── Learned Keywords ────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>?> getLearnedKeyword(String keyword) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM learned_keywords WHERE keyword = ? LIMIT 1',
+      variables: [Variable.withString(keyword.toLowerCase())],
+    ).get();
+    if (results.isEmpty) return null;
+    return results.first.data;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllLearnedKeywords() async {
+    final results = await _db.customSelect(
+      'SELECT * FROM learned_keywords ORDER BY usage_count DESC',
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertLearnedKeyword({
+    required String keyword,
+    required String category,
+    required String source,
+  }) async {
+    final now = AppDatabase.now();
+    final existing = await getLearnedKeyword(keyword);
+    if (existing != null) {
+      await _db.customStatement(
+        '''UPDATE learned_keywords
+           SET category = ?, source = ?,
+               correction_count = correction_count + CASE WHEN ? = 'correction' THEN 1 ELSE 0 END,
+               usage_count = usage_count + 1,
+               updated_at = ?
+           WHERE keyword = ?''',
+        [category, source, source, now, keyword.toLowerCase()],
+      );
+    } else {
+      await _db.customStatement(
+        '''INSERT INTO learned_keywords (keyword, category, source, correction_count, usage_count, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 1, ?, ?)''',
+        [keyword.toLowerCase(), category, source, source == 'correction' ? 1 : 0, now, now],
+      );
+    }
+  }
+
+  // ─── Chat Report Queue ─────────────────────────────────────────────────
+
+  Future<void> insertChatReport(Map<String, dynamic> values) async {
+    final cols = values.keys.join(', ');
+    final placeholders = values.keys.map((_) => '?').join(', ');
+    await _db.customStatement(
+      'INSERT INTO chat_report_queue ($cols) VALUES ($placeholders)',
+      values.values.toList(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getPendingChatReports() async {
+    final results = await _db.customSelect(
+      "SELECT * FROM chat_report_queue WHERE sync_status = 'pending'",
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> markChatReportSynced(int id) async {
+    await _db.customStatement(
+      "UPDATE chat_report_queue SET sync_status = 'synced' WHERE id = ?",
+      [id],
+    );
   }
 
   // ─── Row lookup ──────────────────────────────────────────────────────────

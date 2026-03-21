@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
 import '../../features/accounts/widgets/add_account_dialog.dart';
@@ -103,6 +104,12 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
     if (_isTransactionPage) {
       return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
         if (_isOpen) ...[
+          _FabMenuItem(
+            label: 'Sandalan AI',
+            icon: LucideIcons.messageCircle,
+            onTap: () { _close(); context.push('/chat'); },
+          ),
+          const SizedBox(height: 8),
           _FabMenuItem(
             label: 'Add Expense',
             icon: LucideIcons.trendingDown,
