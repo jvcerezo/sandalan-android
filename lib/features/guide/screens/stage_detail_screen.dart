@@ -57,7 +57,8 @@ class _StageDetailScreenState extends State<StageDetailScreen>
         ? (completedTotal / totalProgress * 100).round()
         : 0;
 
-    return NestedScrollView(
+    return SafeArea(
+      child: NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverToBoxAdapter(
           child: Column(
@@ -65,9 +66,15 @@ class _StageDetailScreenState extends State<StageDetailScreen>
             children: [
               // Back button with stage icon
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: GestureDetector(
-                  onTap: () => context.go('/guide'),
+                  onTap: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      context.go('/guide');
+                    }
+                  },
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(LucideIcons.arrowLeft,
                         size: 14, color: cs.onSurfaceVariant),
@@ -222,6 +229,7 @@ class _StageDetailScreenState extends State<StageDetailScreen>
           ),
         ],
       ),
+    ),
     );
   }
 }

@@ -84,7 +84,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
       children: [
         // ← Back
         GestureDetector(
-          onTap: () => context.go('/guide/${widget.stageSlug}'),
+          onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); else context.go('/guide/${widget.stageSlug}'); },
           child: Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
