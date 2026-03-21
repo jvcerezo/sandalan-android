@@ -135,26 +135,26 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
-      initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.4, expand: false,
+      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
         child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
           // Drag handle
-          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(color: cs.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
           const Center(child: Text('Create a New Goal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Category
           const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 6, children: kGoalCategories.map((c) {
+          Wrap(spacing: 6, runSpacing: 4, children: kGoalCategories.map((c) {
             final selected = _category == c;
             return GestureDetector(
               onTap: () => setState(() => _category = c),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                   border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -198,7 +198,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               style: const TextStyle(fontSize: 13),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Goal Name
           const Text('Goal Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
@@ -217,11 +217,11 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
                     border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 style: const TextStyle(fontSize: 14)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Target Amount
           const Text('Target Amount', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
@@ -246,7 +246,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               )),
             ]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Quick presets for target
           Text('Quick presets', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
@@ -266,7 +266,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               ),
             );
           }).toList()),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Saved So Far + Deadline
           Row(children: [
@@ -320,7 +320,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
               ),
             ])),
           ]),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Linked Account
           const Text('Linked Account', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),

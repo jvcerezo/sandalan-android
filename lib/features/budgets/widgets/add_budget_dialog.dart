@@ -139,29 +139,29 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
-      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.4, expand: false,
+      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
         child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
           // Drag handle
-          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(color: cs.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
           const Center(child: Text('Add Budget', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           const SizedBox(height: 4),
           Center(child: Text('Set a spending limit for a category.',
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant), textAlign: TextAlign.center)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Category
           const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 6, children: kExpenseCategories.map((c) {
+          Wrap(spacing: 6, runSpacing: 4, children: kExpenseCategories.map((c) {
             final selected = _category == c;
             return GestureDetector(
               onTap: () => setState(() => _category = c),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                   border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -205,11 +205,11 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
               style: const TextStyle(fontSize: 13),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Monthly Limit
           const Text('Monthly Limit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
@@ -234,7 +234,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
               )),
             ]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Quick presets
           Text('Quick presets', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),

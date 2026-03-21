@@ -136,9 +136,9 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 0.75,
       maxChildSize: 0.95,
-      minChildSize: 0.5,
+      minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
@@ -150,14 +150,14 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
             Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
             const Text('Add Debt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             _label('Name *'),
             const SizedBox(height: 6),
@@ -192,12 +192,12 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
 
             _label('Type'),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: _types.entries.map((e) {
+            Wrap(spacing: 6, runSpacing: 4, children: _types.entries.map((e) {
               final selected = _type == e.key;
               return GestureDetector(
                 onTap: () => setState(() => _type = e.key),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -220,21 +220,26 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
             ),
             const SizedBox(height: 12),
 
-            _label('Due Day (1-31)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _dueDayCtl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
-              decoration: _inputDecoration(cs, 'e.g. 15'),
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            _label('Linked Account (optional)'),
-            const SizedBox(height: 6),
-            _accountDropdown(cs, accounts),
-            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Due Day (1-31)'),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _dueDayCtl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+                  decoration: _inputDecoration(cs, 'e.g. 15'),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ])),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Linked Account'),
+                const SizedBox(height: 6),
+                _accountDropdown(cs, accounts),
+              ])),
+            ]),
+            const SizedBox(height: 16),
 
             FilledButton(
               onPressed: _saving ? null : _handleSave,

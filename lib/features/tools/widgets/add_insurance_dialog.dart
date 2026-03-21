@@ -167,9 +167,9 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 0.75,
       maxChildSize: 0.95,
-      minChildSize: 0.5,
+      minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
@@ -181,14 +181,14 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
             Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
             const Text('Add Policy', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Policy Name
             _label('Policy Name *'),
@@ -204,12 +204,12 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
             // Type chips
             _label('Type'),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: _types.entries.map((e) {
+            Wrap(spacing: 6, runSpacing: 4, children: _types.entries.map((e) {
               final selected = _type == e.key;
               return GestureDetector(
                 onTap: () => setState(() => _type = e.key),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -264,37 +264,41 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
             _amountField(cs, _coverageCtl, '0'),
             const SizedBox(height: 12),
 
-            // Provider
-            _label('Provider (optional)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _providerCtl,
-              maxLength: 100,
-              decoration: _inputDecoration(cs, 'e.g. Sun Life, AXA'),
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            // Policy Number
-            _label('Policy Number (optional)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _policyNumCtl,
-              maxLength: 50,
-              decoration: _inputDecoration(cs, 'e.g. POL-123456'),
-              style: const TextStyle(fontSize: 13),
-            ),
+            // Provider + Policy Number row
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Provider'),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _providerCtl,
+                  maxLength: 100,
+                  decoration: _inputDecoration(cs, 'e.g. Sun Life'),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ])),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Policy Number'),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _policyNumCtl,
+                  maxLength: 50,
+                  decoration: _inputDecoration(cs, 'e.g. POL-123456'),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ])),
+            ]),
             const SizedBox(height: 12),
 
             // Payment Frequency
             _label('Payment Frequency'),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: _frequencies.entries.map((e) {
+            Wrap(spacing: 6, runSpacing: 4, children: _frequencies.entries.map((e) {
               final selected = _frequency == e.key;
               return GestureDetector(
                 onTap: () => setState(() => _frequency = e.key),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -307,44 +311,48 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
             }).toList()),
             const SizedBox(height: 12),
 
-            // Renewal Date
-            _label('Renewal Date'),
-            const SizedBox(height: 6),
-            GestureDetector(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: _renewalDate ?? DateTime.now().add(const Duration(days: 365)),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 3650)),
-                );
-                if (picked != null) setState(() => _renewalDate = picked);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                  borderRadius: BorderRadius.circular(8),
+            // Renewal Date + Linked Account row
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Renewal Date'),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _renewalDate ?? DateTime.now().add(const Duration(days: 365)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 3650)),
+                    );
+                    if (picked != null) setState(() => _renewalDate = picked);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(children: [
+                      Expanded(child: Text(
+                        _renewalDate != null
+                            ? '${_renewalDate!.month.toString().padLeft(2, '0')}/${_renewalDate!.day.toString().padLeft(2, '0')}/${_renewalDate!.year}'
+                            : 'Select date',
+                        style: TextStyle(fontSize: 13,
+                            color: _renewalDate != null ? cs.onSurface : cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                      )),
+                      Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
+                    ]),
+                  ),
                 ),
-                child: Row(children: [
-                  Expanded(child: Text(
-                    _renewalDate != null
-                        ? '${_renewalDate!.month.toString().padLeft(2, '0')}/${_renewalDate!.day.toString().padLeft(2, '0')}/${_renewalDate!.year}'
-                        : 'Select date',
-                    style: TextStyle(fontSize: 13,
-                        color: _renewalDate != null ? cs.onSurface : cs.onSurfaceVariant.withValues(alpha: 0.4)),
-                  )),
-                  Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
-                ]),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Linked Account
-            _label('Linked Account (optional)'),
-            const SizedBox(height: 6),
-            _accountDropdown(cs, accounts),
-            const SizedBox(height: 20),
+              ])),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Linked Account'),
+                const SizedBox(height: 6),
+                _accountDropdown(cs, accounts),
+              ])),
+            ]),
+            const SizedBox(height: 16),
 
             // Submit
             FilledButton(

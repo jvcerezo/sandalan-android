@@ -122,21 +122,21 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
-      initialChildSize: 0.75, maxChildSize: 0.9, minChildSize: 0.4, expand: false,
+      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
         child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
           // Drag handle
-          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(color: cs.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
           const Center(child: Text('Add Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Quick Add
           Text('Quick Add', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 8),
-          Wrap(spacing: 8, runSpacing: 8, children: kCommonAccounts.map((p) {
+          const SizedBox(height: 6),
+          Wrap(spacing: 6, runSpacing: 4, children: kCommonAccounts.map((p) {
             final selected = _nameCtl.text == p.name && _type == p.type;
             return GestureDetector(
               onTap: () => setState(() { _nameCtl.text = p.name; _type = p.type; }),
@@ -155,7 +155,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               ),
             );
           }).toList()),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Name
           const Text('Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
@@ -182,12 +182,12 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               child: Text(_nameError!, style: TextStyle(fontSize: 11, color: cs.error)),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Type chips
           const Text('Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 6, children: [
+          const SizedBox(height: 6),
+          Wrap(spacing: 6, runSpacing: 4, children: [
             ...['cash', 'bank', 'e-wallet', 'credit-card', 'custom'].map((t) {
               final label = t == 'bank' ? 'Bank Account' : t == 'e-wallet' ? 'E-Wallet'
                   : t == 'credit-card' ? 'Credit Card' : t == 'custom' ? 'Custom'
@@ -196,7 +196,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               return GestureDetector(
                 onTap: () => setState(() => _type = t),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -241,7 +241,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               style: const TextStyle(fontSize: 13),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Currency + Starting Balance
           Row(children: [

@@ -164,9 +164,9 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 0.75,
       maxChildSize: 0.95,
-      minChildSize: 0.5,
+      minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
@@ -178,14 +178,14 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
             Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
             const Text('Add Bill', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Name
             _label('Name *'),
@@ -207,12 +207,12 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
             // Category chips
             _label('Category'),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: _categories.entries.map((e) {
+            Wrap(spacing: 6, runSpacing: 4, children: _categories.entries.map((e) {
               final selected = _category == e.key;
               return GestureDetector(
                 onTap: () => setState(() => _category = e.key),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -258,12 +258,12 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
             // Billing Cycle
             _label('Billing Cycle'),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: _cycles.entries.map((e) {
+            Wrap(spacing: 6, runSpacing: 4, children: _cycles.entries.map((e) {
               final selected = _billingCycle == e.key;
               return GestureDetector(
                 onTap: () => setState(() => _billingCycle = e.key),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
@@ -274,18 +274,6 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
                 ),
               );
             }).toList()),
-            const SizedBox(height: 12),
-
-            // Due Day
-            _label('Due Day (1-31)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _dueDayCtl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
-              decoration: _inputDecoration(cs, 'e.g. 15'),
-              style: const TextStyle(fontSize: 13),
-            ),
             const SizedBox(height: 12),
 
             // Provider
@@ -299,11 +287,27 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
             ),
             const SizedBox(height: 12),
 
-            // Linked Account
-            _label('Linked Account (optional)'),
-            const SizedBox(height: 6),
-            _accountDropdown(cs, accounts),
-            const SizedBox(height: 20),
+            // Due Day + Linked Account row
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Due Day (1-31)'),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _dueDayCtl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+                  decoration: _inputDecoration(cs, 'e.g. 15'),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ])),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _label('Linked Account'),
+                const SizedBox(height: 6),
+                _accountDropdown(cs, accounts),
+              ])),
+            ]),
+            const SizedBox(height: 16),
 
             // Submit
             FilledButton(

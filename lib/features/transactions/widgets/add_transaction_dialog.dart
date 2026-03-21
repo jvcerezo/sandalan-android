@@ -334,9 +334,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: 0.75,
       maxChildSize: 0.95,
-      minChildSize: 0.5,
+      minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
@@ -349,7 +349,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           children: [
             // Drag handle
             Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
@@ -526,7 +526,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   ]),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
 
             // ─── Split mode ─────────────────────────────────────
@@ -658,7 +658,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   ]),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
 
             // ─── Normal amount input ──────────────────────────────
@@ -687,17 +687,17 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               ),
             ]),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Category
             Text('Category', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
             const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: _categories.map((c) {
+            Wrap(spacing: 6, runSpacing: 4, children: _categories.map((c) {
               final selected = _category == c;
               return GestureDetector(
                 onTap: () => setState(() => _category = c),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
                     border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),

@@ -117,9 +117,9 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
     final toAccounts = accounts.where((a) => a.id != _fromAccountId).toList();
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.65,
-      maxChildSize: 0.85,
-      minChildSize: 0.4,
+      initialChildSize: 0.5,
+      maxChildSize: 0.7,
+      minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
@@ -131,14 +131,14 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
             Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
             const Text('Transfer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // From Account
             _label('From Account *'),

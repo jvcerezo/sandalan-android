@@ -123,9 +123,9 @@ class _PayInsuranceDialogState extends ConsumerState<PayInsuranceDialog> {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      maxChildSize: 0.85,
-      minChildSize: 0.4,
+      initialChildSize: 0.5,
+      maxChildSize: 0.7,
+      minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
         decoration: BoxDecoration(
@@ -137,7 +137,7 @@ class _PayInsuranceDialogState extends ConsumerState<PayInsuranceDialog> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
           children: [
             Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
