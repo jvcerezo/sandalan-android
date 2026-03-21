@@ -20,7 +20,7 @@ class StageColors {
 class AppColors {
   // Category colors
   static const income = Color(0xFF22C55E);    // green-500
-  static const expense = Color(0xFFEF4444);   // red-500
+  static const expense = Color(0xFF64748B);   // slate-500 (neutral, not red)
   static const transfer = Color(0xFF6366F1);  // indigo-500
 
   // Status colors

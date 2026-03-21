@@ -7,6 +7,7 @@ import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../data/local/app_database.dart';
 import '../../../core/utils/email_validator.dart';
+import '../../../core/constants/legal.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../providers/auth_provider.dart';
 
@@ -370,12 +371,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _agreedToTerms = !_agreedToTerms),
-                    child: Text(
-                      'I have read and agree to the Privacy Policy and Terms of Service. '
-                      'I consent to Sandalan collecting and processing my personal data as described.',
+                  child: Text.rich(
+                    TextSpan(
                       style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant, height: 1.4),
+                      children: [
+                        const TextSpan(text: 'I have read and agree to the '),
+                        WidgetSpan(
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => _LegalScreen(title: 'Privacy Policy', content: kPrivacyPolicy),
+                            )),
+                            child: Text('Privacy Policy',
+                                style: TextStyle(fontSize: 11, color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
+                          ),
+                        ),
+                        const TextSpan(text: ' and '),
+                        WidgetSpan(
+                          child: GestureDetector(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => _LegalScreen(title: 'Terms of Service', content: kTermsOfService),
+                            )),
+                            child: Text('Terms of Service',
+                                style: TextStyle(fontSize: 11, color: colorScheme.primary,
+                                    fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
+                          ),
+                        ),
+                        const TextSpan(text: '. I consent to Sandalan collecting and processing my personal data as described.'),
+                      ],
                     ),
                   ),
                 ),
@@ -410,6 +433,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LegalScreen extends StatelessWidget {
+  final String title;
+  final String content;
+  const _LegalScreen({required this.title, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: SelectableText(content, style: const TextStyle(fontSize: 13, height: 1.6)),
       ),
     );
   }
