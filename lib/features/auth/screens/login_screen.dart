@@ -274,6 +274,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: _isLoading
                     ? null
                     : () async {
+                        // Destroy any existing session before entering guest mode
+                        try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
                         await GuestModeService.enableGuestMode();
                         await scheduleTour();
                         if (mounted) context.go('/home');
