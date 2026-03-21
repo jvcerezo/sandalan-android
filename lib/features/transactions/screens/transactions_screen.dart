@@ -120,8 +120,16 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             _DetailRow(label: 'Description', value: t.description, colorScheme: colorScheme),
           _DetailRow(label: 'Date', value: formatDate(DateTime.parse(t.date)), colorScheme: colorScheme),
           _DetailRow(label: 'Account', value: accountName, colorScheme: colorScheme),
-          if (t.tags != null && t.tags!.isNotEmpty)
-            _DetailRow(label: 'Tags', value: t.tags!.map((tag) => '#$tag').join(', '), colorScheme: colorScheme),
+          if (t.tags != null && t.tags!.isNotEmpty) ...[
+            Builder(builder: (_) {
+              final userTags = t.tags!.where((tag) =>
+                !RegExp(r'^[0-9a-f]{8}-').hasMatch(tag) &&
+                !const ['bill', 'debt', 'insurance', 'contribution', 'auto-generated'].contains(tag.toLowerCase())
+              ).toList();
+              if (userTags.isEmpty) return const SizedBox.shrink();
+              return _DetailRow(label: 'Tags', value: userTags.map((tag) => '#$tag').join(', '), colorScheme: colorScheme);
+            }),
+          ],
           const SizedBox(height: 20),
 
           // Action buttons
@@ -560,7 +568,10 @@ class _TransactionRow extends StatelessWidget {
         ? 'Transfer \u00b7 ${formatDateRelative(DateTime.parse(transaction.date))}'
         : '${transaction.category} \u00b7 ${formatDateRelative(DateTime.parse(transaction.date))}';
 
-    final tags = transaction.tags;
+    final tags = transaction.tags?.where((tag) =>
+      !RegExp(r'^[0-9a-f]{8}-').hasMatch(tag) &&
+      !const ['bill', 'debt', 'insurance', 'contribution', 'auto-generated'].contains(tag.toLowerCase())
+    ).toList();
 
     return GestureDetector(
       onTap: onTap,
