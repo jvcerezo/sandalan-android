@@ -246,21 +246,11 @@ class NavDrawer extends ConsumerWidget {
                       _DrawerFooterItem(
                         icon: LucideIcons.logOut,
                         label: 'Sign Out',
-                        onTap: () async {
+                        onTap: () {
                           Navigator.of(context).pop();
-                          // Cache user info for quick login before clearing session
-                          final user = Supabase.instance.client.auth.currentUser;
-                          if (user != null) {
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setString('last_user_name', user.userMetadata?['full_name'] as String? ?? '');
-                            await prefs.setString('last_user_email', user.email ?? '');
-                            await prefs.setString('last_user_avatar', user.userMetadata?['avatar_url'] as String? ?? '');
-                          }
-                          await NotificationService.instance.cancelAll();
-                          try {
-                            await ref.read(authRepositoryProvider).signOut();
-                          } catch (_) {}
-                          if (context.mounted) context.go('/login');
+                          // Don't destroy session — just navigate to login
+                          // Quick login card will let them back in instantly
+                          context.go('/login');
                         },
                       ),
                   ],

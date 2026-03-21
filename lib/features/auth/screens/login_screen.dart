@@ -71,6 +71,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
+      // Sign out any existing session first (switching accounts)
+      try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
       await ref.read(authRepositoryProvider).signInWithEmail(
         email: email,
         password: password,
@@ -123,23 +125,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
 
-              // Quick login for previously authenticated users
-              FutureBuilder<SharedPreferences>(
-                future: SharedPreferences.getInstance(),
-                builder: (context, snap) {
-                  if (!snap.hasData) return const SizedBox.shrink();
-                  final prefs = snap.data!;
-                  final name = prefs.getString('last_user_name') ?? '';
-                  final email = prefs.getString('last_user_email') ?? '';
-                  final avatarUrl = prefs.getString('last_user_avatar');
+              // Quick login — session is still alive, user just navigated here
+              Builder(builder: (context) {
+                  final user = Supabase.instance.client.auth.currentUser;
+                  if (user == null) return const SizedBox.shrink();
 
-                  // No cached user info — don't show quick login
-                  if (email.isEmpty) return const SizedBox.shrink();
+                  final name = user.userMetadata?['full_name'] as String? ?? '';
+                  final email = user.email ?? '';
+                  final avatarUrl = user.userMetadata?['avatar_url'] as String?;
 
                 return Column(children: [
                   GestureDetector(
                     onTap: () {
-                      // User has cached identity — go straight to home (offline mode)
+                      // Session still valid — go straight to home
                       context.go('/home');
                     },
                     child: Container(
@@ -187,8 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ]),
                   const SizedBox(height: 16),
                 ]);
-                },
-              ),
+              }),
 
               // Error
               if (_error != null)

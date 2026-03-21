@@ -996,17 +996,9 @@ class _AccountSection extends StatelessWidget {
         if (!isGuest) ...[
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: () async {
-              if (GuestModeService.isGuestSync()) {
-                await GuestModeService.disableGuestMode();
-              }
-              await NotificationService.instance.cancelAll();
-              try {
-                await ref.read(authRepositoryProvider).signOut();
-              } catch (_) {
-                // May fail offline — that's OK, local state is cleared
-              }
-              if (context.mounted) context.go('/login');
+            onPressed: () {
+              // Don't destroy session — quick login lets them back in
+              context.go('/login');
             },
             icon: const Icon(LucideIcons.logOut, size: 16, color: AppColors.expense),
             label: const Text('Sign Out', style: TextStyle(color: AppColors.expense)),

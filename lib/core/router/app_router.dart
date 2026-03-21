@@ -38,21 +38,18 @@ final appRouter = GoRouter(
   initialLocation: '/home',
   redirect: (context, state) {
     final session = Supabase.instance.client.auth.currentSession;
-    final cachedUser = Supabase.instance.client.auth.currentUser;
-    final hasActiveSession = session != null;
-    final hasCachedIdentity = cachedUser != null;
+    final isLoggedIn = session != null;
     final isGuest = GuestModeService.isGuestSync();
     final isAuthRoute = state.uri.path == '/login' || state.uri.path == '/signup';
 
-    // Not logged in, no cached identity, and not guest -> must go to login
-    if (!hasActiveSession && !hasCachedIdentity && !isGuest && !isAuthRoute) {
+    // Not logged in and not guest -> must go to login
+    if (!isLoggedIn && !isGuest && !isAuthRoute) {
       return '/login';
     }
 
-    // Active session on auth route -> redirect to home
-    // (cached-only users stay on login to see quick-login card, but can
-    // navigate to /home when they explicitly tap it)
-    if (hasActiveSession && isAuthRoute) {
+    // Active session on signup route -> redirect to home
+    // (but NOT on /login — let them see the quick-login card)
+    if (isLoggedIn && state.uri.path == '/signup') {
       return '/home';
     }
 
