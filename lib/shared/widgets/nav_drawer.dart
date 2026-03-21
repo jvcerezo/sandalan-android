@@ -222,8 +222,8 @@ class NavDrawer extends ConsumerWidget {
                       },
                     ),
 
-                    // Guest: show both Create Account and Sign Out
-                    if (isGuest) ...[
+                    // Guest: only Create Account (no sign out — commit or stay!)
+                    if (isGuest)
                       _DrawerFooterItem(
                         icon: LucideIcons.userPlus,
                         label: 'Create Account',
@@ -231,18 +231,8 @@ class NavDrawer extends ConsumerWidget {
                           Navigator.of(context).pop();
                           context.go('/signup');
                         },
-                      ),
-                      _DrawerFooterItem(
-                        icon: LucideIcons.logOut,
-                        label: 'Sign Out',
-                        onTap: () async {
-                          Navigator.of(context).pop();
-                          await NotificationService.instance.cancelAll();
-                          await GuestModeService.disableGuestMode();
-                          if (context.mounted) context.go('/login');
-                        },
-                      ),
-                    ] else
+                      )
+                    else
                       _DrawerFooterItem(
                         icon: LucideIcons.logOut,
                         label: 'Sign Out',
