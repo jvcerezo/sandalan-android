@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_add_expense">Add Expense</string>
+    <string name="shortcut_add_expense_long">Quick Add Expense</string>
+    <string name="shortcut_add_income">Add Income</string>
+    <string name="shortcut_add_income_long">Quick Add Income</string>
+    <string name="shortcut_scan">Scan Receipt</string>
+    <string name="shortcut_scan_long">Scan a Receipt</string>
+    <string name="shortcut_chat">Ask AI</string>
+    <string name="shortcut_chat_long">Chat with Assistant</string>
+</resources>

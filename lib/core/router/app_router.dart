@@ -35,7 +35,7 @@ import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Cached landing page, loaded synchronously from SharedPreferences at startup.
@@ -48,7 +48,7 @@ Future<void> loadDefaultLandingPage() async {
 }
 
 final appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
+  navigatorKey: rootNavigatorKey,
   initialLocation: _cachedLandingPage,
   redirect: (context, state) {
     final session = Supabase.instance.client.auth.currentSession;
@@ -94,14 +94,14 @@ final appRouter = GoRouter(
     // ─── Guide sub-pages (full-screen push, no shell) ───────────────
     GoRoute(
       path: '/guide/:stageSlug',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) => MaterialPage(
         child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
       ),
     ),
     GoRoute(
       path: '/guide/:stageSlug/checklist/:itemId',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) => MaterialPage(
         child: ChecklistDetailScreen(
           stageSlug: state.pathParameters['stageSlug']!,
@@ -111,7 +111,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/guide/:stageSlug/:guideSlug',
-      parentNavigatorKey: _rootNavigatorKey,
+      parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) => MaterialPage(
         child: ArticleScreen(
           stageSlug: state.pathParameters['stageSlug']!,
@@ -121,25 +121,25 @@ final appRouter = GoRouter(
     ),
 
     // ─── Tool sub-pages (full-screen push, no shell) ────────────────
-    GoRoute(path: '/tools/contributions', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/contributions', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: ContributionsScreen())))),
-    GoRoute(path: '/tools/13th-month', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/13th-month', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: ThirteenthMonthScreen())))),
-    GoRoute(path: '/tools/retirement', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/retirement', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: RetirementScreen())))),
-    GoRoute(path: '/tools/rent-vs-buy', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/rent-vs-buy', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: RentVsBuyScreen())))),
-    GoRoute(path: '/tools/panganay', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/panganay', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: PanganayModeScreen())))),
-    GoRoute(path: '/tools/calculators', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/calculators', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: CalculatorsScreen())))),
-    GoRoute(path: '/tools/insurance', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/insurance', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: InsuranceScreen())))),
-    GoRoute(path: '/tools/bills', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/bills', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: BillsScreen())))),
-    GoRoute(path: '/tools/debts', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/debts', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: DebtManagerScreen())))),
-    GoRoute(path: '/tools/taxes', parentNavigatorKey: _rootNavigatorKey,
+    GoRoute(path: '/tools/taxes', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: TaxTrackerScreen())))),
 
     // ─── App routes (with shell) ─────────────────────────────────────

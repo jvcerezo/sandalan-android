@@ -8,6 +8,7 @@ import '../../../app.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/tip_service.dart';
 import '../../../core/services/weekly_recap_service.dart';
+import '../../../core/services/widget_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/tips/daily_tips.dart';
@@ -47,6 +48,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _initRetentionFeatures();
+    _updateHomeWidget();
+  }
+
+  /// Push latest data to the Android home screen widget.
+  Future<void> _updateHomeWidget() async {
+    final streak = await StreakService.instance.getStreak();
+    // Summary will be updated via ref.listen in build; send streak now.
+    WidgetService.updateWidget(
+      todaySpending: '\u20B10.00',
+      streakCount: streak,
+    );
   }
 
   Future<void> _initRetentionFeatures() async {
@@ -162,6 +174,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final profile = ref.watch(profileProvider);
     final firstName = profile.valueOrNull?.firstName ?? 'there';
     final summary = ref.watch(transactionsSummaryProvider);
+    // Update home screen widget whenever the summary refreshes.
+    ref.listen(transactionsSummaryProvider, (_, next) {
+      next.whenData((s) {
+        WidgetService.updateWidget(
+          todaySpending: formatCurrency(s.expenses),
+          streakCount: _streak,
+        );
+      });
+    });
     final greetingStyle = ref.watch(greetingStyleProvider);
     final hideBalances = ref.watch(hideBalancesProvider);
     final compactNumbers = ref.watch(compactNumbersProvider);

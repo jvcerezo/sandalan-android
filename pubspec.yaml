@@ -1,7 +1,7 @@
 name: sandalan
 description: Sandalan — Your Filipino adulting guide and personal finance tracker.
 publish_to: 'none'
-version: 0.1.4+17
+version: 0.1.5+18
 
 environment:
   sdk: ^3.7.0
@@ -74,6 +74,12 @@ dependencies:
 
   # Biometric auth
   local_auth: ^2.3.0
+
+  # Deep links
+  app_links: ^6.4.0
+
+  # Home screen widget
+  home_widget: ^0.7.0
 
   # Dynamic color (Material You)
   dynamic_color: ^1.7.0

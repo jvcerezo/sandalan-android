@@ -10,6 +10,7 @@ import 'core/services/guest_mode_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/automation_service.dart';
 import 'core/services/progress_sync_service.dart';
+import 'core/services/deep_link_service.dart';
 import 'core/services/sync_service.dart';
 import 'core/services/sync_status_notifier.dart';
 import 'data/local/app_database.dart';
@@ -69,4 +70,7 @@ Future<void> main() async {
       child: const SandalanApp(),
     ),
   );
+
+  // Initialize deep link handling (app shortcuts + widget buttons).
+  DeepLinkService.instance.init();
 }
