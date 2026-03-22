@@ -671,20 +671,38 @@ class ReceiptParser {
 
   /// Extract total amount -- look for keywords near numbers.
   static double? _extractTotalAmount(List<String> lines) {
+    // Keywords that represent the ACTUAL COST (what you owe) — highest priority first
     final totalKeywords = [
       'grand total',
       'total due',
       'total amount',
       'amount due',
-      'amount tendered',
-      'amount withdrawn',
-      'amount transferred',
-      'amount paid',
-      'amount',
-      'total',
       'net amount',
       'balance due',
       'amount payable',
+      'sub total',
+      'subtotal',
+      'total',
+    ];
+
+    // Keywords that represent PAYMENT/TENDER (what customer paid) — EXCLUDE these
+    final paymentKeywords = [
+      'amount tendered',
+      'amount paid',
+      'cash tendered',
+      'cash received',
+      'tendered',
+      'tender',
+      'cash',
+      'paid',
+      'payment',
+    ];
+
+    // Keywords that represent CHANGE — EXCLUDE these too
+    final changeKeywords = [
+      'change',
+      'change due',
+      'your change',
     ];
 
     final amountPattern = RegExp(
@@ -695,7 +713,11 @@ class ReceiptParser {
     int bestPriority = 999;
 
     for (final line in lines) {
-      final lower = line.toLowerCase();
+      final lower = line.toLowerCase().trim();
+
+      // Skip lines with payment/tender/change keywords
+      if (paymentKeywords.any((k) => lower.contains(k))) continue;
+      if (changeKeywords.any((k) => lower.contains(k))) continue;
 
       for (var priority = 0;
           priority < totalKeywords.length;

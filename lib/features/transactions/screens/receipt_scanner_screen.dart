@@ -819,17 +819,22 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       const SizedBox(height: 12),
 
       // Submit button
-      FilledButton(
-        onPressed: _saving ? null : _handleSave,
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: _saving ? null : _handleSave,
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+          child: _saving
+              ? const SizedBox(height: 18, width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Text(_isTransferReceipt ? 'Record Transfer' : 'Add as Expense',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         ),
-        child: _saving
-            ? const SizedBox(height: 18, width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(_isTransferReceipt ? 'Record Transfer' : 'Add as Expense'),
       ),
+      const SizedBox(height: 16), // Bottom safe area
       ], // end else (has accounts)
     ]);
   }
