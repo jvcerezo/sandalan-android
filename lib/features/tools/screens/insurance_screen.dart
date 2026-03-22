@@ -65,13 +65,13 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
       children: [
         // ← Tools
         GestureDetector(
-          onTap: () => context.go('/tools'),
+          onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); else context.go('/accounts'); },
           child: Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(LucideIcons.arrowLeft, size: 14, color: cs.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text('Tools', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              Text('Accounts', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             ]),
           ),
         ),

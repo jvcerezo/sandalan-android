@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -35,6 +36,10 @@ class AccountsScreen extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
+          // Finance tab chips
+          const _FinanceTabChips(activeTab: 'Accounts'),
+          const SizedBox(height: 16),
+
           // Header
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -288,6 +293,60 @@ class _ContribDetailCard extends StatelessWidget {
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant)),
         ]),
       ]),
+    );
+  }
+}
+
+class _FinanceTabChips extends StatelessWidget {
+  final String activeTab;
+  const _FinanceTabChips({required this.activeTab});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    final items = [
+      (LucideIcons.receipt, 'Bills', '/tools/bills', const Color(0xFF6366F1)),
+      (LucideIcons.creditCard, 'Debts', '/tools/debts', const Color(0xFFEF4444)),
+      (LucideIcons.shield, 'Insurance', '/tools/insurance', const Color(0xFF14B8A6)),
+      (LucideIcons.landmark, 'Gov\'t', '/tools/contributions', const Color(0xFF3B82F6)),
+    ];
+
+    return Row(
+      children: items.map((item) {
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                context.push(item.$3);
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  border: Border.all(color: cs.surfaceContainerHighest),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: item.$4.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(item.$1, size: 16, color: item.$4),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(item.$2, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+                ]),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

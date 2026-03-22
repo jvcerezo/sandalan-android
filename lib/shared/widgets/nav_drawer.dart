@@ -7,15 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/services/guest_mode_service.dart';
-import '../../core/services/notification_service.dart';
 import '../../app.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/achievements/providers/milestone_providers.dart';
 import 'brand_mark.dart';
-import 'tour_overlay.dart';
 
 class _NavItem {
   final String label;
@@ -39,27 +34,18 @@ final _navGroups = [
   ]),
   // Money
   const _NavGroup(label: 'MONEY', items: [
-    _NavItem(label: 'Dashboard', icon: LucideIcons.layoutDashboard, path: '/dashboard'),
+    _NavItem(label: 'Dashboard', icon: LucideIcons.barChart3, path: '/dashboard'),
     _NavItem(label: 'Transactions', icon: LucideIcons.arrowLeftRight, path: '/transactions'),
-    _NavItem(label: 'Accounts', icon: LucideIcons.landmark, path: '/accounts'),
-    _NavItem(label: 'Budgets', icon: LucideIcons.pieChart, path: '/budgets'),
-    _NavItem(label: 'Goals', icon: LucideIcons.target, path: '/goals'),
+    _NavItem(label: 'My Finances', icon: LucideIcons.wallet, path: '/accounts'),
   ]),
   // Tools
   const _NavGroup(label: 'TOOLS', items: [
-    _NavItem(label: 'All Tools', icon: LucideIcons.wrench, path: '/tools'),
-    _NavItem(label: 'Contributions', icon: LucideIcons.landmark, path: '/tools/contributions'),
-    _NavItem(label: 'Bills', icon: LucideIcons.receipt, path: '/tools/bills'),
-    _NavItem(label: 'Debts', icon: LucideIcons.creditCard, path: '/tools/debts'),
-    _NavItem(label: 'Insurance', icon: LucideIcons.shield, path: '/tools/insurance'),
-    _NavItem(label: 'Taxes', icon: LucideIcons.receipt, path: '/tools/taxes'),
-    _NavItem(label: 'Retirement', icon: LucideIcons.piggyBank, path: '/tools/retirement'),
-    _NavItem(label: 'Rent vs Buy', icon: LucideIcons.home, path: '/tools/rent-vs-buy'),
+    _NavItem(label: 'Calculators', icon: LucideIcons.calculator, path: '/tools'),
   ]),
-  // Insights
-  const _NavGroup(label: 'INSIGHTS', items: [
+  // More
+  const _NavGroup(label: 'MORE', items: [
+    _NavItem(label: 'Reports', icon: LucideIcons.fileText, path: '/reports'),
     _NavItem(label: 'Achievements', icon: LucideIcons.award, path: '/achievements'),
-    _NavItem(label: 'Reports', icon: LucideIcons.barChart3, path: '/reports'),
   ]),
 ];
 
@@ -218,16 +204,6 @@ class NavDrawer extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-
-                    // Take a Tour
-                    _DrawerFooterItem(
-                      icon: LucideIcons.compass,
-                      label: 'Take a Tour',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        TourController.of(context).start();
-                      },
-                    ),
 
                     // Settings
                     _DrawerFooterItem(

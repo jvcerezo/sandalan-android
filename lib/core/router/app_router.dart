@@ -120,6 +120,28 @@ final appRouter = GoRouter(
       ),
     ),
 
+    // ─── Tool sub-pages (full-screen push, no shell) ────────────────
+    GoRoute(path: '/tools/contributions', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: ContributionsScreen())))),
+    GoRoute(path: '/tools/13th-month', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: ThirteenthMonthScreen())))),
+    GoRoute(path: '/tools/retirement', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: RetirementScreen())))),
+    GoRoute(path: '/tools/rent-vs-buy', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: RentVsBuyScreen())))),
+    GoRoute(path: '/tools/panganay', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: PanganayModeScreen())))),
+    GoRoute(path: '/tools/calculators', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: CalculatorsScreen())))),
+    GoRoute(path: '/tools/insurance', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: InsuranceScreen())))),
+    GoRoute(path: '/tools/bills', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: BillsScreen())))),
+    GoRoute(path: '/tools/debts', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: DebtManagerScreen())))),
+    GoRoute(path: '/tools/taxes', parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: TaxTrackerScreen())))),
+
     // ─── App routes (with shell) ─────────────────────────────────────
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -173,58 +195,7 @@ final appRouter = GoRouter(
             child: ToolsHubScreen(),
           ),
         ),
-        GoRoute(
-          path: '/tools/contributions',
-          pageBuilder: (context, state) => const MaterialPage(
-            child: ContributionsScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/tools/13th-month',
-          pageBuilder: (context, state) => const MaterialPage(
-            child: ThirteenthMonthScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/tools/retirement',
-          pageBuilder: (context, state) => const MaterialPage(child: RetirementScreen()),
-        ),
-        GoRoute(
-          path: '/tools/rent-vs-buy',
-          pageBuilder: (context, state) => const MaterialPage(child: RentVsBuyScreen()),
-        ),
-        GoRoute(
-          path: '/tools/panganay',
-          pageBuilder: (context, state) => const MaterialPage(child: PanganayModeScreen()),
-        ),
-        GoRoute(
-          path: '/tools/calculators',
-          pageBuilder: (context, state) => const MaterialPage(child: CalculatorsScreen()),
-        ),
-        GoRoute(
-          path: '/tools/insurance',
-          pageBuilder: (context, state) => const MaterialPage(
-            child: InsuranceScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/tools/bills',
-          pageBuilder: (context, state) => const MaterialPage(
-            child: BillsScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/tools/debts',
-          pageBuilder: (context, state) => const MaterialPage(
-            child: DebtManagerScreen(),
-          ),
-        ),
-        GoRoute(
-          path: '/tools/taxes',
-          pageBuilder: (context, state) => const MaterialPage(
-            child: TaxTrackerScreen(),
-          ),
-        ),
+        // Tool sub-routes removed from ShellRoute — see top-level routes
         GoRoute(
           path: '/achievements',
           pageBuilder: (context, state) => const MaterialPage(

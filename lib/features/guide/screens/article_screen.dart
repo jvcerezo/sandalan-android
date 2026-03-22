@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,11 +19,15 @@ class _ArticleScreenState extends State<ArticleScreen> {
   final _scrollProgress = ValueNotifier<double>(0.0);
   final _scrollController = ScrollController();
 
+  static const _secureChannel = MethodChannel('com.jvcerezo.sandalan/secure');
+
   @override
   void initState() {
     super.initState();
     _loadReadStatus();
     _scrollController.addListener(_onScroll);
+    // Prevent screenshots on guide content
+    _secureChannel.invokeMethod('enableSecure').catchError((_) {});
   }
 
   void _onScroll() {
@@ -41,6 +46,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
   @override
   void dispose() {
+    // Re-allow screenshots when leaving guide content
+    _secureChannel.invokeMethod('disableSecure').catchError((_) {});
     _scrollController.dispose();
     _scrollProgress.dispose();
     super.dispose();

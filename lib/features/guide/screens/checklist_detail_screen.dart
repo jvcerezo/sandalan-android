@@ -20,10 +20,13 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
   bool _isSkipped = false;
   double _readProgress = 0.0;
 
+  static const _secureChannel = MethodChannel('com.jvcerezo.sandalan/secure');
+
   @override
   void initState() {
     super.initState();
     _loadStatus();
+    _secureChannel.invokeMethod('enableSecure').catchError((_) {});
   }
 
   Future<void> _loadStatus() async {
@@ -32,6 +35,12 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
       _isDone = (prefs.getStringList('checklist_done') ?? []).contains(widget.itemId);
       _isSkipped = (prefs.getStringList('checklist_skipped') ?? []).contains(widget.itemId);
     });
+  }
+
+  @override
+  void dispose() {
+    _secureChannel.invokeMethod('disableSecure').catchError((_) {});
+    super.dispose();
   }
 
   Future<void> _markDone() async {

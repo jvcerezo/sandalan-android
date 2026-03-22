@@ -24,7 +24,24 @@ class PlanningTab extends ConsumerWidget {
       // Budget Status with Progress Bars
       OverviewCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Budget Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Budget Status', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              InkWell(
+                onTap: () => context.go('/budgets'),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('Manage', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                    const SizedBox(width: 2),
+                    Icon(LucideIcons.arrowRight, size: 12, color: colorScheme.primary),
+                  ]),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           budgets.when(
             data: (list) {
@@ -110,7 +127,24 @@ class PlanningTab extends ConsumerWidget {
       // Active Goals
       OverviewCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Active Goals', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Active Goals', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              InkWell(
+                onTap: () => context.go('/goals'),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('Manage', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                    const SizedBox(width: 2),
+                    Icon(LucideIcons.arrowRight, size: 12, color: colorScheme.primary),
+                  ]),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           goals.when(
             data: (list) {

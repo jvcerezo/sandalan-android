@@ -11,11 +11,11 @@ class ToolsHubScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('Tools',
+        const Text('Calculators & Tools',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(
-          'Financial trackers and calculators for every stage of adulting.',
+          'Financial calculators for every stage of adulting.',
           style: TextStyle(fontSize: 14,
               color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
@@ -23,13 +23,6 @@ class ToolsHubScreen extends StatelessWidget {
 
         // Compliance
         _ToolSection(title: 'Compliance', tools: [
-          _ToolItem(
-            icon: LucideIcons.landmark,
-            color: AppColors.toolBlue,
-            title: "Gov't Contributions",
-            subtitle: 'SSS, PhilHealth, Pag-IBIG',
-            onTap: () => context.go('/tools/contributions'),
-          ),
           _ToolItem(
             icon: LucideIcons.receipt,
             color: AppColors.toolOrange,
@@ -47,34 +40,8 @@ class ToolsHubScreen extends StatelessWidget {
         ]),
         const SizedBox(height: 16),
 
-        // Management
-        _ToolSection(title: 'Management', tools: [
-          _ToolItem(
-            icon: LucideIcons.creditCard,
-            color: AppColors.toolRed,
-            title: 'Debt Manager',
-            subtitle: 'Loans & payoff strategies',
-            onTap: () => context.go('/tools/debts'),
-          ),
-          _ToolItem(
-            icon: LucideIcons.receipt,
-            color: AppColors.toolIndigo,
-            title: 'Bills & Subscriptions',
-            subtitle: 'Track recurring payments',
-            onTap: () => context.go('/tools/bills'),
-          ),
-          _ToolItem(
-            icon: LucideIcons.shield,
-            color: AppColors.toolTeal,
-            title: 'Insurance Tracker',
-            subtitle: 'Policies & renewals',
-            onTap: () => context.go('/tools/insurance'),
-          ),
-        ]),
-        const SizedBox(height: 16),
-
-        // Planning & Calculators
-        _ToolSection(title: 'Planning & Calculators', tools: [
+        // Planning
+        _ToolSection(title: 'Planning', tools: [
           _ToolItem(
             icon: LucideIcons.piggyBank,
             color: AppColors.toolAmber,
