@@ -66,7 +66,28 @@ class NotificationService {
     if (androidPlugin == null) return true;
 
     final granted = await androidPlugin.requestNotificationsPermission();
+    // Also request exact alarm permission (Android 12+)
+    await androidPlugin.requestExactAlarmsPermission();
     return granted ?? false;
+  }
+
+  /// Fire an immediate test notification to verify the pipeline works.
+  Future<void> sendTestNotification() async {
+    if (!_initialized) return;
+    await _plugin.show(
+      99999,
+      'Sandalan',
+      'Notifications are working! 🎉',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id,
+          _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+    );
   }
 
   // ── Schedule / Cancel ───────────────────────────────────────────────────────
@@ -109,7 +130,7 @@ class NotificationService {
           priority: Priority.high,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );

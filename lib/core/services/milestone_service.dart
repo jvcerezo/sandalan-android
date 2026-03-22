@@ -17,10 +17,14 @@ enum MilestoneTier {
 
 /// Category for grouping in the achievements screen.
 enum MilestoneCategory {
+  financial,
+  debtFreedom,
   streaks,
   transactions,
   goalsSavings,
   adultingJourney,
+  toolsFeatures,
+  special,
 }
 
 /// A milestone definition.
@@ -240,6 +244,120 @@ class MilestoneService {
       category: MilestoneCategory.goalsSavings,
       tier: MilestoneTier.c,
     ),
+
+    // ── FINANCIAL MILESTONES ────────────────────────────────────────────
+    const Milestone(id: 'first_budget', title: 'First Budget', description: 'Simula ng disiplina!',
+        icon: LucideIcons.pieChart, category: MilestoneCategory.financial, tier: MilestoneTier.b),
+    const Milestone(id: 'budget_3_months', title: 'Budget Streak', description: '3 consecutive clean budget months!',
+        icon: LucideIcons.pieChart, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'first_savings_goal', title: 'First Savings Goal', description: 'Nag-set ng target!',
+        icon: LucideIcons.target, category: MilestoneCategory.financial, tier: MilestoneTier.b),
+    const Milestone(id: 'saved_1k', title: '₱1K Saved', description: 'Unang libo!',
+        icon: LucideIcons.piggyBank, category: MilestoneCategory.financial, tier: MilestoneTier.b),
+    const Milestone(id: 'saved_5k', title: '₱5K Saved', description: 'Lima libo na!',
+        icon: LucideIcons.piggyBank, category: MilestoneCategory.financial, tier: MilestoneTier.b),
+    const Milestone(id: 'saved_10k', title: '₱10K Saved', description: 'Sampung libo! Keep going!',
+        icon: LucideIcons.piggyBank, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'saved_50k', title: '₱50K Saved', description: 'Kalahating daan na libo!',
+        icon: LucideIcons.piggyBank, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'saved_100k', title: 'Six Figures', description: '₱100,000! Ang galing mo!',
+        icon: LucideIcons.gem, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'saved_500k', title: 'Half Millionaire', description: 'Kalahating milyon! Idol!',
+        icon: LucideIcons.gem, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'saved_1m', title: 'Millionaire', description: '₱1,000,000! Legend status!',
+        icon: LucideIcons.crown, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'positive_net_worth', title: 'Positive Net Worth', description: 'Assets > Debts!',
+        icon: LucideIcons.trendingUp, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+
+    // ── DEBT FREEDOM ────────────────────────────────────────────────────
+    const Milestone(id: 'first_debt_payment', title: 'First Debt Payment', description: 'Unang bayad sa utang!',
+        icon: LucideIcons.creditCard, category: MilestoneCategory.debtFreedom, tier: MilestoneTier.b),
+    const Milestone(id: 'debt_50_percent', title: 'Halfway There', description: '50% of a debt paid off!',
+        icon: LucideIcons.creditCard, category: MilestoneCategory.debtFreedom, tier: MilestoneTier.b),
+    const Milestone(id: 'all_debts_paid', title: 'Completely Debt Free', description: 'WALANG UTANG!',
+        icon: LucideIcons.partyPopper, category: MilestoneCategory.debtFreedom, tier: MilestoneTier.a),
+    const Milestone(id: 'credit_card_paid', title: 'Credit Card Clear', description: 'Full payment, no interest!',
+        icon: LucideIcons.creditCard, category: MilestoneCategory.debtFreedom, tier: MilestoneTier.b),
+
+    // ── MORE STREAKS ────────────────────────────────────────────────────
+    const Milestone(id: 'streak_90', title: 'Quarterly Champion', description: '90 days! Tatlong buwan!',
+        icon: LucideIcons.flame, category: MilestoneCategory.streaks, tier: MilestoneTier.a),
+    const Milestone(id: 'streak_180', title: 'Half Year Hero', description: '180 days! Kalahating taon!',
+        icon: LucideIcons.flame, category: MilestoneCategory.streaks, tier: MilestoneTier.a),
+
+    // ── MORE TRANSACTIONS ───────────────────────────────────────────────
+    const Milestone(id: 'tx_25', title: '25 Transactions', description: 'Building the habit!',
+        icon: LucideIcons.arrowLeftRight, category: MilestoneCategory.transactions, tier: MilestoneTier.c),
+    const Milestone(id: 'tx_250', title: 'Quarter Thousand', description: '250 transactions!',
+        icon: LucideIcons.arrowLeftRight, category: MilestoneCategory.transactions, tier: MilestoneTier.b),
+    const Milestone(id: 'tx_500', title: 'Half Thousand', description: '500 transactions tracked!',
+        icon: LucideIcons.arrowLeftRight, category: MilestoneCategory.transactions, tier: MilestoneTier.a),
+    const Milestone(id: 'tx_1000', title: 'Transaction Master', description: '1000 transactions! Ang sipag!',
+        icon: LucideIcons.crown, category: MilestoneCategory.transactions, tier: MilestoneTier.a),
+
+    // ── ADULTING JOURNEY ────────────────────────────────────────────────
+    const Milestone(id: 'first_guide_read', title: 'First Guide', description: 'Nagbasa ka! Good start!',
+        icon: LucideIcons.bookOpen, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.b),
+    const Milestone(id: 'guides_5', title: 'Bookworm', description: '5 guides read!',
+        icon: LucideIcons.bookOpen, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.b),
+    const Milestone(id: 'guides_10', title: 'Knowledge Seeker', description: '10 guides nabasa mo na!',
+        icon: LucideIcons.bookOpen, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.a),
+    const Milestone(id: 'guides_all', title: 'Scholar', description: 'Read ALL guides!',
+        icon: LucideIcons.graduationCap, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.a),
+    const Milestone(id: 'first_checklist', title: 'First Checklist Done', description: 'Natapos mo!',
+        icon: LucideIcons.checkSquare, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.b),
+    const Milestone(id: 'checklist_5', title: 'Getting Things Done', description: '5 checklist items!',
+        icon: LucideIcons.checkSquare, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.b),
+    const Milestone(id: 'checklist_10', title: 'Adulting Pro', description: '10 items completed!',
+        icon: LucideIcons.checkSquare, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.a),
+    const Milestone(id: 'all_stages', title: 'Fully Adulted', description: 'Completed ALL stages!',
+        icon: LucideIcons.crown, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.a),
+    const Milestone(id: 'first_govt_id', title: 'First Government ID', description: 'Welcome to adulting!',
+        icon: LucideIcons.badgeCheck, category: MilestoneCategory.adultingJourney, tier: MilestoneTier.b),
+
+    // ── TOOLS & FEATURES ────────────────────────────────────────────────
+    const Milestone(id: 'first_scan', title: 'First Receipt Scan', description: 'High-tech ka na!',
+        icon: LucideIcons.scanLine, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'scans_10', title: 'Scanner Pro', description: '10 receipts scanned!',
+        icon: LucideIcons.scanLine, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'scans_50', title: 'OCR Master', description: '50 scans! Efficient!',
+        icon: LucideIcons.scanLine, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.a),
+    const Milestone(id: 'contributions_6mo', title: '6 Months Contributing', description: 'Half a year of contributions!',
+        icon: LucideIcons.landmark, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'contributions_1yr', title: 'Full Year Contributor', description: '12 months straight!',
+        icon: LucideIcons.landmark, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.a),
+    const Milestone(id: 'first_bill_tracked', title: 'Bill Tracker', description: 'First bill added!',
+        icon: LucideIcons.receipt, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.c),
+    const Milestone(id: 'all_bills_paid', title: 'Bills Cleared', description: 'All bills paid this month!',
+        icon: LucideIcons.receipt, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'first_tax_computed', title: 'Tax Filer', description: 'Computed your taxes!',
+        icon: LucideIcons.fileText, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.c),
+    const Milestone(id: 'first_report', title: 'First Report Card', description: 'Checked your monthly report!',
+        icon: LucideIcons.barChart3, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.c),
+    const Milestone(id: 'ai_chat_10', title: 'AI Buddy', description: '10 conversations with your assistant!',
+        icon: LucideIcons.bot, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'ai_chat_50', title: 'Best Friends', description: '50 chats! BFF na kayo!',
+        icon: LucideIcons.bot, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.a),
+
+    // ── SPECIAL / FUN ───────────────────────────────────────────────────
+    const Milestone(id: 'no_spend_day', title: 'No Spend Day', description: 'Zero gastos today!',
+        icon: LucideIcons.ban, category: MilestoneCategory.special, tier: MilestoneTier.b),
+    const Milestone(id: 'no_spend_week', title: 'No Spend Week', description: 'Buong linggo walang gastos!',
+        icon: LucideIcons.ban, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'lowest_spending_month', title: 'Record Low', description: 'Lowest spending month ever!',
+        icon: LucideIcons.trendingDown, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'highest_saving_month', title: 'Record Saver', description: 'Highest savings month ever!',
+        icon: LucideIcons.trendingUp, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'friday_no_spend', title: 'TGIF Saver', description: 'Friday without spending!',
+        icon: LucideIcons.partyPopper, category: MilestoneCategory.special, tier: MilestoneTier.c),
+    const Milestone(id: 'early_bird', title: 'Early Bird', description: 'Logged expense before 7 AM',
+        icon: LucideIcons.sunrise, category: MilestoneCategory.special, tier: MilestoneTier.c),
+    const Milestone(id: 'night_owl', title: 'Night Owl', description: 'Logged expense after 11 PM',
+        icon: LucideIcons.moon, category: MilestoneCategory.special, tier: MilestoneTier.c),
+    const Milestone(id: 'weekend_warrior', title: 'Weekend Warrior', description: 'Tracked expenses all weekend',
+        icon: LucideIcons.calendar, category: MilestoneCategory.special, tier: MilestoneTier.c),
+    const Milestone(id: 'payday_saver', title: 'Payday Discipline', description: 'Saved on payday instead of splurging',
+        icon: LucideIcons.wallet, category: MilestoneCategory.special, tier: MilestoneTier.b),
   ];
 
   /// Check and trigger a milestone. Returns the milestone if newly earned, null otherwise.
@@ -300,14 +418,22 @@ class MilestoneService {
   /// Get the category display name.
   static String categoryName(MilestoneCategory category) {
     switch (category) {
+      case MilestoneCategory.financial:
+        return 'Financial';
+      case MilestoneCategory.debtFreedom:
+        return 'Debt Freedom';
       case MilestoneCategory.streaks:
-        return 'Streaks';
+        return 'Streaks & Consistency';
       case MilestoneCategory.transactions:
         return 'Transactions';
       case MilestoneCategory.goalsSavings:
         return 'Goals & Savings';
       case MilestoneCategory.adultingJourney:
         return 'Adulting Journey';
+      case MilestoneCategory.toolsFeatures:
+        return 'Tools & Features';
+      case MilestoneCategory.special:
+        return 'Special';
     }
   }
 }
