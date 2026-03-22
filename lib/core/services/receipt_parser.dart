@@ -627,44 +627,89 @@ class ReceiptParser {
 
   /// Extract store name -- usually the first 1-2 lines, often in caps.
   static String? _extractStoreName(List<String> lines) {
-    // Skip lines that look like dates, amounts, or receipt metadata
+    // Skip lines that look like dates, amounts, receipt metadata, or addresses
     final skipPatterns = [
       RegExp(r'^\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}'),
-      RegExp(r'^(official|or|si|tin|vat|non)', caseSensitive: false),
+      RegExp(r'^(official|or |si |tin|vat|non-vat|receipt|invoice|pos|terminal|cashier|employee|date|time)', caseSensitive: false),
       RegExp(r'^\*+$'),
       RegExp(r'^-+$'),
       RegExp(r'^=+$'),
       RegExp(r'^\d+$'),
+      RegExp(r'(city|province|brgy|barangay|ave|avenue|street|st\.|blvd|road|rd\.)', caseSensitive: false), // addresses
+      RegExp(r'\d{4,}'), // phone numbers, TINs, reference numbers
     ];
 
+    // First pass: try to match a known merchant name anywhere in the first 8 lines
+    final allText = lines.take(8).join(' ').toLowerCase();
+    final knownMerchants = [
+      'jollibee', 'mcdonalds', "mcdonald's", 'kfc', 'chowking', 'mang inasal',
+      'greenwich', 'pizza hut', 'starbucks', 'tim hortons', 'bonchon',
+      'army navy', 'yellow cab', "shakey's", 'max\'s', 'goldilocks',
+      'red ribbon', 'ministop', '7-eleven', '7 eleven', 'family mart',
+      'alfamart', 'sm supermarket', 'sm hypermarket', 'puregold', 'savemore',
+      'robinsons', 'waltermart', 'landers', 's&r', 'metro supermarket',
+      'mercury drug', 'watsons', 'southstar', 'generika', 'rose pharmacy',
+      'national bookstore', 'fully booked', 'uniqlo', 'h&m', 'miniso', 'daiso',
+      'shell', 'petron', 'caltex', 'seaoil', 'phoenix',
+      'meralco', 'maynilad', 'manila water', 'pldt', 'globe', 'smart', 'converge',
+    ];
+    for (final merchant in knownMerchants) {
+      if (allText.contains(merchant)) {
+        // Return properly capitalized
+        return merchant.split(' ').map((w) =>
+          w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w
+        ).join(' ');
+      }
+    }
+
+    // Second pass: collect candidate lines from the first 8 lines
     final candidates = <String>[];
 
-    for (var i = 0;
-        i < lines.length && i < 5 && candidates.length < 2;
-        i++) {
-      final line = lines[i];
+    for (var i = 0; i < lines.length && i < 8 && candidates.length < 3; i++) {
+      final line = lines[i].trim();
       if (line.length < 3) continue;
       if (skipPatterns.any((p) => p.hasMatch(line))) continue;
 
       // Skip lines that are mostly numbers/symbols
-      final letterCount =
-          line.replaceAll(RegExp(r'[^a-zA-Z]'), '').length;
+      final letterCount = line.replaceAll(RegExp(r'[^a-zA-Z]'), '').length;
       if (letterCount < line.length * 0.3) continue;
+
+      // Skip lines that look like amounts
+      if (RegExp(r'[₱P]\s*\d').hasMatch(line)) continue;
 
       candidates.add(line);
     }
 
     if (candidates.isEmpty) return null;
 
-    // Return the first candidate, cleaned up
-    var name = candidates.first;
-    // Remove common suffixes like "INC", "CORP", "CO."
-    name = name
-        .replaceAll(
-            RegExp(r'\s*(INC\.?|CORP\.?|CO\.?|LTD\.?)$',
-                caseSensitive: false),
-            '')
+    // Pick the best candidate — prefer the longest text-heavy line (usually the store name)
+    // But if a candidate has uppercase letters (store names are often in caps), prefer it
+    String best = candidates.first;
+    int bestScore = 0;
+    for (final c in candidates) {
+      int score = 0;
+      final upper = c.replaceAll(RegExp(r'[^A-Z]'), '').length;
+      final total = c.replaceAll(RegExp(r'[^a-zA-Z]'), '').length;
+      if (total > 0 && upper / total > 0.5) score += 20; // mostly uppercase = likely store name
+      score += c.length; // longer = more likely to be a name
+      if (score > bestScore) {
+        bestScore = score;
+        best = c;
+      }
+    }
+
+    // Clean up
+    var name = best
+        .replaceAll(RegExp(r'\s*(INC\.?|CORP\.?|CO\.?|LTD\.?|TCLB-POS|POS)$', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+
+    // Title case if all caps
+    if (name == name.toUpperCase() && name.length > 3) {
+      name = name.split(' ').map((w) =>
+        w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}' : w
+      ).join(' ');
+    }
 
     return name.isEmpty ? null : name;
   }
