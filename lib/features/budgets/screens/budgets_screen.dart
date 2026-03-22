@@ -202,7 +202,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final month = ref.watch(budgetMonthProvider);
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         // Header
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

@@ -33,6 +33,19 @@ class _ArticleScreenState extends State<ArticleScreen> {
     _secureChannel.invokeMethod('enableSecure').catchError((_) {});
   }
 
+  @override
+  void didUpdateWidget(covariant ArticleScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.guideSlug != widget.guideSlug || oldWidget.stageSlug != widget.stageSlug) {
+      // Reset scroll position and progress when navigating to a different article
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+      _scrollProgress.value = 0.0;
+      _loadReadStatus();
+    }
+  }
+
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
@@ -108,7 +121,17 @@ class _ArticleScreenState extends State<ArticleScreen> {
     final stage = kLifeStages.firstWhere((s) => s.slug == widget.stageSlug);
     final guide = stage.guides.firstWhere((g) => g.slug == widget.guideSlug);
 
-    return Scaffold(body: SafeArea(child: Column(children: [
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/guide/${widget.stageSlug}');
+        }
+      },
+      child: Scaffold(body: SafeArea(child: Column(children: [
       // Reading progress bar
       ValueListenableBuilder<double>(
         valueListenable: _scrollProgress,
@@ -125,7 +148,13 @@ class _ArticleScreenState extends State<ArticleScreen> {
       children: [
         // ← Back
         GestureDetector(
-          onTap: () { if (context.canPop()) context.pop(); else context.go('/guide/${widget.stageSlug}'); },
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/guide/${widget.stageSlug}');
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -241,7 +270,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
         ),
       ],
     )),
-    ])));
+    ]))),  // Column children, Column, SafeArea, Scaffold
+    );  // PopScope
   }
 
   Widget _buildPrevNext(LifeStage stage, Guide currentGuide, ColorScheme cs) {

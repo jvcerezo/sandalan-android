@@ -103,7 +103,17 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     final priorityLabel = item.priority == 'critical' ? 'MUST DO'
         : item.priority == 'important' ? 'SHOULD DO' : 'NICE TO HAVE';
 
-    return Scaffold(body: SafeArea(child: Column(children: [
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/guide/${widget.stageSlug}');
+        }
+      },
+      child: Scaffold(body: SafeArea(child: Column(children: [
       // Reading progress bar
       TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: _readProgress),
@@ -133,7 +143,13 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
           children: [
             // ← Back
             GestureDetector(
-              onTap: () { if (context.canPop()) context.pop(); else context.go('/guide/${widget.stageSlug}'); },
+              onTap: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/guide/${widget.stageSlug}');
+                }
+              },
               child: Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 12),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -363,7 +379,8 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
           ]),
         ),
       ),
-    ])));
+    ]))),
+    );
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────

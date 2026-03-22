@@ -67,7 +67,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onRefresh: _onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
         children: [
           // ── Header ──────────────────────────────────────────────
           Row(children: [
@@ -352,9 +352,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           // ── AI INSIGHTS ────────────────────────────────────────
           const SizedBox(height: 20),
           const AiInsightsSection(),
-
-          // Bottom padding so FAB doesn't cover content
-          const SizedBox(height: 80),
         ],
       ),
     );

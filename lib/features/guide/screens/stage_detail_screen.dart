@@ -60,7 +60,17 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
         ? (completedTotal / totalProgress * 100).round()
         : 0;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/guide');
+        }
+      },
+      child: Scaffold(
       body: SafeArea(
         child: NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
@@ -239,6 +249,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
         );
       }),
       ),
+    ),
     ),
     );
   }

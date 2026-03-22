@@ -34,15 +34,11 @@ class AccountsScreen extends ConsumerWidget {
       },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
-          // Finance tab chips
-          const _FinanceTabChips(activeTab: 'Accounts'),
-          const SizedBox(height: 16),
-
           // Header
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const Text('My Finances', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           Row(mainAxisSize: MainAxisSize.min, children: [
             OutlinedButton.icon(
               onPressed: () {
@@ -116,6 +112,10 @@ class AccountsScreen extends ConsumerWidget {
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
+        const SizedBox(height: 20),
+
+        // Finance navigation cards
+        const _FinanceTabChips(activeTab: 'Accounts'),
       ],
     ),
     );

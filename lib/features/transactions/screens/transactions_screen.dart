@@ -75,7 +75,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final count = ref.watch(transactionsCountProvider);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       children: [
         // ← Dashboard back link
         GestureDetector(

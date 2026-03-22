@@ -304,18 +304,28 @@ class SyncService with WidgetsBindingObserver {
   // ─── Push ────────────────────────────────────────────────────────────────
 
   /// Find all pending rows and push to Supabase.
+  /// Each table push is wrapped in try-catch so one failing table
+  /// doesn't break all sync (e.g. if a Supabase table doesn't exist yet).
   Future<void> pushToSupabase() async {
-    await Future.wait([
-      _pushTable('local_transactions', 'transactions'),
-      _pushTable('local_accounts', 'accounts'),
-      _pushTable('local_budgets', 'budgets'),
-      _pushTable('local_goals', 'goals'),
-      _pushTable('local_contributions', 'contributions'),
-      _pushTable('local_bills', 'bills'),
-      _pushTable('local_debts', 'debts'),
-      _pushTable('local_insurance', 'insurance_policies'),
-      _pushTable('local_investments', 'investments'),
-    ]);
+    final pushes = <(String, String)>[
+      ('local_transactions', 'transactions'),
+      ('local_accounts', 'accounts'),
+      ('local_budgets', 'budgets'),
+      ('local_goals', 'goals'),
+      ('local_contributions', 'contributions'),
+      ('local_bills', 'bills'),
+      ('local_debts', 'debts'),
+      ('local_insurance', 'insurance_policies'),
+      ('local_investments', 'investments'),
+      // NOTE: local_bill_splits is local-only, no Supabase table for it
+    ];
+    for (final (local, remote) in pushes) {
+      try {
+        await _pushTable(local, remote);
+      } catch (e) {
+        if (kDebugMode) debugPrint('SyncService: push $remote failed: $e');
+      }
+    }
   }
 
   Future<void> _pushTable(String localTable, String remoteTable) async {
@@ -355,8 +365,10 @@ class SyncService with WidgetsBindingObserver {
   /// Map local column names back to remote, removing local-only fields.
   Map<String, dynamic> _localToRemote(Map<String, dynamic> row, String localTable) {
     final remote = Map<String, dynamic>.from(row);
+    // Remove local-only columns that don't exist on Supabase
     remote.remove('sync_status');
-    remote.remove('updated_at');
+    remote.remove('failure_reason');
+    remote.remove('status'); // confirmed/pending is local-only
 
     // Decode tags from JSON string for transactions
     if (localTable == 'local_transactions' && remote['tags'] is String) {
