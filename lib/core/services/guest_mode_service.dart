@@ -78,6 +78,8 @@ class GuestModeService {
     'local_bills',
     'local_debts',
     'local_insurance',
+    'learned_keywords',
+    'chat_report_queue',
   ];
 
   /// Simple pseudo-UUID v4 generator (no external package needed).

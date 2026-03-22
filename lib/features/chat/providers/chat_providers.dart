@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/chat_engine.dart';
+import '../../../core/services/guest_mode_service.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/chat_models.dart';
 import '../../../data/repositories/chat_report_repository.dart';
@@ -9,8 +11,14 @@ import '../../auth/providers/auth_provider.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import 'chat_notifier.dart';
 
+String _currentUserId() {
+  return Supabase.instance.client.auth.currentUser?.id
+      ?? GuestModeService.getGuestIdSync()
+      ?? 'anonymous';
+}
+
 final learnedKeywordRepositoryProvider = Provider<LearnedKeywordRepository>((ref) {
-  return LearnedKeywordRepository(AppDatabase.instance);
+  return LearnedKeywordRepository(AppDatabase.instance, _currentUserId);
 });
 
 final chatReportRepositoryProvider = Provider<ChatReportRepository>((ref) {

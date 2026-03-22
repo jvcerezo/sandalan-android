@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/guest_mode_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
 
@@ -119,7 +121,12 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
               .toList(),
           onChanged: (v) async {
             if (v == null) return;
-            await ref.read(authRepositoryProvider).updateProfile(lifeStage: v);
+            if (GuestModeService.isGuestSync()) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('life_stage', v);
+            } else {
+              await ref.read(authRepositoryProvider).updateProfile(lifeStage: v);
+            }
             ref.invalidate(profileProvider);
           },
         ),
@@ -135,7 +142,12 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
               .toList(),
           onChanged: (v) async {
             if (v == null) return;
-            await ref.read(authRepositoryProvider).updateProfile(userType: v);
+            if (GuestModeService.isGuestSync()) {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString('user_type', v);
+            } else {
+              await ref.read(authRepositoryProvider).updateProfile(userType: v);
+            }
             ref.invalidate(profileProvider);
           },
         ),

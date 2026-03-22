@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../local/app_database.dart';
 
@@ -41,13 +42,40 @@ class AuthRepository {
     );
   }
 
-  /// Sign out — clears local data to prevent cross-user leakage.
+  /// Sign out — clears local data and user-specific preferences
+  /// to prevent cross-user data leakage.
   Future<void> signOut() async {
     final userId = _client.auth.currentUser?.id;
     if (userId != null) {
       await AppDatabase.instance.clearAllData(userId);
     }
+    // Clear user-specific SharedPreferences
+    await _clearUserPreferences();
     await _client.auth.signOut();
+  }
+
+  /// Keys that hold user-specific data and must be cleared on logout.
+  static const _userPrefKeys = [
+    'ai_personality',
+    'ai_assistant_name',
+    'ai_setup_complete',
+    'life_stage',
+    'user_type',
+    'focus_areas',
+    'hide_balances',
+    'checklist_done',
+    'checklist_skipped',
+    'guides_read',
+    'last_sync_date',
+    'sandalan_tour_completed',
+    'sandalan_tour_pending',
+  ];
+
+  Future<void> _clearUserPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in _userPrefKeys) {
+      await prefs.remove(key);
+    }
   }
 
   /// Complete onboarding via RPC.

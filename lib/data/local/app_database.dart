@@ -190,18 +190,21 @@ class AppDatabase {
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS learned_keywords (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        keyword TEXT NOT NULL UNIQUE,
+        user_id TEXT NOT NULL DEFAULT '',
+        keyword TEXT NOT NULL,
         category TEXT NOT NULL,
         source TEXT NOT NULL DEFAULT 'user_pick',
         correction_count INTEGER NOT NULL DEFAULT 0,
         usage_count INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT '',
-        updated_at TEXT NOT NULL DEFAULT ''
+        updated_at TEXT NOT NULL DEFAULT '',
+        UNIQUE(user_id, keyword)
       )
     ''');
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS chat_report_queue (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL DEFAULT '',
         user_input TEXT NOT NULL,
         parsed_intent TEXT NOT NULL,
         parsed_amount REAL,
@@ -237,8 +240,8 @@ class AppDatabase {
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bills_user ON local_bills(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_debts_user ON local_debts(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
-    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_learned_keyword ON learned_keywords(keyword)');
-    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_chat_report_sync ON chat_report_queue(sync_status)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_learned_keyword ON learned_keywords(user_id, keyword)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_chat_report_sync ON chat_report_queue(user_id, sync_status)');
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -567,18 +570,19 @@ class AppDatabase {
 
   // ─── Learned Keywords ────────────────────────────────────────────────────
 
-  Future<Map<String, dynamic>?> getLearnedKeyword(String keyword) async {
+  Future<Map<String, dynamic>?> getLearnedKeyword(String keyword, {required String userId}) async {
     final results = await _db.customSelect(
-      'SELECT * FROM learned_keywords WHERE keyword = ? LIMIT 1',
-      variables: [Variable.withString(keyword.toLowerCase())],
+      'SELECT * FROM learned_keywords WHERE user_id = ? AND keyword = ? LIMIT 1',
+      variables: [Variable.withString(userId), Variable.withString(keyword.toLowerCase())],
     ).get();
     if (results.isEmpty) return null;
     return results.first.data;
   }
 
-  Future<List<Map<String, dynamic>>> getAllLearnedKeywords() async {
+  Future<List<Map<String, dynamic>>> getAllLearnedKeywords({required String userId}) async {
     final results = await _db.customSelect(
-      'SELECT * FROM learned_keywords ORDER BY usage_count DESC',
+      'SELECT * FROM learned_keywords WHERE user_id = ? ORDER BY usage_count DESC',
+      variables: [Variable.withString(userId)],
     ).get();
     return results.map((r) => r.data).toList();
   }
@@ -587,9 +591,10 @@ class AppDatabase {
     required String keyword,
     required String category,
     required String source,
+    required String userId,
   }) async {
     final now = AppDatabase.now();
-    final existing = await getLearnedKeyword(keyword);
+    final existing = await getLearnedKeyword(keyword, userId: userId);
     if (existing != null) {
       await _db.customStatement(
         '''UPDATE learned_keywords
@@ -597,14 +602,14 @@ class AppDatabase {
                correction_count = correction_count + CASE WHEN ? = 'correction' THEN 1 ELSE 0 END,
                usage_count = usage_count + 1,
                updated_at = ?
-           WHERE keyword = ?''',
-        [category, source, source, now, keyword.toLowerCase()],
+           WHERE user_id = ? AND keyword = ?''',
+        [category, source, source, now, userId, keyword.toLowerCase()],
       );
     } else {
       await _db.customStatement(
-        '''INSERT INTO learned_keywords (keyword, category, source, correction_count, usage_count, created_at, updated_at)
-           VALUES (?, ?, ?, ?, 1, ?, ?)''',
-        [keyword.toLowerCase(), category, source, source == 'correction' ? 1 : 0, now, now],
+        '''INSERT INTO learned_keywords (user_id, keyword, category, source, correction_count, usage_count, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, 1, ?, ?)''',
+        [userId, keyword.toLowerCase(), category, source, source == 'correction' ? 1 : 0, now, now],
       );
     }
   }
@@ -620,9 +625,10 @@ class AppDatabase {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getPendingChatReports() async {
+  Future<List<Map<String, dynamic>>> getPendingChatReports({required String userId}) async {
     final results = await _db.customSelect(
-      "SELECT * FROM chat_report_queue WHERE sync_status = 'pending'",
+      "SELECT * FROM chat_report_queue WHERE user_id = ? AND sync_status = 'pending'",
+      variables: [Variable.withString(userId)],
     ).get();
     return results.map((r) => r.data).toList();
   }
@@ -649,7 +655,7 @@ class AppDatabase {
 
   Future<List<Map<String, dynamic>>> getPendingRows(String table) async {
     final results = await _db.customSelect(
-      "SELECT * FROM $table WHERE sync_status = 'pending'",
+      "SELECT * FROM $table WHERE sync_status IN ('pending', 'failed')",
     ).get();
     return results.map((r) => r.data).toList();
   }
@@ -668,6 +674,20 @@ class AppDatabase {
     );
   }
 
+  /// Get IDs of all synced rows for a user in a table (for remote deletion detection).
+  Future<List<String>> getSyncedRowIds(String table, String userId) async {
+    final results = await _db.customSelect(
+      "SELECT id FROM $table WHERE user_id = ? AND sync_status = 'synced'",
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data['id'] as String).toList();
+  }
+
+  /// Delete a single row by ID from a table.
+  Future<void> deleteRow(String table, String id) async {
+    await _db.customStatement('DELETE FROM $table WHERE id = ?', [id]);
+  }
+
   // ─── Clear all data ──────────────────────────────────────────────────────
 
   Future<void> clearAllData(String userId) async {
@@ -680,6 +700,8 @@ class AppDatabase {
       'local_bills',
       'local_debts',
       'local_insurance',
+      'learned_keywords',
+      'chat_report_queue',
     ]) {
       await _db.customStatement('DELETE FROM $table WHERE user_id = ?', [userId]);
     }

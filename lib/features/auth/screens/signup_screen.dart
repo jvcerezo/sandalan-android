@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
@@ -152,6 +153,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         if (_wasGuest) {
           final newUserId = response.session!.user.id;
           await GuestModeService.migrateToAccount(newUserId);
+          // Migrate guest preferences to Supabase profile
+          await _migrateGuestPreferences();
           // Trigger a full sync to push migrated data to Supabase
           final syncService = SyncService(
             Supabase.instance.client,
@@ -172,6 +175,26 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         _isLoading = false;
         _error = _parseSignUpError(e);
       });
+    }
+  }
+
+  /// Migrate guest-mode SharedPreferences (life_stage, user_type, focus_areas)
+  /// to the new Supabase profile so they persist after account creation.
+  Future<void> _migrateGuestPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lifeStage = prefs.getString('life_stage');
+      final userType = prefs.getString('user_type');
+      final focusAreas = prefs.getStringList('focus_areas');
+      if (lifeStage != null || userType != null || focusAreas != null) {
+        await ref.read(authRepositoryProvider).updateProfile(
+          lifeStage: lifeStage,
+          userType: userType,
+          focusAreas: focusAreas,
+        );
+      }
+    } catch (_) {
+      // Non-critical — user can re-set in settings
     }
   }
 

@@ -112,9 +112,11 @@ class SyncService with WidgetsBindingObserver {
   Future<void> _pullTable(String remoteTable, String localTable, String userId) async {
     try {
       final data = await _client.from(remoteTable).select().eq('user_id', userId);
+      final remoteIds = <String>{};
 
       for (final row in data) {
         final id = row['id'] as String;
+        remoteIds.add(id);
         // Check if there's a pending local version — don't overwrite it
         final existing = await _db.getRowById(localTable, id);
         if (existing != null && existing['sync_status'] == 'pending') {
@@ -124,8 +126,26 @@ class SyncService with WidgetsBindingObserver {
         final localRow = _remoteToLocal(row, remoteTable);
         await _upsertToLocal(localTable, localRow);
       }
+
+      // Remove local 'synced' rows that no longer exist on remote (deleted on web).
+      // Skip pending/failed rows — those haven't been pushed yet.
+      await _removeDeletedRows(localTable, userId, remoteIds);
     } catch (_) {
       // Individual table pull failure shouldn't stop others
+    }
+  }
+
+  /// Delete local rows that were synced but no longer exist on remote.
+  Future<void> _removeDeletedRows(String localTable, String userId, Set<String> remoteIds) async {
+    try {
+      final localRows = await _db.getSyncedRowIds(localTable, userId);
+      for (final localId in localRows) {
+        if (!remoteIds.contains(localId)) {
+          await _db.deleteRow(localTable, localId);
+        }
+      }
+    } catch (_) {
+      // Non-critical — stale rows are harmless compared to data loss
     }
   }
 
