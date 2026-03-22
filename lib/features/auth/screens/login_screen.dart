@@ -72,13 +72,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      // Sign out any existing session first (clears local data for old user)
-      try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
+      // If was guest, disable guest mode but DON'T clear local data yet
+      // (we need it for migration after sign-in succeeds)
+      if (_wasGuest) {
+        await GuestModeService.disableGuestMode();
+      } else {
+        // Only sign out + clear data if switching between real accounts
+        try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
+      }
       await ref.read(authRepositoryProvider).signInWithEmail(
         email: email,
         password: password,
       );
-      await _migrateGuestDataIfNeeded();
+      // Now migrate guest data after successful sign-in
+      if (_wasGuest) {
+        final newUserId = Supabase.instance.client.auth.currentUser?.id;
+        if (newUserId != null) {
+          await GuestModeService.migrateToAccount(newUserId);
+        }
+      }
       // Pull fresh data from Supabase for the newly logged-in user
       final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
       await syncService.fullSync();
@@ -97,11 +109,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      // Sign out any existing session first
-      try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
+      // If was guest, disable guest mode but keep local data for migration
+      if (_wasGuest) {
+        await GuestModeService.disableGuestMode();
+      } else {
+        try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
+      }
       final response = await ref.read(authRepositoryProvider).signInWithGoogle();
       if (response.session != null) {
-        await _migrateGuestDataIfNeeded();
+        if (_wasGuest) {
+          await GuestModeService.migrateToAccount(response.session!.user.id);
+        }
         final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
         await syncService.fullSync();
         if (mounted) {
