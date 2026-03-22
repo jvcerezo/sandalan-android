@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -38,7 +37,11 @@ class AccountsScreen extends ConsumerWidget {
         children: [
           // Header
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('My Finances', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('My Finances', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              SizedBox(height: 2),
+              Text('Manage your wallets and bank accounts', style: TextStyle(fontSize: 13)),
+            ])),
           Row(mainAxisSize: MainAxisSize.min, children: [
             OutlinedButton.icon(
               onPressed: () {
@@ -112,10 +115,6 @@ class AccountsScreen extends ConsumerWidget {
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
-        const SizedBox(height: 20),
-
-        // Finance navigation cards
-        const _FinanceTabChips(activeTab: 'Accounts'),
       ],
     ),
     );
@@ -300,61 +299,3 @@ class _ContribDetailCard extends StatelessWidget {
   }
 }
 
-class _FinanceTabChips extends ConsumerWidget {
-  final String activeTab;
-  const _FinanceTabChips({required this.activeTab});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-
-    final items = [
-      (LucideIcons.pieChart, 'Budgets', 'Track spending limits', '/budgets', const Color(0xFF22C55E)),
-      (LucideIcons.target, 'Goals', 'Save toward targets', '/goals', const Color(0xFF3B82F6)),
-      (LucideIcons.receipt, 'Bills', 'Track recurring payments', '/tools/bills', const Color(0xFF6366F1)),
-      (LucideIcons.creditCard, 'Debts', 'Manage what you owe', '/tools/debts', const Color(0xFFEF4444)),
-      (LucideIcons.shield, 'Insurance', 'Monitor your policies', '/tools/insurance', const Color(0xFF14B8A6)),
-      (LucideIcons.landmark, 'Contributions', 'SSS · PhilHealth · Pag-IBIG', '/tools/contributions', const Color(0xFF8B5CF6)),
-      (LucideIcons.trendingUp, 'Investments', 'Track your portfolio', '/investments', const Color(0xFFF59E0B)),
-      (LucideIcons.wallet, 'Salary Allocation', 'Auto-split on payday', '/salary-allocation', const Color(0xFF06B6D4)),
-    ];
-
-    return Column(
-      children: items.map((item) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              context.push(item.$4);
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border(left: BorderSide(color: item.$5, width: 3)),
-              ),
-              child: Row(children: [
-                Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    color: item.$5.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(item.$1, size: 18, color: item.$5),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(item.$2, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  Text(item.$3, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                ])),
-                Icon(LucideIcons.chevronRight, size: 16, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-              ]),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}

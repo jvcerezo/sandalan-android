@@ -14,27 +14,7 @@ class ReportsListScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final reportsAsync = ref.watch(allReportsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reports'),
-        actions: [
-          // Generate current month report
-          IconButton(
-            icon: const Icon(LucideIcons.plusCircle),
-            tooltip: 'Generate this month\'s report',
-            onPressed: () {
-              final now = DateTime.now();
-              // Generate for last month if early in month, otherwise current
-              final targetMonth = now.day <= 3 ? now.month - 1 : now.month;
-              final targetYear =
-                  targetMonth <= 0 ? now.year - 1 : now.year;
-              final month = targetMonth <= 0 ? 12 + targetMonth : targetMonth;
-              context.go('/reports/$targetYear/$month');
-            },
-          ),
-        ],
-      ),
-      body: reportsAsync.when(
+    return reportsAsync.when(
         data: (reports) {
           if (reports.isEmpty) {
             return Center(
@@ -70,10 +50,37 @@ class ReportsListScreen extends ConsumerWidget {
 
           return ListView.separated(
             padding: const EdgeInsets.all(16),
-            itemCount: reports.length,
+            itemCount: reports.length + 1,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
-              final report = reports[index];
+              if (index == 0) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Reports', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 2),
+                        Text('Monthly financial summaries', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.plusCircle),
+                      tooltip: 'Generate this month\'s report',
+                      onPressed: () {
+                        final now = DateTime.now();
+                        final targetMonth = now.day <= 3 ? now.month - 1 : now.month;
+                        final targetYear = targetMonth <= 0 ? now.year - 1 : now.year;
+                        final month = targetMonth <= 0 ? 12 + targetMonth : targetMonth;
+                        context.go('/reports/$targetYear/$month');
+                      },
+                    ),
+                  ],
+                );
+              }
+              final adjustedIndex = index - 1;
+              final report = reports[adjustedIndex];
               final monthName = DateFormat('MMMM yyyy').format(
                 DateTime(report.year, report.month),
               );
@@ -149,8 +156,7 @@ class ReportsListScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-      ),
-    );
+      );
   }
 
   Color _gradeColor(String grade) {

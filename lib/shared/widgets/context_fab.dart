@@ -84,6 +84,10 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     if (!_shouldShow) return const SizedBox.shrink();
 
+    // Hide FAB when keyboard is open (e.g. during modal bottom sheet input)
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    if (keyboardVisible) return const SizedBox.shrink();
+
     final cs = Theme.of(context).colorScheme;
     final p = widget.currentPath;
 

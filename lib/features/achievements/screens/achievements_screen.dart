@@ -24,16 +24,11 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final earnedAsync = ref.watch(earnedMilestonesProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Achievements'),
-      ),
-      body: earnedAsync.when(
+    return earnedAsync.when(
         data: (earned) => _buildContent(context, earned, colorScheme),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-      ),
-    );
+      );
   }
 
   Widget _buildContent(
@@ -61,6 +56,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
+        // Title
+        const Text('Achievements', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
         // Header
         Text(
           '$earnedCount of $totalCount earned',

@@ -37,6 +37,16 @@ final _navGroups = [
     _NavItem(label: 'Dashboard', icon: LucideIcons.barChart3, path: '/dashboard'),
     _NavItem(label: 'Transactions', icon: LucideIcons.arrowLeftRight, path: '/transactions'),
     _NavItem(label: 'My Finances', icon: LucideIcons.wallet, path: '/accounts'),
+    _NavItem(label: 'Budgets', icon: LucideIcons.pieChart, path: '/budgets'),
+    _NavItem(label: 'Goals', icon: LucideIcons.target, path: '/goals'),
+  ]),
+  // Manage
+  const _NavGroup(label: 'MANAGE', items: [
+    _NavItem(label: 'Bills', icon: LucideIcons.receipt, path: '/tools/bills'),
+    _NavItem(label: 'Debts', icon: LucideIcons.creditCard, path: '/tools/debts'),
+    _NavItem(label: 'Insurance', icon: LucideIcons.shield, path: '/tools/insurance'),
+    _NavItem(label: 'Contributions', icon: LucideIcons.landmark, path: '/tools/contributions'),
+    _NavItem(label: 'Investments', icon: LucideIcons.trendingUp, path: '/investments'),
   ]),
   // Tools
   const _NavGroup(label: 'TOOLS', items: [
@@ -44,8 +54,9 @@ final _navGroups = [
   ]),
   // More
   const _NavGroup(label: 'MORE', items: [
-    _NavItem(label: 'Reports', icon: LucideIcons.fileText, path: '/reports'),
+    _NavItem(label: 'Salary Allocation', icon: LucideIcons.wallet, path: '/salary-allocation'),
     _NavItem(label: 'Split Bills', icon: LucideIcons.users, path: '/split-bills'),
+    _NavItem(label: 'Reports', icon: LucideIcons.fileText, path: '/reports'),
     _NavItem(label: 'Achievements', icon: LucideIcons.award, path: '/achievements'),
   ]),
 ];
