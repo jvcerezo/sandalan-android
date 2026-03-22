@@ -242,6 +242,22 @@ class AppDatabase {
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_learned_keyword ON learned_keywords(user_id, keyword)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_chat_report_sync ON chat_report_queue(user_id, sync_status)');
+
+    // ─── Migrations for existing installs ─────────────────────────────
+    await _migrateSchema();
+  }
+
+  /// Add columns that didn't exist in earlier schema versions.
+  /// Each ALTER is wrapped in try/catch so it's safe to re-run.
+  Future<void> _migrateSchema() async {
+    // v9: add user_id to learned_keywords and chat_report_queue
+    for (final table in ['learned_keywords', 'chat_report_queue']) {
+      try {
+        await _db.customStatement("ALTER TABLE $table ADD COLUMN user_id TEXT NOT NULL DEFAULT ''");
+      } catch (_) {
+        // Column already exists — safe to ignore
+      }
+    }
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
