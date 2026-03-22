@@ -40,7 +40,7 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
     setState(() => _isSyncing = true);
     try {
       final client = Supabase.instance.client;
-      await SyncService(client, AppDatabase.instance).fullSync();
+      await SyncService(client, AppDatabase.instance).fullSync(forceFullPull: true);
     } finally {
       await _loadCounts();
       if (mounted) setState(() => _isSyncing = false);

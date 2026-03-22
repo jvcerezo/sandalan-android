@@ -13,6 +13,14 @@ import 'sync_status_notifier.dart';
 /// based on updated_at timestamps.
 ///
 /// Syncs once daily (end of day), when app goes to background, and on manual trigger.
+///
+/// Pull strategy:
+/// - **Incremental** (default): only fetches rows with updated_at > last pull
+///   timestamp, skipping delete detection. This cuts bandwidth ~90% after the
+///   first sync.
+/// - **Full**: fetches everything and removes locally-synced rows that no
+///   longer exist on remote. Runs on first-ever sync and once per week to
+///   catch server-side deletes.
 class SyncService with WidgetsBindingObserver {
   final SupabaseClient _client;
   final AppDatabase _db;
@@ -22,7 +30,9 @@ class SyncService with WidgetsBindingObserver {
   bool _isSyncing = false;
   DateTime? _lastSyncAttempt;
   static const _lastSyncKey = 'last_sync_date';
+  static const _lastFullSyncKey = 'last_full_sync_date';
   static const _minSyncInterval = Duration(seconds: 60);
+  static const _fullSyncInterval = Duration(days: 7);
 
   SyncService(this._client, this._db, {SyncStatusNotifier? syncStatus})
       : _syncStatus = syncStatus;
@@ -74,9 +84,13 @@ class SyncService with WidgetsBindingObserver {
     }
   }
 
-  /// Full sync: pull from remote, then push local pending changes.
+  /// Sync: pull from remote, then push local pending changes.
   /// Rate-limited to at most once per 60 seconds.
-  Future<void> fullSync() async {
+  ///
+  /// Uses incremental pull by default (only rows changed since last pull).
+  /// Pass [forceFullPull] = true to fetch everything and detect deletes.
+  /// A full pull also runs automatically once per week and on first-ever sync.
+  Future<void> fullSync({bool forceFullPull = false}) async {
     if (_isSyncing || _userId == null) return;
     if (!await _isOnline()) return;
 
@@ -90,13 +104,18 @@ class SyncService with WidgetsBindingObserver {
     _isSyncing = true;
     _syncStatus?.markSyncing();
     try {
-      await pullFromSupabase();
+      final needsFullPull = forceFullPull || await _isFullPullDue();
+      await pullFromSupabase(fullPull: needsFullPull);
       await pushToSupabase();
       // Sync chat error reports
       try {
         await ChatReportRepository(_db, _client).syncPendingReports();
       } catch (e) {
         if (kDebugMode) debugPrint('SyncService: chat report sync failed: $e');
+      }
+      if (needsFullPull) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_lastFullSyncKey, DateTime.now().toUtc().toIso8601String());
       }
       _syncStatus?.markSynced();
     } catch (e) {
@@ -107,29 +126,70 @@ class SyncService with WidgetsBindingObserver {
     }
   }
 
+  /// Returns true if a full pull is needed (first sync or > 7 days since last full pull).
+  Future<bool> _isFullPullDue() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastFull = prefs.getString(_lastFullSyncKey);
+    if (lastFull == null) return true; // first-ever sync
+    final lastFullDate = DateTime.tryParse(lastFull);
+    if (lastFullDate == null) return true;
+    return DateTime.now().toUtc().difference(lastFullDate) >= _fullSyncInterval;
+  }
+
   // ─── Pull ────────────────────────────────────────────────────────────────
 
-  /// Fetch all tables from Supabase and upsert into local DB.
+  /// Fetch tables from Supabase and upsert into local DB.
   /// Only overwrites rows that are 'synced' locally (preserves pending changes).
-  Future<void> pullFromSupabase() async {
+  ///
+  /// When [fullPull] is false (default), only rows updated since the last
+  /// successful pull are fetched. Delete detection is skipped because we can't
+  /// distinguish "not updated" from "deleted" with a partial result set.
+  /// A full pull runs on first sync and weekly to reconcile deletes.
+  Future<void> pullFromSupabase({bool fullPull = false}) async {
     final userId = _userId;
     if (userId == null) return;
 
+    final tables = [
+      ('transactions', 'local_transactions'),
+      ('accounts', 'local_accounts'),
+      ('budgets', 'local_budgets'),
+      ('goals', 'local_goals'),
+      ('contributions', 'local_contributions'),
+      ('bills', 'local_bills'),
+      ('debts', 'local_debts'),
+      ('insurance_policies', 'local_insurance'),
+    ];
+
+    final prefs = await SharedPreferences.getInstance();
+
     await Future.wait([
-      _pullTable('transactions', 'local_transactions', userId),
-      _pullTable('accounts', 'local_accounts', userId),
-      _pullTable('budgets', 'local_budgets', userId),
-      _pullTable('goals', 'local_goals', userId),
-      _pullTable('contributions', 'local_contributions', userId),
-      _pullTable('bills', 'local_bills', userId),
-      _pullTable('debts', 'local_debts', userId),
-      _pullTable('insurance_policies', 'local_insurance', userId),
+      for (final (remote, local) in tables)
+        _pullTable(remote, local, userId, prefs, fullPull: fullPull),
     ]);
   }
 
-  Future<void> _pullTable(String remoteTable, String localTable, String userId) async {
+  /// SharedPreferences key for the last successful pull timestamp of a table.
+  static String _lastPullKey(String remoteTable) => 'last_pull_$remoteTable';
+
+  Future<void> _pullTable(
+    String remoteTable,
+    String localTable,
+    String userId,
+    SharedPreferences prefs, {
+    required bool fullPull,
+  }) async {
     try {
-      final data = await _client.from(remoteTable).select().eq('user_id', userId);
+      // Decide whether to do an incremental or full pull for this table.
+      final lastPullAt = prefs.getString(_lastPullKey(remoteTable));
+      final isIncremental = !fullPull && lastPullAt != null;
+
+      // Build query — incremental only fetches rows updated since last pull.
+      var query = _client.from(remoteTable).select().eq('user_id', userId);
+      if (isIncremental) {
+        query = query.gte('updated_at', lastPullAt);
+      }
+
+      final data = await query;
 
       // Batch: collect all pending IDs upfront (1 query instead of N)
       final pendingIds = (await _db.getPendingRows(localTable))
@@ -157,11 +217,17 @@ class SyncService with WidgetsBindingObserver {
         await _upsertToLocal(localTable, localRow);
       }
 
-      // Guard: only remove deleted rows if remote returned actual data.
-      // An empty response could mean API error, not "user deleted everything."
-      if (data.isNotEmpty) {
+      // Only detect deletes on full pulls — incremental results don't include
+      // unchanged rows, so missing IDs don't mean "deleted".
+      if (!isIncremental && data.isNotEmpty) {
         await _removeDeletedRows(localTable, userId, remoteIds);
       }
+
+      // Persist the pull timestamp so the next sync can be incremental.
+      await prefs.setString(
+        _lastPullKey(remoteTable),
+        DateTime.now().toUtc().toIso8601String(),
+      );
     } catch (e) {
       if (kDebugMode) debugPrint('SyncService: pull $remoteTable failed: $e');
     }

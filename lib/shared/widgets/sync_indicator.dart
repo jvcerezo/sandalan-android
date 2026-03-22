@@ -48,7 +48,7 @@ class _SyncIndicatorState extends ConsumerState<SyncIndicator>
       AppDatabase.instance,
       syncStatus: ref.read(syncStatusProvider.notifier),
     );
-    syncService.fullSync();
+    syncService.fullSync(forceFullPull: true);
   }
 
   @override
