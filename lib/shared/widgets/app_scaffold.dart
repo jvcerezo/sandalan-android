@@ -15,13 +15,20 @@ import 'tour_overlay.dart';
 
 final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-class AppScaffold extends StatelessWidget {
+class AppScaffold extends StatefulWidget {
   final Widget child;
 
   const AppScaffold({super.key, required this.child});
 
+  @override
+  State<AppScaffold> createState() => _AppScaffoldState();
+}
+
+class _AppScaffoldState extends State<AppScaffold> {
   /// Root tab paths — back button on these should not pop (they're top-level).
-  static const _rootPaths = ['/home', '/guide', '/dashboard', '/tools', '/settings'];
+  static const _rootPaths = ['/home', '/guide', '/dashboard', '/transactions', '/accounts', '/tools', '/settings', '/achievements', '/reports'];
+
+  DateTime? _lastBackPress;
 
   bool _isRootPath(String location) {
     return _rootPaths.any((p) => location == p);
@@ -37,11 +44,25 @@ class AppScaffold extends StatelessWidget {
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_isRootPath(location)) {
-          // On root tab, go to /home or let system handle
           if (location != '/home') {
+            // On a root tab that isn't home → go to home
             context.go('/home');
+          } else {
+            // On /home → double back to exit
+            final now = DateTime.now();
+            if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+              SystemNavigator.pop();
+            } else {
+              _lastBackPress = now;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Press back again to exit'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
           }
-          // On /home, do nothing — don't close app
         } else {
           // On sub-page, navigate back
           if (context.canPop()) {
@@ -112,7 +133,7 @@ class AppScaffold extends StatelessWidget {
             ),
 
             // ─── Page Content ────────────────────────────────────────
-            Expanded(child: child),
+            Expanded(child: widget.child),
           ],
         ),
         floatingActionButton: Padding(

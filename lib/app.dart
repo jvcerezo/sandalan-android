@@ -323,6 +323,7 @@ class _SandalanAppState extends ConsumerState<SandalanApp> with WidgetsBindingOb
   bool _showBlur = false;
   bool _showLock = false;
   bool _lockChecked = false;
+  bool _wasPaused = false; // Track if app was fully paused (not just inactive)
 
   @override
   void initState() {
@@ -352,7 +353,11 @@ class _SandalanAppState extends ConsumerState<SandalanApp> with WidgetsBindingOb
     super.didChangeAppLifecycleState(state);
     switch (state) {
       case AppLifecycleState.inactive:
+        // Just show blur overlay (for app switcher peek) — don't lock
+        if (mounted) setState(() => _showBlur = true);
       case AppLifecycleState.paused:
+        // App fully backgrounded — mark for lock on return
+        _wasPaused = true;
         if (mounted) setState(() => _showBlur = true);
       case AppLifecycleState.resumed:
         _onResumed();
@@ -362,6 +367,16 @@ class _SandalanAppState extends ConsumerState<SandalanApp> with WidgetsBindingOb
   }
 
   Future<void> _onResumed() async {
+    final shouldLock = _wasPaused; // Only lock if app was fully paused
+    _wasPaused = false;
+
+    if (!shouldLock) {
+      // Was just inactive (tab switch / app switcher peek) — remove blur, no lock
+      if (mounted) setState(() => _showBlur = false);
+      return;
+    }
+
+    // App was fully paused — check if lock is enabled
     final lockEnabled = await AppLockService.instance.isEnabled();
     if (mounted) {
       setState(() {
