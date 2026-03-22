@@ -108,6 +108,19 @@ class ChatEngine {
     final smallTalkResult = _checkSmallTalk(lower);
     if (smallTalkResult != null) return smallTalkResult;
 
+    // ─── 2b. App navigation ────────────────────────────────────────────
+    final navResult = _checkNavigation(lower);
+    if (navResult != null) return navResult;
+
+    // ─── 2c. Correction / undo ─────────────────────────────────────────
+    if (_isCorrectionRequest(lower)) {
+      return ParseResult(
+        intent: ChatIntent.unknown,
+        message: _pr(ResponseCategory.didntUnderstand,
+            data: {'fallback': 'Use the [Report] button on the message you want to fix.'}),
+      );
+    }
+
     // ─── 3. Check help ───────────────────────────────────────────────
     if (_isHelp(lower)) {
       return ParseResult(
@@ -379,6 +392,34 @@ class ChatEngine {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // APP NAVIGATION
+  // ═══════════════════════════════════════════════════════════════════════
+
+  ParseResult? _checkNavigation(String lower) {
+    for (final entry in kNavigationTriggers.entries) {
+      if (lower == entry.key || lower.contains(entry.key)) {
+        return ParseResult(
+          intent: ChatIntent.unknown,
+          message: '→ ${entry.value}',
+          // The notifier/UI layer reads this route to navigate
+        );
+      }
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // CORRECTION / UNDO
+  // ═══════════════════════════════════════════════════════════════════════
+
+  bool _isCorrectionRequest(String lower) {
+    for (final word in kCorrectionWords) {
+      if (lower == word || lower.startsWith('$word ')) return true;
+    }
+    return false;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // FINANCIAL ADVICE
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -414,12 +455,7 @@ class ChatEngine {
   // ═══════════════════════════════════════════════════════════════════════
 
   ParseResult? _checkSessionContext(String lower) {
-    final contextPhrases = [
-      'add another', 'isa pa', 'another one', 'one more',
-      'dagdag pa', 'ulit', 'again', 'same',
-    ];
-
-    for (final phrase in contextPhrases) {
+    for (final phrase in kRepeatWords) {
       if (lower.contains(phrase)) {
         // Check if we have context from a previous action
         if (_lastIntent != null) {
@@ -858,6 +894,11 @@ class ChatEngine {
       if (_containsWord(lower, kw)) return _IncomeResult.income;
     }
 
+    // Check expanded income verb patterns
+    for (final verb in kIncomeVerbsExpanded) {
+      if (_containsWord(lower, verb)) return _IncomeResult.income;
+    }
+
     // "binigay sa akin" / "natanggap" = income
     if (lower.contains('sa akin') || lower.contains('natanggap') || lower.contains('tinanggap')) {
       return _IncomeResult.income;
@@ -868,9 +909,21 @@ class ChatEngine {
       return _IncomeResult.income;
     }
 
+    // "binigay/bigay" + family word = expense (giving TO family)
+    if (_containsAny(lower, ['binigay', 'bigay', 'ibinigay', 'ibigay'])) {
+      for (final fw in kFamilyWords) {
+        if (_containsWord(lower, fw)) return _IncomeResult.expense;
+      }
+    }
+
     // Check ambiguous
     for (final kw in kAmbiguousIncomeKeywords) {
       if (_containsWord(lower, kw)) return _IncomeResult.ambiguous;
+    }
+
+    // Check expanded expense verb patterns (reinforces expense default)
+    for (final verb in kExpenseVerbsExpanded) {
+      if (_containsWord(lower, verb)) return _IncomeResult.expense;
     }
 
     // Default: expense

@@ -589,3 +589,61 @@ const Set<String> kDanglingPrepositions = {
 
 /// "pang-" prefix words — strip prefix to get root word for category lookup.
 final RegExp kPangPrefix = RegExp(r'^(?:pang|pinang|ipang|ipinang)(.+)$');
+
+// ═══════════════════════════════════════════════════════════════════════
+// CORRECTION / UNDO WORDS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kCorrectionWords = {
+  'mali', 'wrong', 'undo', 'i-undo', 'cancel', 'hindi yun',
+  'delete that', 'remove that', 'tanggalin', 'burahin',
+  'oops', 'ay mali', 'mali pala', 'hindi pala', 'di pala',
+  'correct', 'itama', 'palitan', 'change', 'edit',
+  'hindi yan', 'di yan', 'not that', 'that\'s wrong',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// REPEAT / CONTEXT WORDS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kRepeatWords = {
+  'add another', 'isa pa', 'another one', 'one more',
+  'dagdag pa', 'ulit', 'again', 'same', 'same ulit',
+  'ganun din', 'pareho', 'repeat', 'ditto',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// EXPANDED EXPENSE VERB PATTERNS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kExpenseVerbsExpanded = {
+  // Shopping apps
+  'nag-shopee', 'shopee', 'nag-lazada', 'lazada',
+  'nag-online-shop', 'online shopping', 'online bilihan',
+  // Delivery apps
+  'nag-grab-food', 'grab food', 'grabfood',
+  'nag-foodpanda', 'foodpanda', 'food panda',
+  'nag-order', 'inorder', 'nag-deliver', 'nagpa-deliver',
+  // Common Filipino verbs
+  'pinambili', 'pinambayad', 'pinang-order',
+  'chinarge', 'kinuha', 'nabili', 'inubos',
+  'nagpa-', 'pinag-', 'ginastos',
+  'bumayad', 'nagpaload', 'nagpa-load', 'nagload',
+  'nagpalaba', 'nagpaayos', 'nagparepair',
+  'nagtip', 'tipped', 'tip',
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// EXPANDED INCOME PATTERNS
+// ═══════════════════════════════════════════════════════════════════════
+
+const Set<String> kIncomeVerbsExpanded = {
+  'kinita', 'kita', 'tinubo', 'tubo', 'nakuha',
+  'nareceive', 'napasok', 'nacredit',
+  'bonus', 'allowance', 'baon',
+  'padala', 'remittance', 'nag-padala', 'pinadala',
+  'refund', 'cashback', 'cash back', 'rebate',
+  'benta', 'nabenta', 'sold', 'pinagbentahan',
+  'freelance', 'sideline', 'side hustle', 'raket',
+  'commission', 'incentive', 'overtime', 'ot pay',
+};
