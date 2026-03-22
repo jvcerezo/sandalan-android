@@ -90,6 +90,39 @@ class LocalBudgetRepository {
     }
   }
 
+  /// Roll over budgets from [fromMonth] to [toMonth], carrying unused amounts forward.
+  /// [spentByCategory] maps lowercase category names to total spent (positive values).
+  /// New limit = original limit + (original limit - spent). Minimum is the original limit.
+  Future<int> rolloverBudgets({
+    required DateTime fromMonth,
+    required DateTime toMonth,
+    required Map<String, double> spentByCategory,
+    String period = 'monthly',
+  }) async {
+    final existing = await getBudgets(fromMonth, period);
+    final current = await getBudgets(toMonth, period);
+    final currentCategories = current.map((b) => b.category).toSet();
+
+    int created = 0;
+    for (final budget in existing) {
+      if (currentCategories.contains(budget.category)) continue;
+
+      final spent = spentByCategory[budget.category] ?? 0;
+      final unused = (budget.amount - spent).clamp(0, double.infinity);
+      final newAmount = budget.amount + unused;
+
+      await createBudget(
+        category: budget.category,
+        amount: newAmount,
+        month: toMonth,
+        period: period,
+        rollover: true,
+      );
+      created++;
+    }
+    return created;
+  }
+
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   Budget _rowToBudget(Map<String, dynamic> row) {

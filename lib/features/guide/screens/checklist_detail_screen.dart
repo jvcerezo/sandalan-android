@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/services/progress_sync_service.dart';
 import '../../../data/guide/guide_data.dart';
 
 class ChecklistDetailScreen extends StatefulWidget {
@@ -53,6 +54,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     await prefs.setStringList('checklist_done', done);
     await prefs.setStringList('checklist_skipped', skipped);
     setState(() { _isDone = true; _isSkipped = false; });
+    ProgressSyncService.instance.pushAfterChange();
   }
 
   Future<void> _markSkipped() async {
@@ -65,6 +67,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     await prefs.setStringList('checklist_done', done);
     await prefs.setStringList('checklist_skipped', skipped);
     setState(() { _isDone = false; _isSkipped = true; });
+    ProgressSyncService.instance.pushAfterChange();
   }
 
   @override
@@ -323,6 +326,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                   done.remove(widget.itemId);
                   await prefs.setStringList('checklist_done', done);
                   setState(() => _isDone = false);
+                  ProgressSyncService.instance.pushAfterChange();
                 } : _markDone,
                 icon: Icon(_isDone ? LucideIcons.undo2 : LucideIcons.circle, size: 16),
                 label: Text(_isDone ? 'Undo' : 'Mark as Done'),

@@ -99,6 +99,21 @@ class AuthRepository {
     await _client.from('profiles').update(updates).eq('id', userId);
   }
 
+  /// Update checklist/guide progress to Supabase profile.
+  Future<void> updateProgress({
+    required List<String> checklistDone,
+    required List<String> checklistSkipped,
+    required List<String> guidesRead,
+  }) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    await _client.from('profiles').update({
+      'checklist_done': checklistDone,
+      'checklist_skipped': checklistSkipped,
+      'guides_read': guidesRead,
+    }).eq('id', userId);
+  }
+
   /// Delete account (signs out first, then deletes via edge function or RPC).
   Future<void> deleteAccount() async {
     await _client.auth.signOut();

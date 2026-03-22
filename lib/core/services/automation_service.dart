@@ -8,6 +8,7 @@ import '../../data/repositories/local_debt_repository.dart';
 import '../../data/repositories/local_insurance_repository.dart';
 import '../../data/repositories/local_transaction_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
+import 'net_worth_service.dart';
 import 'notification_service.dart';
 import 'streak_service.dart';
 import 'weekly_recap_service.dart';
@@ -76,6 +77,9 @@ class AutomationService {
     if (prefs.getBool(AutomationKeys.dailyLogReminder) ?? true) {
       await _scheduleDailyLogReminder(db, client);
     }
+
+    // ── Record daily net worth snapshot ────────────────────────────────────
+    await _recordNetWorthSnapshot(db, client);
 
     // ── Schedule weekly recap notification (Sunday 10 AM) ─────────────────
     await _scheduleWeeklyRecap(db, client);
@@ -475,6 +479,19 @@ class AutomationService {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('AutomationService: daily log reminder failed: $e');
+    }
+  }
+
+  // ── Net worth snapshot ──────────────────────────────────────────────────
+
+  static Future<void> _recordNetWorthSnapshot(AppDatabase db, SupabaseClient client) async {
+    try {
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return;
+      final service = NetWorthService(db, userId);
+      await service.recordSnapshot();
+    } catch (e) {
+      if (kDebugMode) debugPrint('AutomationService: net worth snapshot failed: $e');
     }
   }
 

@@ -2,116 +2,134 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/categories.dart';
 import '../../../data/models/budget.dart';
+import '../../../data/repositories/transaction_repository.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../transactions/providers/transaction_providers.dart';
 import '../providers/budget_providers.dart';
 import '../widgets/add_budget_dialog.dart';
+import '../widgets/budget_rollover_dialog.dart';
 
-class BudgetsScreen extends ConsumerWidget {
+class BudgetsScreen extends ConsumerStatefulWidget {
   const BudgetsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final budgets = ref.watch(budgetsProvider);
-    final period = ref.watch(budgetPeriodProvider);
-    final month = ref.watch(budgetMonthProvider);
+  ConsumerState<BudgetsScreen> createState() => _BudgetsScreenState();
+}
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Header
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          const Text('Budgets', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          FilledButton.icon(
-            onPressed: () => _showAddBudget(context, ref),
-            icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add'),
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-          ),
-        ]),
-        const SizedBox(height: 12),
+class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
+  bool _rolloverCheckDone = false;
 
-        // Monthly label + copy from last month
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text('Monthly', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: () => _copyFromLastMonth(context, ref, month),
-            icon: Icon(LucideIcons.copy, size: 14, color: colorScheme.primary),
-            label: Text('Copy last month', style: TextStyle(fontSize: 12, color: colorScheme.primary)),
-            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-          ),
-        ]),
-        const SizedBox(height: 12),
-
-        // Month nav
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          IconButton(
-            onPressed: () {
-              final prev = DateTime(month.year, month.month - 1, 1);
-              ref.read(budgetMonthProvider.notifier).state = prev;
-            },
-            icon: const Icon(LucideIcons.chevronLeft, size: 18),
-          ),
-          Text(DateFormat('MMMM yyyy').format(month),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          IconButton(
-            onPressed: () {
-              final next = DateTime(month.year, month.month + 1, 1);
-              ref.read(budgetMonthProvider.notifier).state = next;
-            },
-            icon: const Icon(LucideIcons.chevronRight, size: 18),
-          ),
-        ]),
-        const SizedBox(height: 12),
-
-        // Budget list
-        budgets.when(
-          data: (list) {
-            if (list.isEmpty) {
-              return EmptyState(
-                icon: LucideIcons.pieChart,
-                title: 'No budgets for this period',
-                subtitle: 'Create budgets to track your spending by category.',
-                action: FilledButton.icon(
-                  onPressed: () => _showAddBudget(context, ref),
-                  icon: const Icon(LucideIcons.plus, size: 16),
-                  label: const Text('Add Budget'),
-                ),
-              );
-            }
-
-            final totalBudget = list.fold(0.0, (s, b) => s + b.amount);
-
-            return Column(children: [
-              // Summary
-              Row(children: [
-                _SummaryCard(label: 'Total Budget', value: formatCurrency(totalBudget),
-                    color: colorScheme.primary),
-              ]),
-              const SizedBox(height: 12),
-              ...list.map((b) => _BudgetCard(budget: b)),
-            ]);
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
-        ),
-      ],
-    );
+  @override
+  void initState() {
+    super.initState();
+    // Schedule the rollover check after the first frame so providers are available.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkRollover();
+    });
   }
 
-  void _showAddBudget(BuildContext context, WidgetRef ref) {
+  Future<void> _checkRollover() async {
+    if (_rolloverCheckDone) return;
+    _rolloverCheckDone = true;
+
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month, 1);
+    final monthKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+
+    final prefs = await SharedPreferences.getInstance();
+    final shownKey = 'budget_rollover_shown_$monthKey';
+    final alreadyShown = prefs.getBool(shownKey) ?? false;
+    if (alreadyShown) return;
+
+    // Check if viewing current month and budgets are empty
+    final viewedMonth = ref.read(budgetMonthProvider);
+    if (viewedMonth.year != currentMonth.year || viewedMonth.month != currentMonth.month) return;
+
+    // Wait for budgets to load
+    final repo = ref.read(budgetRepositoryProvider);
+    final currentBudgets = await repo.getBudgets(currentMonth, 'monthly');
+    if (currentBudgets.isNotEmpty) {
+      // Already has budgets for this month, mark as shown
+      await prefs.setBool(shownKey, true);
+      return;
+    }
+
+    // Check if there were budgets last month (otherwise nothing to roll over)
+    final lastMonth = DateTime(currentMonth.year, currentMonth.month - 1, 1);
+    final lastMonthBudgets = await repo.getBudgets(lastMonth, 'monthly');
+    if (lastMonthBudgets.isEmpty) return;
+
+    // Check for auto-rollover preference
+    final autoRollover = prefs.getBool('budget_auto_rollover') ?? false;
+    if (autoRollover) {
+      await _performRollover(currentMonth, lastMonth);
+      await prefs.setBool(shownKey, true);
+      return;
+    }
+
+    // Show the popup
+    if (!mounted) return;
+    final result = await showDialog<BudgetRolloverResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => BudgetRolloverDialog(currentMonth: currentMonth),
+    );
+
+    if (result == null || result.choice == BudgetRolloverChoice.dismiss) return;
+
+    // Save auto-rollover preference if checked
+    if (result.autoRollover) {
+      await prefs.setBool('budget_auto_rollover', true);
+    }
+
+    // Mark as shown for this month
+    await prefs.setBool(shownKey, true);
+
+    if (result.choice == BudgetRolloverChoice.rollover) {
+      await _performRollover(currentMonth, lastMonth);
+    }
+    // If startFresh, do nothing — no budgets created
+  }
+
+  Future<void> _performRollover(DateTime currentMonth, DateTime lastMonth) async {
+    final repo = ref.read(budgetRepositoryProvider);
+
+    // Compute spending by category for last month from transactions
+    final lastMonthStart = lastMonth;
+    final lastMonthEnd = DateTime(currentMonth.year, currentMonth.month, 0); // last day of previous month
+    final txnRepo = ref.read(transactionRepositoryProvider);
+    final transactions = await txnRepo.getTransactions(TransactionFilters(
+      startDate: lastMonthStart,
+      endDate: lastMonthEnd,
+    ));
+
+    final spentByCategory = <String, double>{};
+    for (final t in transactions) {
+      if (t.amount >= 0 || t.category.toLowerCase() == 'transfer') continue;
+      spentByCategory[t.category] = (spentByCategory[t.category] ?? 0) + t.amount.abs();
+    }
+
+    final created = await repo.rolloverBudgets(
+      fromMonth: lastMonth,
+      toMonth: currentMonth,
+      spentByCategory: spentByCategory,
+    );
+
+    ref.invalidate(budgetsProvider);
+
+    if (mounted && created > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Rolled over $created budget${created == 1 ? '' : 's'} with unused amounts')),
+      );
+    }
+  }
+
+  void _showAddBudget(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -120,7 +138,7 @@ class BudgetsScreen extends ConsumerWidget {
     ).then((_) => ref.invalidate(budgetsProvider));
   }
 
-  Future<void> _copyFromLastMonth(BuildContext context, WidgetRef ref, DateTime currentMonth) async {
+  Future<void> _copyFromLastMonth(BuildContext context, DateTime currentMonth) async {
     final lastMonth = DateTime(currentMonth.year, currentMonth.month - 1, 1);
     final repo = ref.read(budgetRepositoryProvider);
 
@@ -174,6 +192,104 @@ class BudgetsScreen extends ConsumerWidget {
         SnackBar(content: Text('Copied $copied budget${copied == 1 ? '' : 's'} from ${DateFormat('MMMM').format(lastMonth)}')),
       );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final budgets = ref.watch(budgetsProvider);
+    final period = ref.watch(budgetPeriodProvider);
+    final month = ref.watch(budgetMonthProvider);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Header
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Budgets', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          FilledButton.icon(
+            onPressed: () => _showAddBudget(context),
+            icon: const Icon(LucideIcons.plus, size: 16),
+            label: const Text('Add'),
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        // Monthly label + copy from last month
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text('Monthly', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: () => _copyFromLastMonth(context, month),
+            icon: Icon(LucideIcons.copy, size: 14, color: colorScheme.primary),
+            label: Text('Copy last month', style: TextStyle(fontSize: 12, color: colorScheme.primary)),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        // Month nav
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          IconButton(
+            onPressed: () {
+              final prev = DateTime(month.year, month.month - 1, 1);
+              ref.read(budgetMonthProvider.notifier).state = prev;
+            },
+            icon: const Icon(LucideIcons.chevronLeft, size: 18),
+          ),
+          Text(DateFormat('MMMM yyyy').format(month),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          IconButton(
+            onPressed: () {
+              final next = DateTime(month.year, month.month + 1, 1);
+              ref.read(budgetMonthProvider.notifier).state = next;
+            },
+            icon: const Icon(LucideIcons.chevronRight, size: 18),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        // Budget list
+        budgets.when(
+          data: (list) {
+            if (list.isEmpty) {
+              return EmptyState(
+                icon: LucideIcons.pieChart,
+                title: 'No budgets for this period',
+                subtitle: 'Create budgets to track your spending by category.',
+                action: FilledButton.icon(
+                  onPressed: () => _showAddBudget(context),
+                  icon: const Icon(LucideIcons.plus, size: 16),
+                  label: const Text('Add Budget'),
+                ),
+              );
+            }
+
+            final totalBudget = list.fold(0.0, (s, b) => s + b.amount);
+
+            return Column(children: [
+              // Summary
+              Row(children: [
+                _SummaryCard(label: 'Total Budget', value: formatCurrency(totalBudget),
+                    color: colorScheme.primary),
+              ]),
+              const SizedBox(height: 12),
+              ...list.map((b) => _BudgetCard(budget: b)),
+            ]);
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('Error: $e')),
+        ),
+      ],
+    );
   }
 }
 

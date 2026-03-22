@@ -8,6 +8,7 @@ import 'core/router/app_router.dart';
 import 'core/services/guest_mode_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/automation_service.dart';
+import 'core/services/progress_sync_service.dart';
 import 'core/services/sync_service.dart';
 import 'data/local/app_database.dart';
 
@@ -41,6 +42,9 @@ Future<void> main() async {
     final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
     syncService.fullSync(); // Initial sync on app start (fire-and-forget).
     syncService.startDailySync(); // Once-daily sync + on app background.
+
+    // Sync checklist/guide progress from cloud (merge with local).
+    ProgressSyncService.instance.pullAndMerge();
   }
 
   runApp(

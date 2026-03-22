@@ -186,6 +186,19 @@ class AppDatabase {
       )
     ''');
 
+    // ─── Net Worth Snapshots ────────────────────────────────────────────────
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS net_worth_snapshots (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        total REAL NOT NULL,
+        breakdown TEXT,
+        created_at TEXT NOT NULL DEFAULT '',
+        UNIQUE(user_id, date)
+      )
+    ''');
+
     // ─── Chat AI tables ───────────────────────────────────────────────────
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS learned_keywords (
@@ -240,6 +253,7 @@ class AppDatabase {
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bills_user ON local_bills(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_debts_user ON local_debts(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_net_worth_user_date ON net_worth_snapshots(user_id, date DESC)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_learned_keyword ON learned_keywords(user_id, keyword)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_chat_report_sync ON chat_report_queue(user_id, sync_status)');
 
@@ -258,6 +272,22 @@ class AppDatabase {
         // Column already exists — safe to ignore
       }
     }
+
+    // v10: net_worth_snapshots table (handled by CREATE TABLE IF NOT EXISTS above,
+    // but ensure the table exists for older installs that skip _createTables partially)
+    try {
+      await _db.customStatement('''
+        CREATE TABLE IF NOT EXISTS net_worth_snapshots (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          date TEXT NOT NULL,
+          total REAL NOT NULL,
+          breakdown TEXT,
+          created_at TEXT NOT NULL DEFAULT '',
+          UNIQUE(user_id, date)
+        )
+      ''');
+    } catch (_) {}
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -584,6 +614,33 @@ class AppDatabase {
     await _db.customStatement('DELETE FROM local_insurance WHERE id = ?', [id]);
   }
 
+  // ─── Net Worth Snapshots ─────────────────────────────────────────────────
+
+  Future<void> upsertNetWorthSnapshot(Map<String, dynamic> row) async {
+    final columns = row.keys.join(', ');
+    final placeholders = row.keys.map((_) => '?').join(', ');
+    final updateClauses = row.keys
+        .where((k) => k != 'id' && k != 'user_id' && k != 'date')
+        .map((k) => '$k = excluded.$k')
+        .join(', ');
+
+    await _db.customStatement(
+      'INSERT INTO net_worth_snapshots ($columns) VALUES ($placeholders) '
+      'ON CONFLICT(user_id, date) DO UPDATE SET $updateClauses',
+      row.values.toList(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getNetWorthSnapshots(String userId, {int months = 6}) async {
+    final cutoff = DateTime.now().subtract(Duration(days: months * 31));
+    final cutoffStr = '${cutoff.year}-${cutoff.month.toString().padLeft(2, '0')}-${cutoff.day.toString().padLeft(2, '0')}';
+    final results = await _db.customSelect(
+      'SELECT * FROM net_worth_snapshots WHERE user_id = ? AND date >= ? ORDER BY date DESC',
+      variables: [Variable.withString(userId), Variable.withString(cutoffStr)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
   // ─── Learned Keywords ────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>?> getLearnedKeyword(String keyword, {required String userId}) async {
@@ -704,6 +761,47 @@ class AppDatabase {
     await _db.customStatement('DELETE FROM $table WHERE id = ?', [id]);
   }
 
+  // ─── Sync status counts ─────────────────────────────────────────────────
+
+  static const _syncTables = [
+    'local_transactions',
+    'local_accounts',
+    'local_budgets',
+    'local_goals',
+    'local_contributions',
+    'local_bills',
+    'local_debts',
+    'local_insurance',
+  ];
+
+  /// Returns aggregate sync_status counts across all sync-enabled tables.
+  /// Keys: 'pending', 'failed', 'synced' (defaults to 0).
+  Future<Map<String, int>> getSyncStatusCounts(String userId) async {
+    final counts = <String, int>{'pending': 0, 'failed': 0, 'synced': 0};
+    for (final table in _syncTables) {
+      final results = await _db.customSelect(
+        'SELECT sync_status, COUNT(*) as cnt FROM $table WHERE user_id = ? GROUP BY sync_status',
+        variables: [Variable.withString(userId)],
+      ).get();
+      for (final row in results) {
+        final status = row.data['sync_status'] as String;
+        final cnt = row.data['cnt'] as int;
+        counts[status] = (counts[status] ?? 0) + cnt;
+      }
+    }
+    return counts;
+  }
+
+  /// Delete all rows with sync_status='failed' across sync-enabled tables.
+  Future<void> clearFailedRows(String userId) async {
+    for (final table in _syncTables) {
+      await _db.customStatement(
+        "DELETE FROM $table WHERE user_id = ? AND sync_status = 'failed'",
+        [userId],
+      );
+    }
+  }
+
   // ─── Clear all data ──────────────────────────────────────────────────────
 
   Future<void> clearAllData(String userId) async {
@@ -716,6 +814,7 @@ class AppDatabase {
       'local_bills',
       'local_debts',
       'local_insurance',
+      'net_worth_snapshots',
       'learned_keywords',
       'chat_report_queue',
     ]) {

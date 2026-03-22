@@ -11,16 +11,82 @@ import '../../../shared/widgets/tour_overlay.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
 
-class AccountSection extends ConsumerWidget {
+class AccountSection extends ConsumerStatefulWidget {
   final Widget back;
   const AccountSection({super.key, required this.back});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AccountSection> createState() => _AccountSectionState();
+}
+
+class _AccountSectionState extends ConsumerState<AccountSection> {
+  Map<String, int> _counts = {'pending': 0, 'failed': 0, 'synced': 0};
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounts();
+  }
+
+  Future<void> _loadCounts() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    final counts = await AppDatabase.instance.getSyncStatusCounts(userId);
+    if (mounted) setState(() => _counts = counts);
+  }
+
+  Future<void> _syncNow() async {
+    setState(() => _isSyncing = true);
+    try {
+      final client = Supabase.instance.client;
+      await SyncService(client, AppDatabase.instance).fullSync();
+    } finally {
+      await _loadCounts();
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
+
+  Future<void> _clearQueue() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear failed items?'),
+        content: const Text(
+            'This will permanently delete all failed offline changes. '
+            'They will not be synced to the server.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Clear')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    await AppDatabase.instance.clearFailedRows(userId);
+    await _loadCounts();
+  }
+
+  String _statusText() {
+    final pending = _counts['pending'] ?? 0;
+    final failed = _counts['failed'] ?? 0;
+    final total = pending + failed;
+    if (total == 0) return 'All changes synced.';
+    final parts = <String>[];
+    if (pending > 0) parts.add('$pending pending');
+    if (failed > 0) parts.add('$failed failed');
+    return '${parts.join(', ')} ${total == 1 ? 'change' : 'changes'} queued.';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isGuest = GuestModeService.isGuestSync();
     return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 80), children: [
-      back,
+      widget.back,
 
       // Guest banner
       if (isGuest) ...[
@@ -72,29 +138,33 @@ class AccountSection extends ConsumerWidget {
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, children: [
-            _StatusChip('Pending: 0'),
-            _StatusChip('Syncing: 0'),
-            _StatusChip('Failed: 0'),
-            _StatusChip('Conflict: 0'),
+            _StatusChip('Pending: ${_counts['pending'] ?? 0}'),
+            _StatusChip('Failed: ${_counts['failed'] ?? 0}'),
+            _StatusChip('Synced: ${_counts['synced'] ?? 0}'),
           ]),
           const SizedBox(height: 10),
           Row(children: [
             FilledButton.icon(
-                onPressed: () {},
-                icon: const Icon(LucideIcons.refreshCw, size: 14),
-                label: const Text('Sync now'),
+                onPressed: _isSyncing ? null : _syncNow,
+                icon: _isSyncing
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(LucideIcons.refreshCw, size: 14),
+                label: Text(_isSyncing ? 'Syncing...' : 'Sync now'),
                 style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
             const SizedBox(width: 8),
             OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: (_counts['failed'] ?? 0) == 0 ? null : _clearQueue,
                 icon: const Icon(LucideIcons.trash2, size: 14),
                 label: const Text('Clear queue'),
                 style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8))),
           ]),
           const SizedBox(height: 6),
-          Text('No queued offline changes.',
+          Text(_statusText(),
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         ])),
         const SizedBox(height: 12),

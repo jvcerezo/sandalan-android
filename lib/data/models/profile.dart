@@ -12,6 +12,9 @@ class Profile {
   final String? lifeStage; // e.g. 'unang-hakbang', 'pundasyon', etc.
   final String? userType; // e.g. 'employee', 'freelancer', 'student', etc.
   final List<String> focusAreas; // e.g. ['track-expenses', 'budget-salary']
+  final List<String> checklistDone;
+  final List<String> checklistSkipped;
+  final List<String> guidesRead;
 
   const Profile({
     required this.id,
@@ -25,6 +28,9 @@ class Profile {
     this.lifeStage,
     this.userType,
     this.focusAreas = const [],
+    this.checklistDone = const [],
+    this.checklistSkipped = const [],
+    this.guidesRead = const [],
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
@@ -43,6 +49,18 @@ class Profile {
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      checklistDone: (json['checklist_done'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      checklistSkipped: (json['checklist_skipped'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      guidesRead: (json['guides_read'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
   }
 
@@ -58,12 +76,18 @@ class Profile {
         'life_stage': lifeStage,
         'user_type': userType,
         'focus_areas': focusAreas,
+        'checklist_done': checklistDone,
+        'checklist_skipped': checklistSkipped,
+        'guides_read': guidesRead,
       };
 
   Profile copyWith({
     String? lifeStage,
     String? userType,
     List<String>? focusAreas,
+    List<String>? checklistDone,
+    List<String>? checklistSkipped,
+    List<String>? guidesRead,
   }) {
     return Profile(
       id: id,
@@ -77,6 +101,9 @@ class Profile {
       lifeStage: lifeStage ?? this.lifeStage,
       userType: userType ?? this.userType,
       focusAreas: focusAreas ?? this.focusAreas,
+      checklistDone: checklistDone ?? this.checklistDone,
+      checklistSkipped: checklistSkipped ?? this.checklistSkipped,
+      guidesRead: guidesRead ?? this.guidesRead,
     );
   }
 

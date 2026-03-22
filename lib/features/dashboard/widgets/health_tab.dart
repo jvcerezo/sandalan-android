@@ -10,6 +10,7 @@ import '../../accounts/providers/account_providers.dart';
 import '../../budgets/providers/budget_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import 'dashboard_widgets.dart';
+import 'net_worth_chart.dart';
 
 class HealthTab extends ConsumerWidget {
   const HealthTab({super.key});
@@ -145,6 +146,10 @@ class HealthTab extends ConsumerWidget {
         }
 
         return Column(children: [
+          // Net Worth History Chart
+          const NetWorthChart(),
+          const SizedBox(height: 12),
+
           // Financial Health Score
           OverviewCard(
             child: Semantics(
