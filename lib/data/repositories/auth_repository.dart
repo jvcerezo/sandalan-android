@@ -85,16 +85,12 @@ class AuthRepository {
   Future<AuthResponse> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn.instance;
 
-    // Initialize with the web client ID (server client ID for Supabase).
-    // On Android, the native client ID comes from google-services.json.
-    // The serverClientId must be the Web type OAuth client ID.
-    const webClientId = String.fromEnvironment(
-      'GOOGLE_WEB_CLIENT_ID',
-      defaultValue: '',
-    );
+    // The serverClientId is the Web-type OAuth 2.0 Client ID from Google Cloud Console.
+    // This is a public identifier (not a secret) — safe to embed in client code.
+    const webClientId = '876950718575-p4a1p12d38qqdna9oa1oco7c1itusjpe.apps.googleusercontent.com';
 
     await googleSignIn.initialize(
-      serverClientId: webClientId.isNotEmpty ? webClientId : null,
+      serverClientId: webClientId,
     );
 
     final account = await googleSignIn.authenticate();
