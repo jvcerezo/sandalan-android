@@ -158,6 +158,7 @@ class SyncService with WidgetsBindingObserver {
       ('bills', 'local_bills'),
       ('debts', 'local_debts'),
       ('insurance_policies', 'local_insurance'),
+      ('investments', 'local_investments'),
     ];
 
     final prefs = await SharedPreferences.getInstance();
@@ -274,6 +275,9 @@ class SyncService with WidgetsBindingObserver {
       case 'local_insurance':
         await _db.upsertInsurance(row);
         break;
+      case 'local_investments':
+        await _db.upsertInvestment(row);
+        break;
     }
   }
 
@@ -310,6 +314,7 @@ class SyncService with WidgetsBindingObserver {
       _pushTable('local_bills', 'bills'),
       _pushTable('local_debts', 'debts'),
       _pushTable('local_insurance', 'insurance_policies'),
+      _pushTable('local_investments', 'investments'),
     ]);
   }
 
