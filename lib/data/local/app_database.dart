@@ -399,6 +399,61 @@ class AppDatabase {
     return results.map((r) => r.data).toList();
   }
 
+  /// Keyset (cursor-based) pagination for transactions — efficient for infinite scroll.
+  /// Pass [cursorDate] and [cursorId] from the last item of the previous page.
+  /// Results are ordered by date DESC, id DESC.
+  Future<List<Map<String, dynamic>>> getTransactionsAfterCursor(
+    String userId, {
+    String? cursorDate,
+    String? cursorId,
+    int limit = 20,
+    String? category,
+    String? type,
+    String? search,
+    String? startDate,
+    String? endDate,
+    String? accountId,
+  }) async {
+    var where = 'WHERE user_id = ?';
+    final vars = <Variable>[Variable.withString(userId)];
+
+    if (cursorDate != null && cursorId != null) {
+      where += ' AND (date < ? OR (date = ? AND id < ?))';
+      vars.add(Variable.withString(cursorDate));
+      vars.add(Variable.withString(cursorDate));
+      vars.add(Variable.withString(cursorId));
+    }
+
+    if (category != null) {
+      where += ' AND category = ?';
+      vars.add(Variable.withString(category));
+    }
+    if (accountId != null) {
+      where += ' AND account_id = ?';
+      vars.add(Variable.withString(accountId));
+    }
+    if (startDate != null) {
+      where += ' AND date >= ?';
+      vars.add(Variable.withString(startDate));
+    }
+    if (endDate != null) {
+      where += ' AND date <= ?';
+      vars.add(Variable.withString(endDate));
+    }
+    if (type == 'income') where += ' AND amount > 0';
+    if (type == 'expense') where += ' AND amount < 0';
+    if (search != null && search.isNotEmpty) {
+      where += ' AND description LIKE ?';
+      vars.add(Variable.withString('%$search%'));
+    }
+
+    final results = await _db.customSelect(
+      'SELECT * FROM local_transactions $where ORDER BY date DESC, id DESC LIMIT $limit',
+      variables: vars,
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
   Future<int> getFilteredTransactionsCount(
     String userId, {
     String? category,
@@ -438,6 +493,25 @@ class AppDatabase {
 
   Future<void> upsertTransaction(Map<String, dynamic> values) => _upsert('local_transactions', values);
 
+  /// Get total spent for a specific category in a given month.
+  /// Used by budget threshold checks. Returns the absolute sum of expenses.
+  Future<double> getCategorySpentTotal(String userId, String monthStr, String category) async {
+    // monthStr is like '2026-03-01'; extract YYYY-MM for LIKE match
+    final monthPrefix = monthStr.substring(0, 7);
+    final results = await _db.customSelect(
+      '''SELECT COALESCE(SUM(ABS(amount)), 0) as total
+         FROM local_transactions
+         WHERE user_id = ? AND date LIKE ? AND amount < 0
+           AND status = 'confirmed' AND category = ?''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString('$monthPrefix%'),
+        Variable.withString(category),
+      ],
+    ).get();
+    return (results.first.data['total'] as num).toDouble();
+  }
+
   /// Get income/expense totals using SQL aggregation (avoids loading all rows into Dart).
   Future<Map<String, double>> getTransactionsSummaryAggregate(
     String userId, {
@@ -471,6 +545,117 @@ class AppDatabase {
       variables: [Variable.withString(userId)],
     ).get();
     return (results.first.data['total'] as num).toDouble();
+  }
+
+  /// Get category spending totals for a given month using SQL aggregation.
+  /// Returns rows with {category, total} for expense categories only.
+  Future<List<Map<String, dynamic>>> getCategoryTotals(String userId, String monthStr) async {
+    final results = await _db.customSelect(
+      '''SELECT category, SUM(ABS(amount)) as total
+         FROM local_transactions
+         WHERE user_id = ? AND date LIKE ? AND amount < 0
+           AND status = 'confirmed'
+           AND LOWER(category) NOT IN ('transfer', 'goal funding')
+         GROUP BY category
+         ORDER BY total DESC''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString('$monthStr%'),
+      ],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  /// Get monthly income/expense totals for the last N months using SQL aggregation.
+  /// Returns rows with {month, income, expenses}.
+  Future<List<Map<String, dynamic>>> getMonthlyTotals(String userId, int months) async {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month - months + 1, 1);
+    final startStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-01';
+
+    final results = await _db.customSelect(
+      '''SELECT substr(date, 1, 7) as month,
+            SUM(CASE WHEN amount > 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') THEN amount ELSE 0 END) as income,
+            SUM(CASE WHEN amount < 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') THEN ABS(amount) ELSE 0 END) as expenses
+         FROM local_transactions
+         WHERE user_id = ? AND status = 'confirmed' AND date >= ?
+         GROUP BY month
+         ORDER BY month''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString(startStr),
+      ],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  /// Get transaction summary (income, expenses, count) for a month using SQL aggregation.
+  Future<Map<String, dynamic>> getTransactionsSummaryFromDb(String userId, String monthStr) async {
+    final results = await _db.customSelect(
+      '''SELECT
+            COALESCE(SUM(CASE WHEN amount > 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') THEN amount ELSE 0 END), 0) as income,
+            COALESCE(SUM(CASE WHEN amount < 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') THEN ABS(amount) ELSE 0 END), 0) as expenses,
+            COUNT(*) as count
+         FROM local_transactions
+         WHERE user_id = ? AND date LIKE ? AND status = 'confirmed'
+           AND LOWER(category) NOT IN ('transfer', 'goal funding')''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString('$monthStr%'),
+      ],
+    ).get();
+    final row = results.first.data;
+    return {
+      'income': (row['income'] as num).toDouble(),
+      'expenses': (row['expenses'] as num).toDouble(),
+      'count': (row['count'] as num).toInt(),
+    };
+  }
+
+  /// Get monthly net amounts (income + expense combined) for net worth calculation.
+  /// Returns rows with {month, net} where net = SUM(amount) excluding transfers.
+  Future<List<Map<String, dynamic>>> getMonthlyNetTotals(String userId, int months) async {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month - months + 1, 1);
+    final startStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-01';
+
+    final results = await _db.customSelect(
+      '''SELECT substr(date, 1, 7) as month,
+            SUM(amount) as net
+         FROM local_transactions
+         WHERE user_id = ? AND status = 'confirmed' AND date >= ?
+           AND LOWER(category) != 'transfer'
+         GROUP BY month
+         ORDER BY month''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString(startStr),
+      ],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  /// Get per-category expense totals for two specific months (for compare view).
+  /// Returns rows with {category, month, total}.
+  Future<List<Map<String, dynamic>>> getCategoryTotalsForMonths(
+    String userId, String month1, String month2,
+  ) async {
+    final results = await _db.customSelect(
+      '''SELECT category, substr(date, 1, 7) as month, SUM(ABS(amount)) as total
+         FROM local_transactions
+         WHERE user_id = ? AND amount < 0
+           AND status = 'confirmed'
+           AND LOWER(category) NOT IN ('transfer', 'goal funding')
+           AND (date LIKE ? OR date LIKE ?)
+         GROUP BY category, month
+         ORDER BY total DESC''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString('$month1%'),
+        Variable.withString('$month2%'),
+      ],
+    ).get();
+    return results.map((r) => r.data).toList();
   }
 
   Future<List<Map<String, dynamic>>> getPendingTransactions(String userId) async {

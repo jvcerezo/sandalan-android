@@ -34,6 +34,18 @@ class ChatEngine {
 
   ChatEngine(this._learnedRepo, this._getAccounts);
 
+  /// Reset session context (call on user change to prevent state leaks).
+  void clearSessionContext() {
+    _lastIntent = null;
+    _lastCategory = null;
+    _lastAccountId = null;
+  }
+
+  /// Force personality to reload from SharedPreferences on next parse.
+  void reloadPersonality() {
+    _personalityLoaded = false;
+  }
+
   /// Load personality from SharedPreferences.
   Future<void> _ensurePersonalityLoaded() async {
     if (_personalityLoaded) return;

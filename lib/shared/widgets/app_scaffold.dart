@@ -10,6 +10,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'brand_mark.dart';
 import 'nav_drawer.dart';
 import 'context_fab.dart';
+import 'sync_indicator.dart';
 import 'universal_search.dart';
 import 'tour_overlay.dart';
 
@@ -116,6 +117,9 @@ class _AppScaffoldState extends State<AppScaffold> {
                           child: BrandMark(size: 28),
                         ),
                       ),
+
+                      // Sync status indicator
+                      const SyncIndicator(),
 
                       // Search
                       IconButton(

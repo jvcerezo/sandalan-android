@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/goal.dart';
 import 'goal_repository.dart';
@@ -46,7 +47,7 @@ class LocalGoalRepository {
     String category = 'Savings',
     String? accountId,
   }) async {
-    final id = _generateId();
+    final id = IdGenerator.goal();
     final now = AppDatabase.now();
     final row = <String, dynamic>{
       'id': id,
@@ -230,7 +231,4 @@ class LocalGoalRepository {
     );
   }
 
-  String _generateId() =>
-      'local-goal-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

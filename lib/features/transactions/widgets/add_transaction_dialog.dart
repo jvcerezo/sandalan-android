@@ -11,37 +11,8 @@ import '../../accounts/providers/account_providers.dart';
 import '../../accounts/widgets/add_account_dialog.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../providers/transaction_providers.dart';
-
-// Formats numbers with thousand separators: 10000 → 10,000
-class _ThousandsSeparatorFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final text = newValue.text.replaceAll(',', '');
-    if (text.isEmpty) return newValue;
-
-    // Split by decimal
-    final parts = text.split('.');
-    final stripped = int.tryParse(parts[0])?.toString() ?? parts[0];
-    String decPart = '';
-    if (parts.length > 1) {
-      final dec = parts[1].length > 2 ? parts[1].substring(0, 2) : parts[1];
-      decPart = '.$dec';
-    }
-
-    // Add commas
-    final buffer = StringBuffer();
-    for (int i = 0; i < stripped.length; i++) {
-      if (i > 0 && (stripped.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(stripped[i]);
-    }
-
-    final formatted = '$buffer$decPart';
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
-}
+import 'split_transaction_section.dart';
+import 'recurring_transaction_section.dart';
 
 class AddTransactionDialog extends ConsumerStatefulWidget {
   final bool isIncome;
@@ -52,12 +23,6 @@ class AddTransactionDialog extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<AddTransactionDialog> createState() => _AddTransactionDialogState();
-}
-
-class _SplitEntry {
-  String? accountId;
-  final TextEditingController amountCtl;
-  _SplitEntry({this.accountId}) : amountCtl = TextEditingController();
 }
 
 class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
@@ -71,7 +36,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   DateTime _date = DateTime.now();
   bool _showRepeat = false;
   bool _showSplit = false;
-  final List<_SplitEntry> _splitEntries = [];
+  final List<SplitEntry> _splitEntries = [];
   int _repeatInterval = 1;
   String _repeatFrequency = 'monthly';
   TimeOfDay? _repeatTime;
@@ -102,8 +67,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       _category = _categories.first;
     }
     // Initialize with 2 split entries
-    _splitEntries.add(_SplitEntry());
-    _splitEntries.add(_SplitEntry());
+    _splitEntries.add(SplitEntry());
+    _splitEntries.add(SplitEntry());
   }
 
   List<String> get _categories => _isIncome ? kIncomeCategories : kExpenseCategories;
@@ -589,136 +554,15 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             ],
 
             // ─── Split mode ─────────────────────────────────────
-            if (_showSplit) ...[
-              Text('Total amount', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-              const SizedBox(height: 4),
-              // Show total from split entries
-              Builder(builder: (_) {
-                double total = 0;
-                for (final e in _splitEntries) {
-                  total += double.tryParse(e.amountCtl.text.replaceAll(',', '')) ?? 0;
-                }
-                return Text('\u20B1 ${_formatWithCommas(total)}',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant));
-              }),
-              const SizedBox(height: 12),
-              Text('Split between accounts', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              ...List.generate(_splitEntries.length, (i) {
-                final entry = _splitEntries[i];
-                final acct = accounts.where((a) => a.id == entry.accountId).firstOrNull;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
-                    borderRadius: BorderRadius.circular(12),
-                    color: cs.surfaceContainerLowest,
-                  ),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    // Account dropdown
-                    Row(children: [
-                      Expanded(
-                        child: PopupMenuButton<String>(
-                          onSelected: (id) => setState(() => entry.accountId = id),
-                          itemBuilder: (_) => accounts.map((a) => PopupMenuItem(
-                            value: a.id,
-                            child: Row(children: [
-                              Expanded(child: Text(a.name, style: const TextStyle(fontSize: 13))),
-                              const SizedBox(width: 8),
-                              Text(formatCurrency(a.balance, currencyCode: a.currency),
-                                  style: TextStyle(fontSize: 11, color: AppColors.income, fontWeight: FontWeight.w600)),
-                            ]),
-                          )).toList(),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                              borderRadius: BorderRadius.circular(8)),
-                            child: Row(children: [
-                              Expanded(child: Text(acct?.name ?? 'Choose an account',
-                                  style: TextStyle(fontSize: 12, color: acct != null ? cs.onSurface : cs.onSurfaceVariant))),
-                              if (acct != null) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    color: cs.primary.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
-                                ),
-                                const SizedBox(width: 4),
-                              ],
-                              Icon(LucideIcons.chevronDown, size: 12, color: cs.onSurfaceVariant),
-                            ]),
-                          ),
-                        ),
-                      ),
-                      if (_splitEntries.length > 2) ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => setState(() => _splitEntries.removeAt(i)),
-                          child: Icon(LucideIcons.x, size: 16, color: cs.onSurfaceVariant),
-                        ),
-                      ],
-                    ]),
-                    if (acct != null) ...[
-                      const SizedBox(height: 4),
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(acct.type, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                        Text(formatCurrency(acct.balance, currencyCode: acct.currency),
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.income)),
-                      ]),
-                    ],
-                    const SizedBox(height: 8),
-                    // Amount for this split
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: cs.outline.withValues(alpha: 0.10)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(children: [
-                        Text('\u20B1', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
-                        const SizedBox(width: 8),
-                        Expanded(child: TextField(
-                          controller: entry.amountCtl,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                            _ThousandsSeparatorFormatter(),
-                          ],
-                          onChanged: (_) => setState(() {}),
-                          decoration: const InputDecoration(
-                            hintText: '0.00', isDense: true,
-                            border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
-                          ),
-                          style: const TextStyle(fontSize: 14),
-                        )),
-                      ]),
-                    ),
-                  ]),
-                );
-              }),
-              // Add account button — styled as outlined chip
-              GestureDetector(
-                onTap: () => setState(() => _splitEntries.add(_SplitEntry())),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(LucideIcons.plus, size: 12, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('Add account', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                  ]),
-                ),
+            if (_showSplit)
+              SplitTransactionSection(
+                entries: _splitEntries,
+                accounts: accounts,
+                cs: cs,
+                onChanged: () => setState(() {}),
+                onAddEntry: () => setState(() => _splitEntries.add(SplitEntry())),
+                onRemoveEntry: (i) => setState(() => _splitEntries.removeAt(i)),
               ),
-              const SizedBox(height: 12),
-            ],
 
             // ─── Normal amount input ──────────────────────────────
             if (!_showSplit) ...[
@@ -732,7 +576,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
-                    _ThousandsSeparatorFormatter(),
+                    ThousandsSeparatorFormatter(),
                   ],
                   autofocus: true,
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
@@ -861,103 +705,16 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
             // Repeat settings (expandable)
             if (_showRepeat) ...[
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.04),
-                  border: Border.all(color: cs.primary.withValues(alpha: 0.15)),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Icon(LucideIcons.repeat, size: 14, color: cs.primary),
-                    const SizedBox(width: 6),
-                    Text('Repeat settings', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.primary)),
-                  ]),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    SizedBox(width: 50, child: TextField(
-                      decoration: const InputDecoration(isDense: true),
-                      keyboardType: TextInputType.number,
-                      controller: TextEditingController(text: '$_repeatInterval'),
-                      onChanged: (v) {
-                        final parsed = int.tryParse(v) ?? 1;
-                        _repeatInterval = parsed.clamp(1, 365);
-                      },
-                    )),
-                    const SizedBox(width: 8),
-                    Expanded(child: DropdownButtonFormField<String>(
-                      value: _repeatFrequency, isDense: true,
-                      items: ['daily', 'weekly', 'monthly'].map((f) =>
-                          DropdownMenuItem(value: f, child: Text('${f[0].toUpperCase()}${f.substring(1)}(s)'))).toList(),
-                      onChanged: (v) => setState(() => _repeatFrequency = v ?? 'monthly'),
-                    )),
-                  ]),
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Time (optional)', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onTap: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: _repeatTime ?? TimeOfDay.now(),
-                          );
-                          if (picked != null) setState(() => _repeatTime = picked);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                            borderRadius: BorderRadius.circular(8)),
-                          child: Row(children: [
-                            Text(
-                              _repeatTime != null ? _repeatTime!.format(context) : '--:-- --',
-                              style: TextStyle(fontSize: 12,
-                                  color: _repeatTime != null ? cs.onSurface : cs.onSurfaceVariant),
-                            ),
-                            const Spacer(),
-                            Icon(LucideIcons.clock, size: 14, color: cs.onSurfaceVariant),
-                          ]),
-                        ),
-                      ),
-                    ])),
-                    const SizedBox(width: 8),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('End date (optional)', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-                      const SizedBox(height: 4),
-                      GestureDetector(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: _repeatEndDate ?? DateTime.now().add(const Duration(days: 365)),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 3650)),
-                          );
-                          if (picked != null) setState(() => _repeatEndDate = picked);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                            borderRadius: BorderRadius.circular(8)),
-                          child: Row(children: [
-                            Text(
-                              _repeatEndDate != null
-                                  ? '${_repeatEndDate!.month.toString().padLeft(2, '0')}/${_repeatEndDate!.day.toString().padLeft(2, '0')}/${_repeatEndDate!.year}'
-                                  : 'mm/dd/yyyy',
-                              style: TextStyle(fontSize: 12,
-                                  color: _repeatEndDate != null ? cs.onSurface : cs.onSurfaceVariant),
-                            ),
-                            const Spacer(),
-                            Icon(LucideIcons.calendar, size: 14, color: cs.onSurfaceVariant),
-                          ]),
-                        ),
-                      ),
-                    ])),
-                  ]),
-                ]),
+              RecurringTransactionSection(
+                repeatInterval: _repeatInterval,
+                repeatFrequency: _repeatFrequency,
+                repeatTime: _repeatTime,
+                repeatEndDate: _repeatEndDate,
+                onIntervalChanged: (v) => setState(() => _repeatInterval = v),
+                onFrequencyChanged: (v) => setState(() => _repeatFrequency = v),
+                onTimeChanged: (v) => setState(() => _repeatTime = v),
+                onEndDateChanged: (v) => setState(() => _repeatEndDate = v),
+                cs: cs,
               ),
               const SizedBox(height: 12),
             ],

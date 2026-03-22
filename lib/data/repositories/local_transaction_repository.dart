@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/transaction.dart';
 import 'transaction_repository.dart';
@@ -92,7 +93,7 @@ class LocalTransactionRepository {
       _userId,
       startDate: startDate,
       endDate: endDate,
-      pageSize: 100000,
+      pageSize: 5000,
     );
     return rows
         .where((t) => (t['status'] as String? ?? 'confirmed') == 'confirmed')
@@ -110,12 +111,38 @@ class LocalTransactionRepository {
       _userId,
       startDate: startDate,
       endDate: endDate,
-      pageSize: 100000,
+      pageSize: 5000,
     );
     return rows
         .where((t) => (t['status'] as String? ?? 'confirmed') == 'confirmed')
         .map(_rowToTransaction)
         .toList();
+  }
+
+  // ─── Aggregate queries (no row loading) ────────────────────────────────
+
+  /// Get category spending totals for the current month via SQL.
+  Future<List<Map<String, dynamic>>> getCategoryTotals() async {
+    final now = DateTime.now();
+    final monthStr = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    return _db.getCategoryTotals(_userId, monthStr);
+  }
+
+  /// Get monthly income/expense totals for the last N months via SQL.
+  Future<List<Map<String, dynamic>>> getMonthlyTotals(int months) async {
+    return _db.getMonthlyTotals(_userId, months);
+  }
+
+  /// Get monthly net amounts for net worth calculation via SQL.
+  Future<List<Map<String, dynamic>>> getMonthlyNetTotals(int months) async {
+    return _db.getMonthlyNetTotals(_userId, months);
+  }
+
+  /// Get per-category expense totals for two months (compare view) via SQL.
+  Future<List<Map<String, dynamic>>> getCategoryTotalsForMonths(
+    String month1, String month2,
+  ) async {
+    return _db.getCategoryTotalsForMonths(_userId, month1, month2);
   }
 
   // ─── Writes (to local DB, marked pending) ───────────────────────────────
@@ -130,7 +157,7 @@ class LocalTransactionRepository {
     List<String>? tags,
     String status = 'confirmed',
   }) async {
-    final id = _generateId();
+    final id = IdGenerator.transaction();
     final now = AppDatabase.now();
     final dateStr = date.toIso8601String().substring(0, 10);
 
@@ -160,9 +187,9 @@ class LocalTransactionRepository {
       await _updateAccountBalance(accountId, amount);
     }
 
-    // Check budget thresholds for expense transactions
+    // Check budget thresholds for expense transactions (fire-and-forget, don't block UI)
     if (amount < 0 && status == 'confirmed' && category.toLowerCase() != 'transfer' && category.toLowerCase() != 'goal funding') {
-      await _checkBudgetThresholds(category);
+      Future.microtask(() => _checkBudgetThresholds(category));
     }
 
     return _rowToTransaction(row);
@@ -249,7 +276,7 @@ class LocalTransactionRepository {
   Future<void> importTransactions(List<Map<String, dynamic>> transactions) async {
     final now = AppDatabase.now();
     for (final t in transactions) {
-      final id = _generateId();
+      final id = IdGenerator.transaction();
       t['id'] = id;
       t['user_id'] = _userId;
       t['status'] = t['status'] ?? 'confirmed';
@@ -274,11 +301,11 @@ class LocalTransactionRepository {
     await _db.runInTransaction(() async {
       final now = AppDatabase.now();
       final dateStr = date.toIso8601String().substring(0, 10);
-      final transferId = _generateId();
+      final transferId = IdGenerator.transaction();
 
       // Debit from source
       await _db.upsertTransaction({
-        'id': _generateId(),
+        'id': IdGenerator.transaction(),
         'user_id': _userId,
         'amount': -amount,
         'category': 'Transfer',
@@ -295,7 +322,7 @@ class LocalTransactionRepository {
 
       // Credit to destination
       await _db.upsertTransaction({
-        'id': _generateId(),
+        'id': IdGenerator.transaction(),
         'user_id': _userId,
         'amount': amount,
         'category': 'Transfer',
@@ -331,22 +358,8 @@ class LocalTransactionRepository {
         final budgetAmount = (budget['amount'] as num).toDouble();
         if (budgetAmount <= 0) continue;
 
-        // Calculate spent this month for this category
-        final startDate = monthStr;
-        final endDate = DateTime(now.year, now.month + 1, 0).toIso8601String().substring(0, 10);
-        final transactions = await _db.getFilteredTransactions(
-          _userId,
-          category: budgetCat,
-          startDate: startDate,
-          endDate: endDate,
-        );
-
-        final spent = transactions
-            .where((t) {
-              final status = t['status'] as String? ?? 'confirmed';
-              return (t['amount'] as num) < 0 && status == 'confirmed';
-            })
-            .fold<double>(0, (sum, t) => sum + (t['amount'] as num).toDouble().abs());
+        // Calculate spent this month for this category using SQL aggregate
+        final spent = await _db.getCategorySpentTotal(_userId, monthStr, budgetCat);
 
         final pct = spent / budgetAmount;
         final notifId = 'budget-$budgetCat-${now.month}'.hashCode;
@@ -409,7 +422,4 @@ class LocalTransactionRepository {
     await _db.upsertAccount(updated);
   }
 
-  String _generateId() =>
-      'local-txn-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

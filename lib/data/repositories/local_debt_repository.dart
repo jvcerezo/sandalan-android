@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/debt.dart';
 import 'debt_repository.dart';
@@ -49,7 +50,7 @@ class LocalDebtRepository {
     String? notes,
     String? accountId,
   }) async {
-    final id = _generateId();
+    final id = IdGenerator.debt();
     final now = AppDatabase.now();
     final row = <String, dynamic>{
       'id': id,
@@ -115,7 +116,4 @@ class LocalDebtRepository {
     );
   }
 
-  String _generateId() =>
-      'local-debt-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

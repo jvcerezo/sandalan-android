@@ -50,3 +50,33 @@ final currentMonthTransactionsProvider = FutureProvider<List<Transaction>>((ref)
 final last6MonthsTransactionsProvider = FutureProvider<List<Transaction>>((ref) async {
   return ref.read(transactionRepositoryProvider).getTransactionsForLastMonths(6);
 });
+
+// ─── Aggregate providers (SQL-level, no full row loading) ──────────────
+
+/// Category spending totals for the current month via SQL GROUP BY.
+/// Returns List<Map> with {category: String, total: double}.
+final categoryTotalsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return ref.read(transactionRepositoryProvider).getCategoryTotals();
+});
+
+/// Monthly income/expense totals for the last 6 months via SQL GROUP BY.
+/// Returns List<Map> with {month: String, income: double, expenses: double}.
+final monthlyTotalsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return ref.read(transactionRepositoryProvider).getMonthlyTotals(6);
+});
+
+/// Monthly net totals for the last 6 months (for net worth view).
+/// Returns List<Map> with {month: String, net: double}.
+final monthlyNetTotalsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  return ref.read(transactionRepositoryProvider).getMonthlyNetTotals(6);
+});
+
+/// Per-category expense totals for this month vs last month (compare view).
+/// Returns List<Map> with {category: String, month: String, total: double}.
+final compareCategoryTotalsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final now = DateTime.now();
+  final thisMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+  final lastMonth = DateTime(now.year, now.month - 1);
+  final lastMonthStr = '${lastMonth.year}-${lastMonth.month.toString().padLeft(2, '0')}';
+  return ref.read(transactionRepositoryProvider).getCategoryTotalsForMonths(thisMonth, lastMonthStr);
+});

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/account.dart';
 
@@ -42,7 +43,7 @@ class LocalAccountRepository {
     String currency = 'PHP',
     double balance = 0,
   }) async {
-    final id = _generateId();
+    final id = IdGenerator.account();
     final now = AppDatabase.now();
     final row = <String, dynamic>{
       'id': id,
@@ -116,7 +117,4 @@ class LocalAccountRepository {
     );
   }
 
-  String _generateId() =>
-      'local-acct-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

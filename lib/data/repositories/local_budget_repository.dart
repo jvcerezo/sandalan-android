@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/budget.dart';
 
@@ -33,7 +34,7 @@ class LocalBudgetRepository {
     String period = 'monthly',
     bool rollover = false,
   }) async {
-    final id = _generateId();
+    final id = IdGenerator.budget();
     final now = AppDatabase.now();
     final row = <String, dynamic>{
       'id': id,
@@ -138,7 +139,4 @@ class LocalBudgetRepository {
     );
   }
 
-  String _generateId() =>
-      'local-bgt-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

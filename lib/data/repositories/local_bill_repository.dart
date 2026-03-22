@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/bill.dart';
 import 'bill_repository.dart';
@@ -55,7 +56,7 @@ class LocalBillRepository {
   // ─── Writes ─────────────────────────────────────────────────────────────
 
   Future<Bill> createBill(Map<String, dynamic> data) async {
-    final id = _generateId();
+    final id = IdGenerator.bill();
     final now = AppDatabase.now();
     data['id'] = id;
     data['user_id'] = _userId;
@@ -123,7 +124,4 @@ class LocalBillRepository {
     );
   }
 
-  String _generateId() =>
-      'local-bill-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

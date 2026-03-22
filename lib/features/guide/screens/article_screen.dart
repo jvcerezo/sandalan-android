@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/progress_sync_service.dart';
 import '../../../data/guide/guide_data.dart';
 
 class ArticleScreen extends StatefulWidget {
@@ -66,6 +67,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
       }
     });
     await prefs.setStringList('guides_read', readList);
+    ProgressSyncService.instance.pushAfterChange();
   }
 
   @override

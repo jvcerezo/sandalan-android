@@ -17,6 +17,7 @@ import '../widgets/trends_tab.dart';
 import '../widgets/planning_tab.dart';
 import '../widgets/health_tab.dart';
 import '../widgets/insights_tab.dart';
+import '../widgets/net_worth_chart.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -38,6 +39,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(goalsSummaryProvider);
     ref.invalidate(accountsProvider);
     ref.invalidate(budgetsProvider);
+    ref.invalidate(netWorthHistoryProvider);
     await ref.read(transactionsSummaryProvider.future);
   }
 

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/contribution.dart';
 import 'contribution_repository.dart';
@@ -78,7 +79,7 @@ class LocalContributionRepository {
       return _rowToContribution(updated);
     }
 
-    final id = _generateId();
+    final id = IdGenerator.contribution();
     final row = <String, dynamic>{
       'id': id,
       'user_id': _userId,
@@ -190,7 +191,4 @@ class LocalContributionRepository {
     );
   }
 
-  String _generateId() =>
-      'local-contrib-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

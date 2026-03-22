@@ -31,7 +31,11 @@ final chatReportRepositoryProvider = Provider<ChatReportRepository>((ref) {
 final chatEngineProvider = Provider<ChatEngine>((ref) {
   final lkRepo = ref.watch(learnedKeywordRepositoryProvider);
   final accountRepo = ref.watch(accountRepositoryProvider);
-  return ChatEngine(
+
+  // Watch auth state so the engine resets when the user changes (login/logout).
+  ref.watch(currentUserProvider);
+
+  final engine = ChatEngine(
     lkRepo,
     () async {
       final accounts = await accountRepo.getAccounts();
@@ -40,6 +44,12 @@ final chatEngineProvider = Provider<ChatEngine>((ref) {
           .toList();
     },
   );
+
+  // Clear stale session context and force personality reload for the new user.
+  engine.clearSessionContext();
+  engine.reloadPersonality();
+
+  return engine;
 });
 
 final chatStateProvider = StateNotifierProvider<ChatNotifier, ChatUiState>((ref) {

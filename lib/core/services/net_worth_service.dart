@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../data/local/app_database.dart';
+import '../utils/id_generator.dart';
 
 /// Records and retrieves daily net worth snapshots.
 ///
@@ -11,10 +12,6 @@ class NetWorthService {
   final String _userId;
 
   NetWorthService(this._db, this._userId);
-
-  static int _counter = 0;
-  static String _generateId() =>
-      'nw-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
 
   /// Calculate current net worth from accounts, goals, and debts, then upsert
   /// today's snapshot. Safe to call multiple times per day (upserts on date).
@@ -69,7 +66,7 @@ class NetWorthService {
       final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
       await _db.upsertNetWorthSnapshot({
-        'id': _generateId(),
+        'id': IdGenerator.netWorth(),
         'user_id': _userId,
         'date': dateStr,
         'total': total,

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/insurance_policy.dart';
 import 'insurance_repository.dart';
@@ -57,7 +58,7 @@ class LocalInsuranceRepository {
   // ─── Writes ─────────────────────────────────────────────────────────────
 
   Future<InsurancePolicy> createPolicy(Map<String, dynamic> data) async {
-    final id = _generateId();
+    final id = IdGenerator.insurance();
     final now = AppDatabase.now();
     data['id'] = id;
     data['user_id'] = _userId;
@@ -112,7 +113,4 @@ class LocalInsuranceRepository {
     );
   }
 
-  String _generateId() =>
-      'local-ins-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
-  static int _counter = 0;
 }

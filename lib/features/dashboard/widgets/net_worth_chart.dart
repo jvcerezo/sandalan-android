@@ -92,7 +92,8 @@ class NetWorthChart extends ConsumerWidget {
     final values = spots.map((s) => s.y).toList();
     final minY = values.reduce((a, b) => a < b ? a : b);
     final maxY = values.reduce((a, b) => a > b ? a : b);
-    final padding = (maxY - minY) * 0.15;
+    final range = maxY - minY;
+    final padding = range > 0 ? range * 0.15 : maxY.abs() * 0.1 + 100;
     final chartMinY = minY - padding;
     final chartMaxY = maxY + padding;
 
@@ -138,7 +139,7 @@ class NetWorthChart extends ConsumerWidget {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  horizontalInterval: (chartMaxY - chartMinY) / 4,
+                  horizontalInterval: ((chartMaxY - chartMinY) / 4).clamp(1, double.infinity),
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: colorScheme.surfaceContainerHighest,
                     strokeWidth: 1,

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/chat_report_repository.dart';
+import 'sync_status_notifier.dart';
 
 /// Background sync service: pulls from Supabase into local DB, pushes pending
 /// local changes back to Supabase. Uses last-write-wins conflict resolution
@@ -15,6 +16,7 @@ import '../../data/repositories/chat_report_repository.dart';
 class SyncService with WidgetsBindingObserver {
   final SupabaseClient _client;
   final AppDatabase _db;
+  final SyncStatusNotifier? _syncStatus;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isSyncing = false;
@@ -22,7 +24,8 @@ class SyncService with WidgetsBindingObserver {
   static const _lastSyncKey = 'last_sync_date';
   static const _minSyncInterval = Duration(seconds: 60);
 
-  SyncService(this._client, this._db);
+  SyncService(this._client, this._db, {SyncStatusNotifier? syncStatus})
+      : _syncStatus = syncStatus;
 
   String? get _userId => _client.auth.currentUser?.id;
 
@@ -85,6 +88,7 @@ class SyncService with WidgetsBindingObserver {
     _lastSyncAttempt = DateTime.now();
 
     _isSyncing = true;
+    _syncStatus?.markSyncing();
     try {
       await pullFromSupabase();
       await pushToSupabase();
@@ -94,8 +98,10 @@ class SyncService with WidgetsBindingObserver {
       } catch (e) {
         if (kDebugMode) debugPrint('SyncService: chat report sync failed: $e');
       }
+      _syncStatus?.markSynced();
     } catch (e) {
       if (kDebugMode) debugPrint('SyncService: fullSync failed: $e');
+      _syncStatus?.markFailed(e.toString());
     } finally {
       _isSyncing = false;
     }
@@ -136,6 +142,16 @@ class SyncService with WidgetsBindingObserver {
         remoteIds.add(id);
         // Skip if local has pending changes for this row
         if (pendingIds.contains(id)) continue;
+
+        // Timestamp-based conflict resolution: keep the newer version
+        final existing = await _db.getRowById(localTable, id);
+        if (existing != null) {
+          final localUpdated = existing['updated_at'] as String? ?? '';
+          final remoteUpdated = row['updated_at'] as String? ?? row['created_at'] as String? ?? '';
+          if (localUpdated.compareTo(remoteUpdated) > 0) {
+            continue; // local is newer, skip remote
+          }
+        }
 
         final localRow = _remoteToLocal(row, remoteTable);
         await _upsertToLocal(localTable, localRow);
