@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../models/profile.dart';
@@ -59,7 +60,7 @@ class ProfileRepository {
 
   /// Upload avatar image and update profile.
   /// Returns empty string for guests (no-op).
-  Future<String> uploadAvatar(List<int> bytes, String fileName) async {
+  Future<String> uploadAvatar(Uint8List bytes, String fileName) async {
     if (GuestModeService.isGuestSync()) return '';
 
     final userId = _client.auth.currentUser!.id;
@@ -67,7 +68,7 @@ class ProfileRepository {
 
     await _client.storage.from('avatars').uploadBinary(
       path,
-      bytes as dynamic,
+      bytes,
       fileOptions: const FileOptions(upsert: true),
     );
 

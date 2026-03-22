@@ -73,8 +73,8 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: GestureDetector(
                   onTap: () {
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
+                    if (context.canPop()) {
+                      context.pop();
                     } else {
                       context.go('/guide');
                     }

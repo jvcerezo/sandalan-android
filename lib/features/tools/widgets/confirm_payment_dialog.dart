@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
+import '../../../shared/widgets/milestone_celebration.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/tool_providers.dart';
@@ -150,10 +152,15 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
       ref.invalidate(pendingInsuranceTransactionsProvider);
 
       if (mounted) {
-        Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
+        final ctx = context;
+        Navigator.of(ctx).pop(true);
+        ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(content: Text('Payment of ${formatCurrency(amount)} confirmed')),
         );
+        // Fire-and-forget debt milestone check
+        if (_sourceType == 'debt' && _sourceId != null) {
+          _checkDebtMilestonesAfterConfirm(ctx);
+        }
       }
     } catch (e) {
       setState(() => _saving = false);
@@ -165,6 +172,26 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppColors.expense),
     );
+  }
+
+  Future<void> _checkDebtMilestonesAfterConfirm(BuildContext ctx) async {
+    try {
+      final m1 = await MilestoneService.checkAndTrigger('first_debt_payment');
+      if (m1 != null && ctx.mounted) {
+        showMilestoneCelebration(ctx, m1);
+        return;
+      }
+      // Check if all debts are paid
+      final debtRepo = ref.read(debtRepositoryProvider);
+      final debts = await debtRepo.getDebts();
+      final allPaid = debts.every((d) => d.isPaidOff);
+      if (allPaid) {
+        final m2 = await MilestoneService.checkAndTrigger('all_debts_paid');
+        if (m2 != null && ctx.mounted) {
+          showMilestoneCelebration(ctx, m2);
+        }
+      }
+    } catch (_) {}
   }
 
   @override

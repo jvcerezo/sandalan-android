@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/guide/guide_data.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/local_bill_repository.dart';
 import '../../data/repositories/local_contribution_repository.dart';
 import '../../data/repositories/local_debt_repository.dart';
+import '../../data/repositories/local_goal_repository.dart';
 import '../../data/repositories/local_insurance_repository.dart';
 import '../../data/repositories/local_transaction_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
+import 'milestone_service.dart';
 import 'net_worth_service.dart';
 import 'notification_service.dart';
 import 'streak_service.dart';
@@ -83,6 +86,11 @@ class AutomationService {
 
     // ── Schedule weekly recap notification (Sunday 10 AM) ─────────────────
     await _scheduleWeeklyRecap(db, client);
+
+    // ── Check all milestones (fire-and-forget) ──────────────────────────
+    _checkAllMilestones(db, client).catchError((e) {
+      if (kDebugMode) debugPrint('AutomationService: milestone check failed: $e');
+    });
   }
 
   // ── Contributions ──────────────────────────────────────────────────────────
@@ -533,4 +541,100 @@ class AutomationService {
   }
 
   static String _fmt(double amount) => 'PHP ${amount.toStringAsFixed(2)}';
+
+  // ── Milestone checks (runs through all conditions silently) ─────────────
+
+  static Future<void> _checkAllMilestones(AppDatabase db, SupabaseClient client) async {
+    try {
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // ── Streak milestones ─────────────────────────────────────────────
+      final streak = await StreakService.instance.getStreak();
+      final streakThresholds = {
+        3: 'streak_3',
+        7: 'streak_7',
+        14: 'streak_14',
+        30: 'streak_30',
+        60: 'streak_60',
+        90: 'streak_90',
+        100: 'streak_100',
+        180: 'streak_180',
+        365: 'streak_365',
+      };
+      for (final entry in streakThresholds.entries) {
+        if (streak >= entry.key) {
+          await MilestoneService.checkAndTrigger(entry.value);
+        }
+      }
+
+      // ── Transaction count milestones ──────────────────────────────────
+      final txnRepo = LocalTransactionRepository(db, client);
+      final txCount = await txnRepo.getTransactionsCount();
+      final txThresholds = {
+        1: 'first_transaction',
+        10: 'tx_10',
+        25: 'tx_25',
+        50: 'tx_50',
+        100: 'tx_100',
+        200: 'tx_200',
+        250: 'tx_250',
+        500: 'tx_500',
+        1000: 'tx_1000',
+      };
+      for (final entry in txThresholds.entries) {
+        if (txCount >= entry.key) {
+          await MilestoneService.checkAndTrigger(entry.value);
+        }
+      }
+
+      // ── Guide milestones ──────────────────────────────────────────────
+      final prefs = await SharedPreferences.getInstance();
+      final guidesRead = prefs.getStringList('guides_read') ?? [];
+      final guidesReadCount = guidesRead.length;
+      final totalGuides = kLifeStages.fold<int>(0, (sum, s) => sum + s.guides.length);
+
+      if (guidesReadCount >= 1) await MilestoneService.checkAndTrigger('first_guide_read');
+      if (guidesReadCount >= 5) await MilestoneService.checkAndTrigger('guides_5');
+      if (guidesReadCount >= 10) await MilestoneService.checkAndTrigger('guides_10');
+      if (totalGuides > 0 && guidesReadCount >= totalGuides) {
+        await MilestoneService.checkAndTrigger('guides_all');
+      }
+
+      // ── Checklist milestones ──────────────────────────────────────────
+      final checklistDone = prefs.getStringList('checklist_done') ?? [];
+      final checklistCount = checklistDone.length;
+      if (checklistCount >= 1) await MilestoneService.checkAndTrigger('first_checklist');
+      if (checklistCount >= 5) await MilestoneService.checkAndTrigger('checklist_5');
+      if (checklistCount >= 10) await MilestoneService.checkAndTrigger('checklist_10');
+
+      // ── Goal milestones ───────────────────────────────────────────────
+      final goalRepo = LocalGoalRepository(db, client);
+      final goals = await goalRepo.getGoals();
+      final fundedGoals = goals.where((g) => g.isCompleted).length;
+      if (fundedGoals >= 1) await MilestoneService.checkAndTrigger('first_goal_funded');
+      if (fundedGoals >= 2) await MilestoneService.checkAndTrigger('goal_2');
+      if (fundedGoals >= 3) await MilestoneService.checkAndTrigger('goal_3');
+
+      // ── Debt milestones ───────────────────────────────────────────────
+      final debtRepo = LocalDebtRepository(db, client);
+      final debts = await debtRepo.getDebts();
+      if (debts.isNotEmpty) {
+        // first_debt_payment: any debt where currentBalance < originalAmount
+        final anyPaymentMade = debts.any((d) => d.currentBalance < d.originalAmount);
+        if (anyPaymentMade) await MilestoneService.checkAndTrigger('first_debt_payment');
+
+        // debt_50_percent: any debt where 50%+ paid off
+        final any50 = debts.any((d) =>
+            d.originalAmount > 0 && d.currentBalance <= d.originalAmount * 0.5);
+        if (any50) await MilestoneService.checkAndTrigger('debt_50_percent');
+
+        // all_debts_paid: all debts are paid off
+        final allPaid = debts.every((d) => d.isPaidOff);
+        if (allPaid) await MilestoneService.checkAndTrigger('all_debts_paid');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('AutomationService: _checkAllMilestones error: $e');
+    }
+  }
 }

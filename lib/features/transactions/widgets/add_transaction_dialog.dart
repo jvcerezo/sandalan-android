@@ -6,6 +6,8 @@ import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/milestone_service.dart';
+import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../data/models/transaction.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../accounts/widgets/add_account_dialog.dart';
@@ -109,6 +111,36 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  /// Check transaction-count milestones after a successful create.
+  Future<void> _checkTransactionMilestones(BuildContext ctx) async {
+    try {
+      final repo = ref.read(transactionRepositoryProvider);
+      final count = await repo.getTransactionsCount();
+      final thresholds = {
+        1: 'first_transaction',
+        10: 'tx_10',
+        25: 'tx_25',
+        50: 'tx_50',
+        100: 'tx_100',
+        200: 'tx_200',
+        250: 'tx_250',
+        500: 'tx_500',
+        1000: 'tx_1000',
+      };
+      for (final entry in thresholds.entries) {
+        if (count >= entry.key) {
+          final milestone = await MilestoneService.checkAndTrigger(entry.value);
+          if (milestone != null && ctx.mounted) {
+            showMilestoneCelebration(ctx, milestone);
+            return; // Show at most one celebration per action
+          }
+        }
+      }
+    } catch (_) {
+      // Non-critical — don't block the user.
+    }
   }
 
   /// Compute the next run date from today based on frequency and interval.
@@ -231,13 +263,16 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final ctx = context;
+          ScaffoldMessenger.of(ctx).showSnackBar(
             const SnackBar(
               content: Text('Transaction added!'),
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.of(context).pop(true);
+          Navigator.of(ctx).pop(true);
+          // Fire-and-forget milestone check after dialog closes
+          _checkTransactionMilestones(ctx);
         }
       } catch (e) {
         setState(() => _saving = false);
@@ -315,7 +350,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final ctx = context;
+        ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(
             content: Text(edit != null
                 ? 'Transaction updated!'
@@ -325,7 +361,11 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true);
+        Navigator.of(ctx).pop(true);
+        // Fire-and-forget milestone check for new transactions (not edits)
+        if (edit == null) {
+          _checkTransactionMilestones(ctx);
+        }
       }
     } catch (e) {
       setState(() => _saving = false);

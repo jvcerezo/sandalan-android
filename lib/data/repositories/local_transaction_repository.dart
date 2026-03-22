@@ -157,6 +157,17 @@ class LocalTransactionRepository {
     List<String>? tags,
     String status = 'confirmed',
   }) async {
+    // Validate before inserting — Supabase has CHECK (amount <> 0)
+    if (amount == 0) {
+      throw ArgumentError('Amount cannot be zero');
+    }
+    if (category.trim().isEmpty) {
+      throw ArgumentError('Category cannot be empty');
+    }
+    if (description.length > 500) {
+      throw ArgumentError('Description too long (max 500 characters)');
+    }
+
     final id = IdGenerator.transaction();
     final now = AppDatabase.now();
     final dateStr = date.toIso8601String().substring(0, 10);

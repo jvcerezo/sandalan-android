@@ -709,6 +709,18 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           ),
         ),
       ]),
+      if (_receipt?.totalAmount == null || _receipt?.totalAmount == 0)
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(children: [
+            Icon(LucideIcons.alertTriangle, size: 14, color: cs.error),
+            const SizedBox(width: 4),
+            Text(
+              'Amount not detected — please enter it manually',
+              style: TextStyle(fontSize: 12, color: cs.error),
+            ),
+          ]),
+        ),
       const SizedBox(height: 14),
 
       // Source account selector

@@ -502,7 +502,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               // Google sign-up
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _handleGoogleSignUp,
-                icon: const Icon(LucideIcons.chrome, size: 18),
+                icon: Container(
+                  width: 18, height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('G', style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: Color(0xFF4285F4), height: 1,
+                  )),
+                ),
                 label: const Text('Sign up with Google'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),

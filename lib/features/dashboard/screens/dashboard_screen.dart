@@ -65,7 +65,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onRefresh: _onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
         children: [
           // ── Header ──────────────────────────────────────────────
           Row(children: [

@@ -256,8 +256,24 @@ class SyncService with WidgetsBindingObserver {
           await _client.from(remoteTable).upsert(remoteRow);
           await _db.markSynced(localTable, row['id'] as String);
         } catch (e) {
-          if (kDebugMode) debugPrint('SyncService: push $remoteTable row ${row['id']} failed: $e');
-          await _db.markFailed(localTable, row['id'] as String);
+          final errorMsg = e.toString();
+          debugPrint('SyncService: push $remoteTable row ${row['id']} failed: $errorMsg');
+
+          // Distinguish validation errors (non-retryable) from network errors.
+          // Postgres constraint violations (23xxx) and 400 errors won't fix on retry.
+          final isValidationError = errorMsg.contains('violates check constraint') ||
+              errorMsg.contains('23') || // Postgres integrity constraint class
+              errorMsg.contains('400') ||
+              errorMsg.contains('not-null') ||
+              errorMsg.contains('invalid input');
+
+          await _db.markFailed(
+            localTable,
+            row['id'] as String,
+            reason: isValidationError
+                ? 'Validation error: $errorMsg'
+                : 'Network error: $errorMsg',
+          );
         }
       }
     } catch (e) {

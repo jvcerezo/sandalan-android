@@ -108,6 +108,7 @@ class AppDatabase {
     // Migration: add new columns if missing
     try { await _db.customStatement('ALTER TABLE local_goals ADD COLUMN account_id TEXT'); } catch (_) {}
     try { await _db.customStatement("ALTER TABLE local_transactions ADD COLUMN status TEXT NOT NULL DEFAULT 'confirmed'"); } catch (_) {}
+    try { await _db.customStatement('ALTER TABLE local_transactions ADD COLUMN failure_reason TEXT'); } catch (_) {}
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS local_contributions (
         id TEXT PRIMARY KEY,
@@ -946,15 +947,29 @@ class AppDatabase {
       "UPDATE $table SET sync_status = 'synced' WHERE id = ?",
       [id],
     );
+    // Clear failure reason on successful sync
+    if (table == 'local_transactions') {
+      await _db.customStatement(
+        'UPDATE local_transactions SET failure_reason = NULL WHERE id = ?',
+        [id],
+      );
+    }
   }
 
-  Future<void> markFailed(String table, String id) async {
+  Future<void> markFailed(String table, String id, {String? reason}) async {
     _assertTable(table);
     if (!_allowedTables.contains(table)) return;
     await _db.customStatement(
       "UPDATE $table SET sync_status = 'failed' WHERE id = ?",
       [id],
     );
+    // Store failure reason if the table supports it (local_transactions)
+    if (reason != null && table == 'local_transactions') {
+      await _db.customStatement(
+        'UPDATE local_transactions SET failure_reason = ? WHERE id = ?',
+        [reason, id],
+      );
+    }
   }
 
   /// Get IDs of all synced rows for a user in a table (for remote deletion detection).

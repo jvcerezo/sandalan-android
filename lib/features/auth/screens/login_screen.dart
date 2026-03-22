@@ -323,10 +323,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               // Google sign-in
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _handleGoogleSignIn,
-                icon: Image.network(
-                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                  height: 18, width: 18,
-                  errorBuilder: (_, __, ___) => const Icon(LucideIcons.chrome, size: 18),
+                icon: Container(
+                  width: 18, height: 18,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.5), width: 1),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text('G', style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: Color(0xFF4285F4), height: 1,
+                  )),
                 ),
                 label: const Text('Sign in with Google'),
                 style: OutlinedButton.styleFrom(

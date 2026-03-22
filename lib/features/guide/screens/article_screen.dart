@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/services/progress_sync_service.dart';
+import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../data/guide/guide_data.dart';
 
 class ArticleScreen extends StatefulWidget {
@@ -68,6 +70,36 @@ class _ArticleScreenState extends State<ArticleScreen> {
     });
     await prefs.setStringList('guides_read', readList);
     ProgressSyncService.instance.pushAfterChange();
+    // Check guide milestones when marking as read (not when unmarking)
+    if (_isRead) {
+      _checkGuideMilestones(readList.length);
+    }
+  }
+
+  Future<void> _checkGuideMilestones(int readCount) async {
+    try {
+      final totalGuides = kLifeStages.fold<int>(0, (sum, s) => sum + s.guides.length);
+      final thresholds = <int, String>{
+        1: 'first_guide_read',
+        5: 'guides_5',
+        10: 'guides_10',
+      };
+      for (final entry in thresholds.entries) {
+        if (readCount >= entry.key) {
+          final milestone = await MilestoneService.checkAndTrigger(entry.value);
+          if (milestone != null && mounted) {
+            showMilestoneCelebration(context, milestone);
+            return;
+          }
+        }
+      }
+      if (totalGuides > 0 && readCount >= totalGuides) {
+        final milestone = await MilestoneService.checkAndTrigger('guides_all');
+        if (milestone != null && mounted) {
+          showMilestoneCelebration(context, milestone);
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -93,7 +125,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
       children: [
         // ← Back
         GestureDetector(
-          onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); else context.go('/guide/${widget.stageSlug}'); },
+          onTap: () { if (context.canPop()) context.pop(); else context.go('/guide/${widget.stageSlug}'); },
           child: Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [

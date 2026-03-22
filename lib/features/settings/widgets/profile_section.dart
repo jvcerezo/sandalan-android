@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/input_sanitizer.dart';
@@ -19,11 +20,66 @@ class ProfileSection extends ConsumerStatefulWidget {
 class _ProfileSectionState extends ConsumerState<ProfileSection> {
   late TextEditingController _nameCtl;
   bool _initialized = false;
+  bool _uploading = false;
 
   @override
   void dispose() {
     _nameCtl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+
+    // Validate file size (max 2 MB)
+    final bytes = await picked.readAsBytes();
+    if (bytes.lengthInBytes > 2 * 1024 * 1024) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image must be under 2 MB')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _uploading = true);
+    try {
+      final ext = picked.name.split('.').last.toLowerCase();
+      final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      await ref.read(profileRepositoryProvider).uploadAvatar(bytes, fileName);
+      ref.invalidate(profileProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload photo: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    setState(() => _uploading = true);
+    try {
+      await ref.read(profileRepositoryProvider).removeAvatar();
+      ref.invalidate(profileProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove photo: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
   }
 
   @override
@@ -64,14 +120,19 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
             const SizedBox(height: 6),
             Row(children: [
               OutlinedButton(
-                  onPressed: () {},
+                  onPressed: _uploading ? null : _pickAndUploadPhoto,
                   style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       textStyle: const TextStyle(fontSize: 11)),
-                  child: const Text('Change Photo')),
+                  child: _uploading
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Change Photo')),
               const SizedBox(width: 8),
               InkWell(
-                onTap: () {},
+                onTap: _uploading ? null : _removePhoto,
                 borderRadius: BorderRadius.circular(4),
                 child: Padding(
                   padding: const EdgeInsets.all(4),
@@ -151,7 +212,9 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
             ref.invalidate(profileProvider);
           },
         ),
-        Text('Changing this updates which guides are recommended for you.',
+        const SizedBox(height: 8),
+        Text('These help us personalize your guides, recommendations, and '
+            'financial tips based on your situation. You can change them anytime.',
             style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
         const SizedBox(height: 16),
         FilledButton(

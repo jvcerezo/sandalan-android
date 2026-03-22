@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/goal.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
@@ -270,6 +272,23 @@ class _GoalCard extends ConsumerWidget {
     );
   }
 
+  Future<void> _checkGoalMilestones(BuildContext ctx, WidgetRef ref) async {
+    try {
+      final goals = await ref.read(goalRepositoryProvider).getGoals();
+      final funded = goals.where((g) => g.isCompleted).length;
+      final thresholds = {1: 'first_goal_funded', 2: 'goal_2', 3: 'goal_3'};
+      for (final entry in thresholds.entries) {
+        if (funded >= entry.key) {
+          final milestone = await MilestoneService.checkAndTrigger(entry.value);
+          if (milestone != null && ctx.mounted) {
+            showMilestoneCelebration(ctx, milestone);
+            return;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   void _showAddFundsDialog(BuildContext context, WidgetRef ref) {
     final amountCtl = TextEditingController();
     final colorScheme = Theme.of(context).colorScheme;
@@ -343,6 +362,11 @@ class _GoalCard extends ConsumerWidget {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Added ${formatCurrency(amount)} to ${goal.name}')));
+                      // Check goal milestones if this funding completes the goal
+                      final newAmount = goal.currentAmount + amount;
+                      if (newAmount >= goal.targetAmount) {
+                        _checkGoalMilestones(context, ref);
+                      }
                     }
                   } catch (e) {
                     if (context.mounted) {

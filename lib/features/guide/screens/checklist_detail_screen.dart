@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/services/progress_sync_service.dart';
+import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../data/guide/guide_data.dart';
 
 class ChecklistDetailScreen extends StatefulWidget {
@@ -55,6 +57,26 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     await prefs.setStringList('checklist_skipped', skipped);
     setState(() { _isDone = true; _isSkipped = false; });
     ProgressSyncService.instance.pushAfterChange();
+    _checkChecklistMilestones(done.length);
+  }
+
+  Future<void> _checkChecklistMilestones(int doneCount) async {
+    try {
+      final thresholds = <int, String>{
+        1: 'first_checklist',
+        5: 'checklist_5',
+        10: 'checklist_10',
+      };
+      for (final entry in thresholds.entries) {
+        if (doneCount >= entry.key) {
+          final milestone = await MilestoneService.checkAndTrigger(entry.value);
+          if (milestone != null && mounted) {
+            showMilestoneCelebration(context, milestone);
+            return;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _markSkipped() async {
@@ -111,7 +133,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
           children: [
             // ← Back
             GestureDetector(
-              onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); else context.go('/guide/${widget.stageSlug}'); },
+              onTap: () { if (context.canPop()) context.pop(); else context.go('/guide/${widget.stageSlug}'); },
               child: Padding(
                 padding: const EdgeInsets.only(top: 4, bottom: 12),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [

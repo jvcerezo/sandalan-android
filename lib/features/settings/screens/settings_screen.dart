@@ -27,10 +27,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_activeSection != null) {
-      return _buildSection(context);
-    }
-    return _buildMenu(context);
+    return PopScope(
+      canPop: _activeSection == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _activeSection != null) {
+          setState(() => _activeSection = null);
+        }
+      },
+      child: _activeSection != null ? _buildSection(context) : _buildMenu(context),
+    );
   }
 
   Widget _buildMenu(BuildContext context) {

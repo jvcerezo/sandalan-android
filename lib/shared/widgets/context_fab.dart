@@ -114,7 +114,7 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
 
     // ─── Multi-action FAB (Home, Dashboard, Transactions) ──────
     if (_isTransactionPage) {
-      return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+      final fab = Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
         if (_isOpen) ...[
           _FabMenuItem(
             label: _aiName,
@@ -150,6 +150,26 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
           ),
         ),
       ]);
+
+      if (!_isOpen) return fab;
+
+      // When open, add a full-screen tap barrier that closes the menu
+      return SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _close,
+                behavior: HitTestBehavior.opaque,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Positioned(right: 0, bottom: 0, child: fab),
+          ],
+        ),
+      );
     }
 
     // Default: hidden

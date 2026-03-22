@@ -66,13 +66,13 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
       children: [
         // ← Tools
         GestureDetector(
-          onTap: () { if (Navigator.canPop(context)) Navigator.pop(context); else context.go('/accounts'); },
+          onTap: () { if (context.canPop()) context.pop(); else context.go('/tools'); },
           child: Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(LucideIcons.arrowLeft, size: 14, color: colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text('Accounts', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+              Text('Tools', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
             ]),
           ),
         ),
@@ -211,22 +211,24 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Bill Reminders', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text('Get notified before your bills are due so you never miss a payment.',
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 8),
-            ...[
-              'Bills with a due day appear in Upcoming Payments on your Home page',
-              'Push notifications sent 3 days before due date',
-              'Mark as paid to record a transaction from your linked account',
-              'Set a due day on each bill to enable reminders',
-            ].map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('•  ', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
-                Expanded(child: Text(t, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))),
-              ]),
-            )),
+            if (!_remindersEnabled) ...[
+              const SizedBox(height: 4),
+              Text('Get notified before your bills are due so you never miss a payment.',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              ...[
+                'Bills with a due day appear in Upcoming Payments on your Home page',
+                'Push notifications sent 3 days before due date',
+                'Mark as paid to record a transaction from your linked account',
+                'Set a due day on each bill to enable reminders',
+              ].map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('•  ', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                  Expanded(child: Text(t, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))),
+                ]),
+              )),
+            ],
           ])),
           const SizedBox(width: 8),
           GestureDetector(
