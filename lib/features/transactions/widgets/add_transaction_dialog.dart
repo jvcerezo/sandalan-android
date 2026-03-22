@@ -9,6 +9,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../accounts/widgets/add_account_dialog.dart';
+import '../../tools/providers/tool_providers.dart';
 import '../providers/transaction_providers.dart';
 
 // Formats numbers with thousand separators: 10000 → 10,000
@@ -143,6 +144,55 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  /// Compute the next run date from today based on frequency and interval.
+  String _computeNextRunDate() {
+    final now = _date;
+    late DateTime next;
+    switch (_repeatFrequency) {
+      case 'daily':
+        next = now.add(Duration(days: _repeatInterval));
+        break;
+      case 'weekly':
+        next = now.add(Duration(days: 7 * _repeatInterval));
+        break;
+      case 'monthly':
+      default:
+        next = DateTime(now.year, now.month + _repeatInterval, now.day);
+        break;
+    }
+    return next.toIso8601String().substring(0, 10);
+  }
+
+  /// Create a recurring transaction entry via the repository.
+  Future<void> _createRecurringTransaction(double amount, List<String>? tags) async {
+    try {
+      final recurringRepo = ref.read(recurringTransactionRepositoryProvider);
+      final signedAmount = _isIncome ? amount : -amount;
+      final timeStr = _repeatTime != null
+          ? '${_repeatTime!.hour.toString().padLeft(2, '0')}:${_repeatTime!.minute.toString().padLeft(2, '0')}:00'
+          : null;
+
+      await recurringRepo.createRecurring({
+        'amount': signedAmount,
+        'category': _effectiveCategory,
+        'description': InputSanitizer.sanitize(_noteController.text),
+        'currency': 'PHP',
+        'account_id': _selectedAccountId,
+        'frequency': _repeatFrequency,
+        'interval_count': _repeatInterval,
+        'start_date': _date.toIso8601String().substring(0, 10),
+        'end_date': _repeatEndDate?.toIso8601String().substring(0, 10),
+        'next_run_date': _computeNextRunDate(),
+        'run_time': timeStr,
+        'is_active': true,
+        'tags': tags,
+      });
+    } catch (_) {
+      // Non-critical — the immediate transaction was already saved.
+      // The recurring entry failing shouldn't block the user.
+    }
   }
 
   Future<void> _handleSave() async {
@@ -292,12 +342,21 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           accountId: _selectedAccountId,
           tags: tags,
         );
+
+        // Create recurring transaction if repeat is enabled
+        if (_showRepeat) {
+          await _createRecurringTransaction(amount, tags);
+        }
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(edit != null ? 'Transaction updated!' : 'Transaction added!'),
+            content: Text(edit != null
+                ? 'Transaction updated!'
+                : _showRepeat
+                    ? 'Transaction added with repeat!'
+                    : 'Transaction added!'),
             backgroundColor: Colors.green,
           ),
         );
