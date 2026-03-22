@@ -467,15 +467,59 @@ class AutomationService {
       if (target.isAfter(now)) {
         final notifId = 'daily-log-$todayStr'.hashCode;
 
-        // Include streak info in the notification body
+        // Contextual, day-aware notification body
         final streak = await StreakService.instance.getStreak();
+        final dayOfWeek = now.weekday; // 1=Mon, 7=Sun
+        final dayOfMonth = now.day;
+        final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+        final isPayday = dayOfMonth == 15 || dayOfMonth == 30 || dayOfMonth == lastDayOfMonth;
+        final random = DateTime.now().millisecondsSinceEpoch;
+
         String body;
-        if (streak >= 3) {
-          body = "You're on a $streak-day streak! Don't break it. Log your expenses now.";
-        } else if (streak == 0) {
-          body = "Start a new streak today! Log your expenses to stay on top of your finances.";
+        if (isPayday) {
+          const msgs = [
+            "Sweldo day! 💸 Time to allocate that budget before it magically disappears.",
+            "Payday! 🎉 Ilaan mo na agad bago maubos. Quick log?",
+            "Sahod na! 💰 Budget muna bago gala. Tara, log expenses!",
+          ];
+          body = msgs[random % msgs.length];
+        } else if (dayOfWeek == 1) {
+          const msgs = [
+            "Surviving Monday! ☕ Bumili ka ba ng kape or nag-Grab today? Let's log it.",
+            "Start of the week! 📝 Simula pa lang, log na natin agad.",
+            "Monday na naman! Tara, i-track natin bago makalimutan.",
+          ];
+          body = msgs[random % msgs.length];
+        } else if (dayOfWeek == 5) {
+          const msgs = [
+            "TGIF! 🎉 Take 5 seconds to log today's expenses before the weekend.",
+            "Friday na! 🍻 Quick log muna ng gastos before you unwind.",
+            "Happy Friday! Log expenses muna — 5 seconds lang!",
+          ];
+          body = msgs[random % msgs.length];
+        } else if (dayOfWeek >= 6) {
+          const msgs = [
+            "Weekend mode! 🏖️ Nag-lakad ka ba today? Don't forget to log.",
+            "Chill day! Pero log expenses pa rin ha. 😄",
+            "Weekend gastos hits different. I-track na natin!",
+          ];
+          body = msgs[random % msgs.length];
         } else {
-          body = "Don't forget to log your expenses! Track your spending to stay on top of your finances.";
+          const msgs = [
+            "Kumusta ang araw? 😊 Anong gastos mo today? Quick log na!",
+            "Midweek check! Anong pinaka-malaki mong gastos today?",
+            "Hey! Log your expenses — future you will thank you. 💪",
+            "Tara, 5 seconds lang. Ano yung binili mo today?",
+            "Don't let today's expenses slip away! Quick log na. 📝",
+          ];
+          body = msgs[random % msgs.length];
+        }
+
+        // Append streak context
+        if (streak >= 3) {
+          body += " 🔥 $streak-day streak!";
+        } else if (streak == 0) {
+          body += " Start a new streak today!";
         }
 
         await NotificationService.instance.scheduleNotification(
