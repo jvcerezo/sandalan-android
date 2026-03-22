@@ -340,7 +340,11 @@ class _SummaryCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerRight,
+          child: Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor)),
+        ),
       ]),
     ));
   }
@@ -382,8 +386,11 @@ class _DebtRow extends StatelessWidget {
               style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
             ),
           ])),
-          Text(formatCurrency(debt.currentBalance),
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          Flexible(
+            child: Text(formatCurrency(debt.currentBalance),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
           const SizedBox(width: 8),
           Icon(LucideIcons.trash2, size: 14, color: AppColors.toolRed.withValues(alpha: 0.5)),
         ]),

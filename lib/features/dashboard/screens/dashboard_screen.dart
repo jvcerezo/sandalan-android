@@ -128,12 +128,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Text('NET WORTH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
                             letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
                         const SizedBox(height: 6),
-                        hideBalances
-                            ? Text('••••', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
-                                color: colorScheme.primary))
-                            : AnimatedCurrency(value: netWorth,
-                                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
-                                    color: colorScheme.primary)),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: hideBalances
+                              ? Text('••••', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
+                                  color: colorScheme.primary))
+                              : AnimatedCurrency(value: netWorth,
+                                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
+                                      color: colorScheme.primary)),
+                        ),
                         const SizedBox(height: 12),
                         summary.when(
                           data: (s) {

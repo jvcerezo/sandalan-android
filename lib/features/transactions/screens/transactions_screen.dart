@@ -325,11 +325,14 @@ class _TransactionRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      isTransfer
-                          ? formatCurrency(transaction.amount.abs())
-                          : '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: amountColor),
+                    Flexible(
+                      child: Text(
+                        isTransfer
+                            ? formatCurrency(transaction.amount.abs())
+                            : '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: amountColor),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

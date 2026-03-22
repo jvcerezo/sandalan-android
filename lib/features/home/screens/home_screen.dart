@@ -520,16 +520,19 @@ class _FinStat extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                hidden
-                    ? Text(displayAmount(value, hidden: true),
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor))
-                    : compact
-                        ? Text(displayAmount(value, compact: true),
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor))
-                        : AnimatedCurrency(
-                            value: value,
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor),
-                          ),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: hidden
+                      ? Text(displayAmount(value, hidden: true),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor))
+                      : compact
+                          ? Text(displayAmount(value, compact: true),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor))
+                          : AnimatedCurrency(
+                              value: value,
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: valueColor),
+                            ),
+                ),
               ],
             ),
           ),

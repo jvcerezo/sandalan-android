@@ -77,11 +77,13 @@ class InsightsTab extends ConsumerWidget {
                 Row(children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Average Amount', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
-                    Text(formatCurrency(avgAmount), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    Text(formatCurrency(avgAmount), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                   ])),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     Text('Largest Expense', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
-                    Text(formatCurrency(largestExpense), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    Text(formatCurrency(largestExpense), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
                   ])),
                 ]),
               ]),

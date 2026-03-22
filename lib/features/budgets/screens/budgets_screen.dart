@@ -359,7 +359,8 @@ class _BudgetCard extends StatelessWidget {
             Text(budget.category,
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             Text(formatCurrency(budget.amount),
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.primary),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
           ]),
           const SizedBox(height: 8),
           ClipRRect(
@@ -374,9 +375,11 @@ class _BudgetCard extends StatelessWidget {
           const SizedBox(height: 4),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('${formatCurrency(0)} spent',
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
             Text('${formatCurrency(budget.amount)} remaining',
-                style: TextStyle(fontSize: 11, color: AppColors.income)),
+                style: TextStyle(fontSize: 11, color: AppColors.income),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
           ]),
           if (budget.rollover) ...[
             const SizedBox(height: 4),

@@ -144,7 +144,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
                     ...dueSoon.map((b) => Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text('${b.name} — Day ${b.dueDay} · ${formatCurrency(b.amount)}',
-                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
                     )),
                   ]),
                 );
@@ -338,7 +339,11 @@ class _SummaryCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
         const SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerRight,
+          child: Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: valueColor)),
+        ),
       ]),
     ));
   }

@@ -269,7 +269,11 @@ class _SumCard extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerRight,
+          child: Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        ),
       ]),
     ));
   }

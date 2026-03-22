@@ -215,8 +215,11 @@ class _GoalCard extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}',
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+            Flexible(
+              child: Text('${formatCurrency(goal.currentAmount)} / ${formatCurrency(goal.targetAmount)}',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
             Text('${goal.progressPercent.toStringAsFixed(0)}%',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
           ]),

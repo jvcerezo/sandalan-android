@@ -94,8 +94,11 @@ class PlanningTab extends ConsumerWidget {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                         Expanded(child: Text(b.category, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-                        Text('${formatCurrency(spent)} / ${formatCurrency(b.amount)}',
-                            style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                        Flexible(
+                          child: Text('${formatCurrency(spent)} / ${formatCurrency(b.amount)}',
+                              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
                       ]),
                       const SizedBox(height: 6),
                       ClipRRect(
