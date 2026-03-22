@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/config/env.dart';
 import '../local/app_database.dart';
 
 class AuthRepository {
@@ -85,9 +86,7 @@ class AuthRepository {
   Future<AuthResponse> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn.instance;
 
-    // The serverClientId is the Web-type OAuth 2.0 Client ID from Google Cloud Console.
-    // This is a public identifier (not a secret) — safe to embed in client code.
-    const webClientId = '876950718575-p4a1p12d38qqdna9oa1oco7c1itusjpe.apps.googleusercontent.com';
+    final webClientId = Env.googleWebClientId;
 
     await googleSignIn.initialize(
       serverClientId: webClientId,

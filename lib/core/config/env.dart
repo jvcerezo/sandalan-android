@@ -11,4 +11,7 @@ abstract class Env {
 
   @EnviedField(varName: 'SUPABASE_ANON_KEY')
   static const String supabaseAnonKey = _Env.supabaseAnonKey;
+
+  @EnviedField(varName: 'GOOGLE_WEB_CLIENT_ID')
+  static const String googleWebClientId = _Env.googleWebClientId;
 }
