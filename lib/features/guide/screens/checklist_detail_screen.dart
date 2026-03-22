@@ -69,7 +69,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     final priorityLabel = item.priority == 'critical' ? 'MUST DO'
         : item.priority == 'important' ? 'SHOULD DO' : 'NICE TO HAVE';
 
-    return Column(children: [
+    return Scaffold(body: SafeArea(child: Column(children: [
       // Reading progress bar
       TweenAnimationBuilder<double>(
         tween: Tween(begin: 0, end: _readProgress),
@@ -328,7 +328,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
           ]),
         ),
       ),
-    ]);
+    ])));
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────

@@ -67,7 +67,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
     final stage = kLifeStages.firstWhere((s) => s.slug == widget.stageSlug);
     final guide = stage.guides.firstWhere((g) => g.slug == widget.guideSlug);
 
-    return Column(children: [
+    return Scaffold(body: SafeArea(child: Column(children: [
       // Reading progress bar
       ValueListenableBuilder<double>(
         valueListenable: _scrollProgress,
@@ -194,7 +194,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         ),
       ],
     )),
-    ]);
+    ])));
   }
 
   Widget _buildPrevNext(LifeStage stage, Guide currentGuide, ColorScheme cs) {

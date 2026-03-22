@@ -57,8 +57,9 @@ class _StageDetailScreenState extends State<StageDetailScreen>
         ? (completedTotal / totalProgress * 100).round()
         : 0;
 
-    return SafeArea(
-      child: NestedScrollView(
+    return Scaffold(
+      body: SafeArea(
+        child: NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverToBoxAdapter(
           child: Column(
@@ -228,6 +229,7 @@ class _StageDetailScreenState extends State<StageDetailScreen>
             onLoadProgress: _loadProgress,
           ),
         ],
+      ),
       ),
     ),
     );
