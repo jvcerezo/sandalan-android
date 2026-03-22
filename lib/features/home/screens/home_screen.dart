@@ -204,7 +204,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onRefresh: () => _onRefresh(ref),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
         children: [
           // ─── Greeting + Streak Badge ──────────────────────────────
           StaggeredFadeIn(

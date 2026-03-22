@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../app.dart';
 import '../../../core/utils/formatters.dart';
@@ -203,20 +204,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final activeDebts = debtSummary.valueOrNull?.activeCount ?? 0;
 
             return Row(children: [
-              QuickStat(icon: LucideIcons.landmark,
-                  label: 'Accounts',
-                  value: fc(totalBalance),
-                  subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
+              GestureDetector(
+                onTap: () => context.go('/accounts'),
+                child: QuickStat(icon: LucideIcons.landmark,
+                    label: 'Accounts',
+                    value: fc(totalBalance),
+                    subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
+              ),
               const SizedBox(width: 8),
-              QuickStat(icon: LucideIcons.target,
-                  label: 'Goals',
-                  value: fc(goalSaved),
-                  subtitle: '$activeGoals active'),
+              GestureDetector(
+                onTap: () => context.go('/goals'),
+                child: QuickStat(icon: LucideIcons.target,
+                    label: 'Goals',
+                    value: fc(goalSaved),
+                    subtitle: '$activeGoals active'),
+              ),
               const SizedBox(width: 8),
-              QuickStat(icon: LucideIcons.creditCard,
-                  label: 'Debts',
-                  value: fc(totalDebt),
-                  subtitle: '$activeDebts active'),
+              GestureDetector(
+                onTap: () => context.go('/budgets'),
+                child: QuickStat(icon: LucideIcons.creditCard,
+                    label: 'Debts',
+                    value: fc(totalDebt),
+                    subtitle: '$activeDebts active'),
+              ),
             ]);
           }),
           const SizedBox(height: 10),
