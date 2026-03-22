@@ -7,6 +7,7 @@ import '../../../data/chat/personality_templates.dart';
 import '../../../data/models/chat_models.dart';
 import '../../../data/repositories/chat_report_repository.dart';
 import '../../../data/repositories/learned_keyword_repository.dart';
+import '../../../core/services/guide_search_service.dart';
 import '../../../data/repositories/local_account_repository.dart';
 import '../../../data/repositories/local_transaction_repository.dart';
 
@@ -352,9 +353,18 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
   Future<void> _handleParseResult(ParseResult result, String rawInput) async {
     switch (result.intent) {
       case ChatIntent.help:
-      case ChatIntent.unknown:
       case ChatIntent.transfer:
         _addBotMessage(result.message ?? "I didn't understand that. Try 'lunch 250' or 'net worth ko'");
+        break;
+
+      case ChatIntent.unknown:
+        // Before giving up, search guide content
+        final guideResults = GuideSearchService.search(rawInput);
+        if (guideResults.isNotEmpty) {
+          _addBotMessage(_buildGuideResponse(guideResults));
+        } else {
+          _addBotMessage(result.message ?? "I didn't understand that. Try 'lunch 250' or 'net worth ko'");
+        }
         break;
 
       case ChatIntent.query:
@@ -575,6 +585,41 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       timestamp: DateTime.now(),
       parseResult: result,
     ));
+  }
+
+  String _buildGuideResponse(List<GuideSearchResult> results) {
+    final name = engine.assistantName;
+    final personality = engine.personality;
+
+    if (results.length == 1) {
+      final r = results.first;
+      final icon = r.type == 'guide' ? '📖' : '✅';
+      final prefix = switch (personality) {
+        AiPersonality.strictNanay => 'Eto, anak, nabasa ko sa guide natin:',
+        AiPersonality.chillBestFriend => 'Oh nice question! Based sa guide natin:',
+        AiPersonality.professionalAdvisor => 'Based on our guide "${r.title}":',
+        AiPersonality.motivationalCoach => 'Great question! Here\'s what I found:',
+        AiPersonality.kuripotTita => 'Ay alam ko yan! Sabi sa guide:',
+      };
+      return '$prefix\n\n${r.excerpt}\n\n$icon ${r.title}\n→ ${r.route}';
+    }
+
+    // Multiple results
+    final prefix = switch (personality) {
+      AiPersonality.strictNanay => 'May nakita akong related sa tanong mo, anak:',
+      AiPersonality.chillBestFriend => 'Found a few things about that, bro:',
+      AiPersonality.professionalAdvisor => 'I found several relevant resources:',
+      AiPersonality.motivationalCoach => 'Great question! Here are some helpful guides:',
+      AiPersonality.kuripotTita => 'Marami akong nakita, basahin mo lahat para sulit:',
+    };
+
+    final items = results.asMap().entries.map((e) {
+      final r = e.value;
+      final icon = r.type == 'guide' ? '📖' : '✅';
+      return '${e.key + 1}. $icon ${r.title}\n   ${r.excerpt.length > 100 ? '${r.excerpt.substring(0, 100)}...' : r.excerpt}\n   → ${r.route}';
+    }).join('\n\n');
+
+    return '$prefix\n\n$items';
   }
 
   void _addBotMessage(String text) {
