@@ -4,6 +4,7 @@
 key.properties
 .env.local
 .env
+lib/core/config/env.g.dart
 
 # Miscellaneous
 *.class
