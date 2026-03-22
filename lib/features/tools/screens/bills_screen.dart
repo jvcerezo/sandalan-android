@@ -11,6 +11,7 @@ import '../../../data/models/bill.dart';
 import '../../../data/models/transaction.dart';
 import '../providers/tool_providers.dart';
 import '../widgets/add_bill_dialog.dart';
+import '../widgets/bill_calendar.dart';
 import '../widgets/confirm_payment_dialog.dart';
 
 class BillsScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class BillsScreen extends ConsumerStatefulWidget {
 
 class _BillsScreenState extends ConsumerState<BillsScreen> {
   bool _remindersEnabled = true;
+  bool _calendarView = false;
 
   @override
   void initState() {
@@ -94,7 +96,53 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
           ])),
         ]),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+
+        // View toggle: List / Calendar
+        Row(children: [
+          GestureDetector(
+            onTap: () => setState(() => _calendarView = false),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: !_calendarView ? colorScheme.primary : Colors.transparent,
+                border: Border.all(color: !_calendarView ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text('List View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                  color: !_calendarView ? colorScheme.onPrimary : colorScheme.onSurfaceVariant)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => setState(() => _calendarView = true),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: _calendarView ? colorScheme.primary : Colors.transparent,
+                border: Border.all(color: _calendarView ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text('Calendar View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                  color: _calendarView ? colorScheme.onPrimary : colorScheme.onSurfaceVariant)),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
+
+        // Calendar view
+        if (_calendarView) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              border: Border.all(color: colorScheme.surfaceContainerHighest),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const BillDueCalendar(),
+          ),
+          const SizedBox(height: 16),
+        ],
 
         // Summary cards
         summary.when(

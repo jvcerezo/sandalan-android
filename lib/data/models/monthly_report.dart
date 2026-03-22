@@ -41,6 +41,9 @@ class MonthlyReport {
   final double healthScoreDelta;
   final int goalsContributed;
   final int stageStepsCompleted;
+  final String positiveHighlight;
+  final String hardTruth;
+  final String encouragement;
 
   const MonthlyReport({
     required this.grade,
@@ -57,6 +60,9 @@ class MonthlyReport {
     required this.healthScoreDelta,
     required this.goalsContributed,
     required this.stageStepsCompleted,
+    this.positiveHighlight = '',
+    this.hardTruth = '',
+    this.encouragement = '',
   });
 
   factory MonthlyReport.fromJson(Map<String, dynamic> json) {
@@ -77,6 +83,9 @@ class MonthlyReport {
       healthScoreDelta: (json['health_score_delta'] as num).toDouble(),
       goalsContributed: json['goals_contributed'] as int,
       stageStepsCompleted: json['stage_steps_completed'] as int,
+      positiveHighlight: json['positive_highlight'] as String? ?? '',
+      hardTruth: json['hard_truth'] as String? ?? '',
+      encouragement: json['encouragement'] as String? ?? '',
     );
   }
 
@@ -95,5 +104,8 @@ class MonthlyReport {
         'health_score_delta': healthScoreDelta,
         'goals_contributed': goalsContributed,
         'stage_steps_completed': stageStepsCompleted,
+        'positive_highlight': positiveHighlight,
+        'hard_truth': hardTruth,
+        'encouragement': encouragement,
       };
 }

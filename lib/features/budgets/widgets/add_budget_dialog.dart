@@ -41,6 +41,7 @@ class AddBudgetDialog extends ConsumerStatefulWidget {
 
 class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
   String _category = kExpenseCategories.first;
+  String _period = 'monthly';
   final _amountCtl = TextEditingController();
   final _customCategoryCtl = TextEditingController();
   bool _saving = false;
@@ -117,9 +118,8 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
     setState(() => _saving = true);
     try {
       final month = ref.read(budgetMonthProvider);
-      final period = ref.read(budgetPeriodProvider);
       await ref.read(budgetRepositoryProvider).createBudget(
-          category: _effectiveCategory, amount: amount, month: month, period: period);
+          category: _effectiveCategory, amount: amount, month: month, period: _period);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -207,8 +207,29 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
           ],
           const SizedBox(height: 12),
 
-          // Monthly Limit
-          const Text('Monthly Limit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          // Budget Period
+          const Text('Budget Period', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 4, children: ['weekly', 'monthly', 'quarterly'].map((p) {
+            final selected = _period == p;
+            final label = p[0].toUpperCase() + p.substring(1);
+            return GestureDetector(
+              onTap: () => setState(() => _period = p),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: selected ? cs.primary : Colors.transparent,
+                  border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(20)),
+                child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                    color: selected ? cs.onPrimary : cs.onSurfaceVariant)),
+              ),
+            );
+          }).toList()),
+          const SizedBox(height: 12),
+
+          // Budget Limit
+          Text('${_period[0].toUpperCase()}${_period.substring(1)} Limit', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

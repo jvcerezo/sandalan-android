@@ -175,6 +175,75 @@ class MonthlyReportService {
       hasDebts: hasDebts,
     );
 
+    // ── Sandwich report: positive highlight ──
+    String positiveHighlight;
+    // Find best under-budget category
+    String? underBudgetCat;
+    double underBudgetAmt = 0;
+    for (final b in budgets) {
+      final budgetCat = b['category'] as String;
+      final budgetAmount = (b['amount'] as num).toDouble();
+      final spent = categoryTotals[budgetCat] ?? 0;
+      if (spent < budgetAmount && (budgetAmount - spent) > underBudgetAmt) {
+        underBudgetAmt = budgetAmount - spent;
+        underBudgetCat = budgetCat;
+      }
+    }
+    if (underBudgetCat != null && underBudgetAmt > 0) {
+      positiveHighlight = 'You stayed \u20B1${underBudgetAmt.toStringAsFixed(0)} under your $underBudgetCat budget! \ud83c\udfaf';
+    } else if (savingsRate > 20) {
+      positiveHighlight = 'Your savings rate was ${savingsRate.toStringAsFixed(1)}% \u2014 above the recommended 20%! \ud83d\udcc8';
+    } else if (bestStreak > 20) {
+      positiveHighlight = 'You maintained a $bestStreak-day logging streak this month! \ud83d\udd25';
+    } else if (goalsContributed > 0) {
+      positiveHighlight = 'You made $goalsContributed goal contribution${goalsContributed > 1 ? 's' : ''} this month! \ud83d\udcaa';
+    } else {
+      final txCount = confirmedTx.length;
+      positiveHighlight = 'You logged $txCount transaction${txCount != 1 ? 's' : ''} this month \u2014 awareness is the first step! \u2728';
+    }
+
+    // ── Hard truth ──
+    String hardTruth;
+    String? overBudgetCat;
+    double overBudgetAmt = 0;
+    for (final b in budgets) {
+      final budgetCat = b['category'] as String;
+      final budgetAmount = (b['amount'] as num).toDouble();
+      final spent = categoryTotals[budgetCat] ?? 0;
+      if (spent > budgetAmount && (spent - budgetAmount) > overBudgetAmt) {
+        overBudgetAmt = spent - budgetAmount;
+        overBudgetCat = budgetCat;
+      }
+    }
+    if (overBudgetCat != null) {
+      hardTruth = 'You went \u20B1${overBudgetAmt.toStringAsFixed(0)} over on $overBudgetCat this month.';
+    } else if (savingsRate < 10) {
+      hardTruth = 'Your savings rate was only ${savingsRate.toStringAsFixed(1)}% \u2014 below the healthy 20% target.';
+    } else if (goalsContributed == 0) {
+      hardTruth = 'No contributions to your savings goals this month.';
+    } else {
+      hardTruth = 'No major concerns this month \u2014 keep it up!';
+    }
+
+    // ── Encouragement ──
+    String encouragement;
+    if (overBudgetCat != null) {
+      final cat = overBudgetCat.toLowerCase();
+      if (cat == 'food') {
+        encouragement = 'Try meal prepping on Sundays \u2014 even 2 days of home cooking saves \u20B1500+/week.';
+      } else if (cat == 'transportation') {
+        encouragement = 'Consider a weekly Grab pass or carpooling to cap transport costs.';
+      } else {
+        encouragement = 'Review your top 3 categories \u2014 small adjustments there make the biggest impact.';
+      }
+    } else if (savingsRate < 10) {
+      encouragement = 'Try the \u20B120 challenge \u2014 save \u20B120 more each day. By month end that\u2019s \u20B1600+.';
+    } else if (goalsContributed == 0) {
+      encouragement = 'Even \u20B1100/week to your goal adds up to \u20B15,200 in a year!';
+    } else {
+      encouragement = 'Stay consistent and keep logging. You\u2019re building great habits! \ud83c\udf1f';
+    }
+
     final report = MonthlyReport(
       grade: grade,
       year: year,
@@ -190,6 +259,9 @@ class MonthlyReportService {
       healthScoreDelta: healthScoreDelta,
       goalsContributed: goalsContributed,
       stageStepsCompleted: 0, // Not tracked in local DB
+      positiveHighlight: positiveHighlight,
+      hardTruth: hardTruth,
+      encouragement: encouragement,
     );
 
     // Cache the report

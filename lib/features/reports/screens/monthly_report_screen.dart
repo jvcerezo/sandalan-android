@@ -79,6 +79,29 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Sandwich report cards
+          if (report.positiveHighlight.isNotEmpty)
+            _SandwichCard(
+              text: report.positiveHighlight,
+              accentColor: const Color(0xFF22C55E), // green
+              icon: LucideIcons.star,
+            ),
+          if (report.positiveHighlight.isNotEmpty) const SizedBox(height: 8),
+          if (report.hardTruth.isNotEmpty)
+            _SandwichCard(
+              text: report.hardTruth,
+              accentColor: const Color(0xFFF59E0B), // amber
+              icon: LucideIcons.alertTriangle,
+            ),
+          if (report.hardTruth.isNotEmpty) const SizedBox(height: 8),
+          if (report.encouragement.isNotEmpty)
+            _SandwichCard(
+              text: report.encouragement,
+              accentColor: colorScheme.primary,
+              icon: LucideIcons.lightbulb,
+            ),
+          if (report.encouragement.isNotEmpty) const SizedBox(height: 16),
+
           // Grade hero card
           Container(
             width: double.infinity,
@@ -727,6 +750,58 @@ class _CategoryBar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SandwichCard extends StatelessWidget {
+  final String text;
+  final Color accentColor;
+  final IconData icon;
+
+  const _SandwichCard({
+    required this.text,
+    required this.accentColor,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 3,
+            height: 40,
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Icon(icon, size: 16, color: accentColor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurface,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

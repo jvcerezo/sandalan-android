@@ -17,7 +17,7 @@ final remoteBudgetRepositoryProvider = Provider<BudgetRepository>((ref) {
   return BudgetRepository(ref.watch(supabaseClientProvider));
 });
 
-final budgetPeriodProvider = StateProvider<String>((ref) => 'monthly');
+final budgetPeriodProvider = StateProvider<String>((ref) => 'all');
 
 final budgetMonthProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
@@ -27,5 +27,12 @@ final budgetMonthProvider = StateProvider<DateTime>((ref) {
 final budgetsProvider = FutureProvider<List<Budget>>((ref) async {
   final month = ref.watch(budgetMonthProvider);
   final period = ref.watch(budgetPeriodProvider);
+  if (period == 'all') {
+    // Fetch all periods and merge
+    final weekly = await ref.read(budgetRepositoryProvider).getBudgets(month, 'weekly');
+    final monthly = await ref.read(budgetRepositoryProvider).getBudgets(month, 'monthly');
+    final quarterly = await ref.read(budgetRepositoryProvider).getBudgets(month, 'quarterly');
+    return [...weekly, ...monthly, ...quarterly];
+  }
   return ref.read(budgetRepositoryProvider).getBudgets(month, period);
 });

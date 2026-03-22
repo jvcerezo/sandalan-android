@@ -216,17 +216,21 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         ]),
         const SizedBox(height: 12),
 
-        // Monthly label + copy from last month
+        // Period filter tabs
         Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text('Monthly', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
-          ),
-          const Spacer(),
+          Expanded(child: Wrap(spacing: 6, runSpacing: 4, children: [
+            {'label': 'All', 'value': 'all'},
+            {'label': 'Weekly', 'value': 'weekly'},
+            {'label': 'Monthly', 'value': 'monthly'},
+            {'label': 'Quarterly', 'value': 'quarterly'},
+          ].map((p) {
+            final selected = period == p['value'];
+            return _PeriodTab(
+              label: p['label']!,
+              isSelected: selected,
+              onTap: () => ref.read(budgetPeriodProvider.notifier).state = p['value']!,
+            );
+          }).toList())),
           TextButton.icon(
             onPressed: () => _copyFromLastMonth(context, month),
             icon: Icon(LucideIcons.copy, size: 14, color: colorScheme.primary),
@@ -346,6 +350,37 @@ class _BudgetCard extends StatelessWidget {
   final Budget budget;
   const _BudgetCard({required this.budget});
 
+  String _periodLabel() {
+    final now = DateTime.now();
+    switch (budget.period) {
+      case 'weekly':
+        // Monday of current week to Sunday
+        final monday = now.subtract(Duration(days: now.weekday - 1));
+        final sunday = monday.add(const Duration(days: 6));
+        final mFmt = '${_monthAbbr(monday.month)} ${monday.day}';
+        final sFmt = '${sunday.day}';
+        return 'Weekly ($mFmt-$sFmt)';
+      case 'quarterly':
+        final q = ((now.month - 1) ~/ 3) + 1;
+        return 'Quarterly (Q$q ${now.year})';
+      default:
+        return 'Monthly';
+    }
+  }
+
+  static String _monthAbbr(int m) {
+    const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[m];
+  }
+
+  Color _periodColor(ColorScheme cs) {
+    switch (budget.period) {
+      case 'weekly': return const Color(0xFF3B82F6);
+      case 'quarterly': return const Color(0xFF8B5CF6);
+      default: return cs.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -356,8 +391,22 @@ class _BudgetCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text(budget.category,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Flexible(child: Row(children: [
+              Flexible(child: Text(budget.category,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis)),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _periodColor(colorScheme).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(_periodLabel(),
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                        color: _periodColor(colorScheme))),
+              ),
+            ])),
             Text(formatCurrency(budget.amount),
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.primary),
                 maxLines: 1, overflow: TextOverflow.ellipsis),

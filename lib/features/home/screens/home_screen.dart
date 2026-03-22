@@ -22,6 +22,9 @@ import '../providers/upcoming_payments_provider.dart';
 import '../widgets/streak_detail_sheet.dart';
 import '../widgets/tip_of_day_card.dart';
 import '../widgets/weekly_recap_card.dart';
+import '../../../core/services/salary_allocation_service.dart';
+import '../../../data/repositories/transaction_repository.dart';
+import '../../tools/widgets/bill_calendar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -43,6 +46,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Recap state
   WeeklyRecap? _weeklyRecap;
   bool _recapVisible = false;
+
+  // Payday state
+  bool _paydayDetected = false;
+  bool _paydayDismissed = false;
+  double _salaryAmount = 0;
 
   @override
   void initState() {
@@ -80,6 +88,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       recap = await WeeklyRecapService.instance.getWeeklyRecap();
     }
 
+    // Payday detection
+    bool paydayDetected = false;
+    double salaryAmount = 0;
+    try {
+      final configured = await SalaryAllocationService.isConfigured();
+      if (configured) {
+        final allocated = await SalaryAllocationService.hasAllocatedThisPeriod();
+        if (!allocated) {
+          // Check today's transactions for salary
+          final txRepo = ref.read(transactionRepositoryProvider);
+          final today = DateTime.now();
+          final todayStr = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+          final transactions = await txRepo.getTransactions(TransactionFilters(
+            startDate: today,
+            endDate: today,
+          ));
+          for (final t in transactions) {
+            if (t.category.toLowerCase() == 'salary' && t.amount > 0) {
+              paydayDetected = true;
+              salaryAmount = t.amount;
+              break;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
     if (mounted) {
       setState(() {
         _streak = streak;
@@ -89,6 +124,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _tipDismissed = tipDismissed;
         _weeklyRecap = recap;
         _recapVisible = recapVisible && recap != null;
+        _paydayDetected = paydayDetected;
+        _salaryAmount = salaryAmount;
       });
     }
   }
@@ -268,6 +305,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 16),
 
+          // ─── Payday Card ──────────────────────────────────────────
+          if (_paydayDetected && !_paydayDismissed)
+            StaggeredFadeIn(
+              index: 1,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(colors: [
+                      colorScheme.primary.withValues(alpha: 0.1),
+                      colorScheme.primary.withValues(alpha: 0.05),
+                    ]),
+                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(children: [
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('\ud83d\udcb8 Salary received!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text('${formatCurrency(_salaryAmount)} deposited. Ready to allocate to your budgets and goals?',
+                          style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                    ])),
+                    const SizedBox(width: 12),
+                    Column(children: [
+                      FilledButton(
+                        onPressed: () => context.go('/settings/salary-allocation'),
+                        child: const Text('Allocate', style: TextStyle(fontSize: 12)),
+                      ),
+                      const SizedBox(height: 4),
+                      TextButton(
+                        onPressed: () => setState(() => _paydayDismissed = true),
+                        child: const Text('Skip', style: TextStyle(fontSize: 12)),
+                      ),
+                    ]),
+                  ]),
+                ),
+              ),
+            ),
+
           // ─── Current Stage Card ──────────────────────────────────
           StaggeredFadeIn(
             index: 1,
@@ -327,22 +404,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _buildContextualCard(),
           ),
 
-          // ─── Upcoming Payments ───────────────────────────────────
+          // ─── Due This Week Strip ────────────────────────────────
           StaggeredFadeIn(
             index: 4,
+            child: const DueThisWeekStrip(),
+          ),
+
+          // ─── Upcoming Payments ───────────────────────────────────
+          StaggeredFadeIn(
+            index: 5,
             child: _UpcomingPaymentsSection(ref: ref, hideBalances: hideBalances),
           ),
 
           // ─── Next Steps Carousel ─────────────────────────────────
           StaggeredFadeIn(
-            index: 5,
+            index: 6,
             child: _NextStepsSection(),
           ),
 
           // ─── Quick Navigation ────────────────────────────────────
           const SizedBox(height: 6),
           StaggeredFadeIn(
-            index: 6,
+            index: 7,
             child: _NavRow(
               icon: LucideIcons.bookOpen,
               iconBg: colorScheme.primary.withValues(alpha: 0.1),
@@ -354,7 +437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 8),
           StaggeredFadeIn(
-            index: 7,
+            index: 8,
             child: _NavRow(
               icon: LucideIcons.wrench,
               iconBg: AppColors.warning.withValues(alpha: 0.1),
@@ -366,7 +449,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 8),
           StaggeredFadeIn(
-            index: 8,
+            index: 9,
             child: _NavRow(
               icon: LucideIcons.wallet,
               iconBg: AppColors.toolEmerald.withValues(alpha: 0.1),
