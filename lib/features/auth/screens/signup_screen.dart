@@ -198,6 +198,37 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignUp() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await ref.read(authRepositoryProvider).signInWithGoogle();
+      if (response.session != null && mounted) {
+        if (_wasGuest) {
+          final newUserId = response.session!.user.id;
+          await GuestModeService.migrateToAccount(newUserId);
+          await _migrateGuestPreferences();
+          final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
+          syncService.fullSync();
+          syncService.startDailySync();
+        }
+        context.go('/onboarding');
+      }
+    } catch (e) {
+      if (mounted) {
+        final msg = e.toString();
+        setState(() {
+          _isLoading = false;
+          _error = msg.contains('cancelled') || msg.contains('canceled')
+              ? null
+              : 'Google sign-up failed. Please try again.';
+        });
+      }
+    }
+  }
+
   String _parseSignUpError(dynamic e) {
     final msg = e.toString().toLowerCase();
     if (msg.contains('422') || msg.contains('400') || msg.contains('invalid')) {
@@ -453,6 +484,31 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
                 ),
               ]),
+
+              const SizedBox(height: 24),
+
+              // Divider
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('or continue with',
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                ),
+                const Expanded(child: Divider()),
+              ]),
+              const SizedBox(height: 16),
+
+              // Google sign-up
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : _handleGoogleSignUp,
+                icon: const Icon(LucideIcons.chrome, size: 18),
+                label: const Text('Sign up with Google'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
             ],
           ),
         ),

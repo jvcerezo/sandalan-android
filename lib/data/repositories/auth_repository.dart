@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../local/app_database.dart';
@@ -76,6 +77,42 @@ class AuthRepository {
     for (final key in _userPrefKeys) {
       await prefs.remove(key);
     }
+  }
+
+  /// Sign in with Google via native Google Sign-In (v7) + Supabase ID token.
+  /// Requires a web client ID from Google Cloud Console configured in
+  /// Supabase Dashboard > Auth > Providers > Google.
+  Future<AuthResponse> signInWithGoogle() async {
+    final googleSignIn = GoogleSignIn.instance;
+
+    // Initialize with the web client ID (server client ID for Supabase).
+    // On Android, the native client ID comes from google-services.json.
+    // The serverClientId must be the Web type OAuth client ID.
+    const webClientId = String.fromEnvironment(
+      'GOOGLE_WEB_CLIENT_ID',
+      defaultValue: '',
+    );
+
+    await googleSignIn.initialize(
+      serverClientId: webClientId.isNotEmpty ? webClientId : null,
+    );
+
+    final account = await googleSignIn.authenticate();
+    final idToken = account.authentication.idToken;
+
+    if (idToken == null) {
+      throw Exception('No ID token from Google');
+    }
+
+    return _client.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+    );
+  }
+
+  /// Send a password reset email via Supabase.
+  Future<void> resetPassword(String email) async {
+    await _client.auth.resetPasswordForEmail(email);
   }
 
   /// Complete onboarding via RPC.

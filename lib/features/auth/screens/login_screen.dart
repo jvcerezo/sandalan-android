@@ -11,6 +11,7 @@ import '../../../core/utils/email_validator.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 import '../providers/auth_provider.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -87,6 +88,43 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _isLoading = false;
         _error = _parseAuthError(e);
       });
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      // Sign out any existing session first
+      try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
+      final response = await ref.read(authRepositoryProvider).signInWithGoogle();
+      if (response.session != null) {
+        await _migrateGuestDataIfNeeded();
+        final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
+        await syncService.fullSync();
+        if (mounted) {
+          // Check if onboarding is complete
+          final profile = await Supabase.instance.client
+              .from('profiles')
+              .select('has_completed_onboarding')
+              .eq('id', response.session!.user.id)
+              .maybeSingle();
+          final onboarded = profile?['has_completed_onboarding'] as bool? ?? false;
+          context.go(onboarded ? '/home' : '/onboarding');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        final msg = e.toString();
+        setState(() {
+          _isLoading = false;
+          _error = msg.contains('cancelled') || msg.contains('canceled')
+              ? null // User cancelled — no error
+              : 'Google sign-in failed. Please try again.';
+        });
+      }
     }
   }
 
@@ -241,6 +279,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text('Sign In'),
               ),
+              const SizedBox(height: 8),
+
+              // Forgot password
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                  ),
+                  child: Text('Forgot password?',
+                      style: TextStyle(fontSize: 13, color: colorScheme.primary)),
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Sign up link
@@ -262,12 +313,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const Expanded(child: Divider()),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('or',
+                  child: Text('or continue with',
                       style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                 ),
                 const Expanded(child: Divider()),
               ]),
               const SizedBox(height: 16),
+
+              // Google sign-in
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : _handleGoogleSignIn,
+                icon: Image.network(
+                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                  height: 18, width: 18,
+                  errorBuilder: (_, __, ___) => const Icon(LucideIcons.chrome, size: 18),
+                ),
+                label: const Text('Sign in with Google'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Guest mode divider
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('or',
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                ),
+                const Expanded(child: Divider()),
+              ]),
+              const SizedBox(height: 12),
 
               // Guest mode
               TextButton(
