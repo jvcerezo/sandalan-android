@@ -32,49 +32,46 @@ class TransactionFiltersPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.surfaceContainerHighest),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(children: [
-        // Search row
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: 'Search transactions...',
-                prefixIcon: const Icon(LucideIcons.search, size: 16),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
+    return Column(children: [
+        // Search row — compact, no card wrapper
+        Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(children: [
+            Icon(LucideIcons.search, size: 16, color: colorScheme.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Search...',
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                ),
+                style: const TextStyle(fontSize: 13),
+                onSubmitted: (_) => onSearch(),
               ),
-              style: const TextStyle(fontSize: 13),
-              onSubmitted: (_) => onSearch(),
             ),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(LucideIcons.download, size: 18, color: colorScheme.onSurfaceVariant),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
-          IconButton(
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              onToggleFilters();
-            },
-            icon: Icon(LucideIcons.slidersHorizontal, size: 18,
-                color: showFilters ? colorScheme.primary : colorScheme.onSurfaceVariant),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-          ),
-        ]),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onToggleFilters();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(LucideIcons.slidersHorizontal, size: 16,
+                    color: showFilters ? colorScheme.primary : colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ]),
+        ),
 
         // Expandable filters
         if (showFilters) ...[
@@ -119,8 +116,7 @@ class TransactionFiltersPanel extends StatelessWidget {
             ),
           ),
         ],
-      ]),
-    );
+      ]);
   }
 }
 

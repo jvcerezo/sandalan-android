@@ -113,28 +113,28 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ),
           child: Row(
             children: List.generate(3, (i) => Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedTypeTab = i);
-                    _applyFilters();
-                  },
-                  borderRadius: BorderRadius.circular(7),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _selectedTypeTab == i ? colorScheme.surface : Colors.transparent,
-                      borderRadius: BorderRadius.circular(7),
-                      boxShadow: _selectedTypeTab == i ? [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
-                      ] : null,
-                    ),
-                    child: Center(child: Text(_typeLabels[i],
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                            color: _selectedTypeTab == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
+              child: GestureDetector(
+                onTap: () {
+                  if (_selectedTypeTab == i) return;
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedTypeTab = i);
+                  // Delay filter application to next frame to prevent stutter
+                  WidgetsBinding.instance.addPostFrameCallback((_) => _applyFilters());
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _selectedTypeTab == i ? colorScheme.surface : Colors.transparent,
+                    borderRadius: BorderRadius.circular(7),
+                    boxShadow: _selectedTypeTab == i ? [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4),
+                    ] : null,
                   ),
+                  child: Center(child: Text(_typeLabels[i],
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                          color: _selectedTypeTab == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
                 ),
               ),
             )),
@@ -290,13 +290,12 @@ class _TransactionRow extends StatelessWidget {
       !const ['bill', 'debt', 'insurance', 'contribution', 'auto-generated'].contains(tag.toLowerCase())
     ).toList();
 
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Icon
             Container(
@@ -315,7 +314,6 @@ class _TransactionRow extends StatelessWidget {
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 // Title + amount row
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Text(
@@ -324,15 +322,12 @@ class _TransactionRow extends StatelessWidget {
                         maxLines: 2, overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        isTransfer
-                            ? formatCurrency(transaction.amount.abs())
-                            : '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: amountColor),
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                      ),
+                    const SizedBox(width: 12),
+                    Text(
+                      isTransfer
+                          ? formatCurrency(transaction.amount.abs())
+                          : '${isIncome ? '+' : '-'}${formatCurrency(transaction.amount.abs())}',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: amountColor),
                     ),
                   ],
                 ),

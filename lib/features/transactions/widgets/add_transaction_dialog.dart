@@ -43,6 +43,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   String _repeatFrequency = 'monthly';
   TimeOfDay? _repeatTime;
   DateTime? _repeatEndDate;
+  int? _repeatDay;
+  String? _repeatDates;
+  DateTime? _biweeklyStartDate;
   bool _saving = false;
   bool _autoSelected = false;
   String? _customCategoryError;
@@ -154,6 +157,27 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       case 'weekly':
         next = now.add(Duration(days: 7 * _repeatInterval));
         break;
+      case 'biweekly':
+        next = now.add(const Duration(days: 14));
+        break;
+      case 'twice_monthly':
+        final parts = (_repeatDates ?? '15,30').split(',');
+        final d1 = int.tryParse(parts[0].trim()) ?? 15;
+        final d2 = int.tryParse(parts.length > 1 ? parts[1].trim() : '30') ?? 30;
+        if (now.day < d1) {
+          next = DateTime(now.year, now.month, d1);
+        } else if (now.day < d2) {
+          next = DateTime(now.year, now.month, d2);
+        } else {
+          next = DateTime(now.year, now.month + 1, d1);
+        }
+        break;
+      case 'quarterly':
+        next = DateTime(now.year, now.month + 3, now.day);
+        break;
+      case 'yearly':
+        next = DateTime(now.year + 1, now.month, now.day);
+        break;
       case 'monthly':
       default:
         next = DateTime(now.year, now.month + _repeatInterval, now.day);
@@ -185,6 +209,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         'run_time': timeStr,
         'is_active': true,
         'tags': tags,
+        if (_repeatDay != null) 'repeat_day': _repeatDay,
+        if (_repeatDates != null) 'repeat_dates': _repeatDates,
       });
     } catch (_) {
       // Non-critical — the immediate transaction was already saved.
@@ -750,10 +776,16 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 repeatFrequency: _repeatFrequency,
                 repeatTime: _repeatTime,
                 repeatEndDate: _repeatEndDate,
+                repeatDay: _repeatDay,
+                repeatDates: _repeatDates,
+                biweeklyStartDate: _biweeklyStartDate,
                 onIntervalChanged: (v) => setState(() => _repeatInterval = v),
                 onFrequencyChanged: (v) => setState(() => _repeatFrequency = v),
                 onTimeChanged: (v) => setState(() => _repeatTime = v),
                 onEndDateChanged: (v) => setState(() => _repeatEndDate = v),
+                onRepeatDayChanged: (v) => setState(() => _repeatDay = v),
+                onRepeatDatesChanged: (v) => setState(() => _repeatDates = v),
+                onBiweeklyStartDateChanged: (v) => setState(() => _biweeklyStartDate = v),
                 cs: cs,
               ),
               const SizedBox(height: 12),
