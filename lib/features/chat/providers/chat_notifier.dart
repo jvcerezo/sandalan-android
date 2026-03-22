@@ -8,6 +8,10 @@ import '../../../data/models/chat_models.dart';
 import '../../../data/repositories/chat_report_repository.dart';
 import '../../../data/repositories/learned_keyword_repository.dart';
 import '../../../core/services/guide_search_service.dart';
+import '../../../core/services/spending_insights_service.dart';
+import '../../../core/services/guest_mode_service.dart';
+import '../../../data/local/app_database.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../data/repositories/local_account_repository.dart';
 import '../../../data/repositories/local_transaction_repository.dart';
 
@@ -30,6 +34,18 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
 
   int _idCounter = 0;
   String _nextId() => 'msg-${DateTime.now().millisecondsSinceEpoch}-${_idCounter++}';
+
+  AppDatabase? _getDb() {
+    try { return AppDatabase.instance; } catch (_) { return null; }
+  }
+
+  String _getUserId() {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) return user.id;
+    } catch (_) {}
+    return GuestModeService.getGuestIdSync() ?? 'guest';
+  }
 
   // ─── Public API ────────────────────────────────────────────────────────
 
@@ -254,6 +270,15 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
         case QueryType.accountBalance:
           await _queryNetWorth(); // same data, different framing
           break;
+        case QueryType.spendingInsights:
+          await _queryInsights();
+          break;
+        case QueryType.exportCsv:
+          _addBotMessage("To export your transactions as CSV, go to Transactions and tap the download icon, or go to Settings > Privacy & Data.");
+          break;
+        case QueryType.currencyConvert:
+          _addBotMessage("Open the Currency Converter in Tools to convert between currencies. You can find it under Calculators & Tools > Utilities.");
+          break;
         case null:
           _addBotMessage("I'm not sure what to look up. Try 'net worth' or 'gastos ko'");
       }
@@ -271,6 +296,27 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     final total = accounts.fold<double>(0, (sum, a) => sum + a.balance);
     final lines = accounts.map((a) => "  ${a.name} — PHP ${_formatAmount(a.balance)}").join('\n');
     _addBotMessage("Your net worth is PHP ${_formatAmount(total)} across ${accounts.length} account${accounts.length == 1 ? '' : 's'}:\n$lines");
+  }
+
+  Future<void> _queryInsights() async {
+    try {
+      final db = _getDb();
+      if (db == null) {
+        _addBotMessage("Can't access the database right now. Try again later.");
+        return;
+      }
+      final userId = _getUserId();
+      final insights = await SpendingInsightsService.getInsights(db, userId);
+      if (insights.isEmpty) {
+        _addBotMessage("No insights available yet. Keep logging transactions and I'll find patterns for you!");
+        return;
+      }
+      final top3 = insights.take(3);
+      final lines = top3.map((i) => "  \u2022 ${i.text}").join('\n');
+      _addBotMessage("Here are your top insights:\n$lines\n\nCheck the Dashboard for more details.");
+    } catch (_) {
+      _addBotMessage("Couldn't load insights right now. Try the Dashboard instead.");
+    }
   }
 
   Future<void> _querySpendingSummary() async {

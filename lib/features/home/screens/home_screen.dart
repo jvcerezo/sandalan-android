@@ -25,6 +25,8 @@ import '../widgets/weekly_recap_card.dart';
 import '../../../core/services/salary_allocation_service.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../tools/widgets/bill_calendar.dart';
+import '../../transactions/widgets/quick_add_strip.dart';
+import '../widgets/insight_card.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -397,6 +399,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 14),
+
+          // ─── Quick Add Templates ──────────────────────────────────
+          StaggeredFadeIn(
+            index: 3,
+            child: const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: QuickAddStrip(),
+            ),
+          ),
+
+          // ─── Spending Insight ─────────────────────────────────────
+          StaggeredFadeIn(
+            index: 3,
+            child: const HomeInsightCard(),
+          ),
 
           // ─── Tier 2: Contextual Card (Recap or Tip) ───────────────
           StaggeredFadeIn(

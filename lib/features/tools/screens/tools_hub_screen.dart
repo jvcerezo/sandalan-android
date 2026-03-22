@@ -71,6 +71,18 @@ class ToolsHubScreen extends StatelessWidget {
             onTap: () => context.go('/tools/calculators'),
           ),
         ]),
+        const SizedBox(height: 16),
+
+        // Utilities
+        _ToolSection(title: 'Utilities', tools: [
+          _ToolItem(
+            icon: LucideIcons.globe,
+            color: AppColors.toolBlue,
+            title: 'Currency Converter',
+            subtitle: 'Convert between currencies',
+            onTap: () => context.go('/tools/currency'),
+          ),
+        ]),
       ],
     );
   }

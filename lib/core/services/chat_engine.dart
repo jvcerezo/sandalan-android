@@ -153,6 +153,19 @@ class ChatEngine {
     final adviceResult = _checkAdvice(lower);
     if (adviceResult != null) return adviceResult;
 
+    // ─── 4b. Direct query shortcuts (insights, export, convert) ──────
+    if (_containsAny(lower, ['insight', 'insights', 'pattern', 'patterns', 'analysis',
+        'spending pattern', 'any insights', 'analyze'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingInsights, message: '');
+    }
+    if (_containsAny(lower, ['export', 'download csv', 'csv export', 'export transactions'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.exportCsv, message: '');
+    }
+    if (_containsAny(lower, ['convert', 'exchange rate']) ||
+        RegExp(r'\d+\s*(dollar|usd|euro|eur|pound|gbp|yen|jpy|sgd|aud)\b', caseSensitive: false).hasMatch(lower)) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.currencyConvert, message: '');
+    }
+
     // ─── 5. Check negation ───────────────────────────────────────────
     final negationResult = _checkNegation(lower);
     if (negationResult != null) return negationResult;

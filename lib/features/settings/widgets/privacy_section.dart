@@ -6,6 +6,10 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/legal.dart';
 import '../../../core/services/app_lock_service.dart';
 import '../../../core/services/data_export_service.dart';
+import '../../../core/services/csv_export_service.dart';
+import '../../../core/services/guest_mode_service.dart';
+import '../../../data/local/app_database.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
 
@@ -20,6 +24,7 @@ class PrivacySection extends ConsumerStatefulWidget {
 class _PrivacySectionState extends ConsumerState<PrivacySection> {
   final _deleteCtl = TextEditingController();
   bool _exporting = false;
+  bool _exportingCsv = false;
 
   // App lock state
   bool _appLockEnabled = false;
@@ -133,6 +138,34 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
     }
   }
 
+  String get _csvUserId {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) return user.id;
+    return GuestModeService.getGuestIdSync() ?? 'guest';
+  }
+
+  Future<void> _exportCsv() async {
+    setState(() => _exportingCsv = true);
+    final path = await CsvExportService.exportTransactions(
+      db: AppDatabase.instance,
+      userId: _csvUserId,
+    );
+    if (!mounted) return;
+    setState(() => _exportingCsv = false);
+    if (path != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('CSV exported to:\n$path', style: const TextStyle(fontSize: 12)),
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('CSV export failed. Please try again.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
   void _openLegalDocument(String title, String content) {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => _LegalDocumentScreen(title: title, content: content),
@@ -190,6 +223,16 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(LucideIcons.download, size: 14),
             label: Text(_exporting ? 'Exporting...' : 'Download My Data')),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+            onPressed: _exportingCsv ? null : _exportCsv,
+            icon: _exportingCsv
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(LucideIcons.fileText, size: 14),
+            label: Text(_exportingCsv ? 'Exporting...' : 'Export as CSV')),
         const SizedBox(height: 16),
         const Text('Legal Documents',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),

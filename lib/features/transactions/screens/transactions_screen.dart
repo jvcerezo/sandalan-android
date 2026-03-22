@@ -15,6 +15,7 @@ import '../../accounts/providers/account_providers.dart';
 import '../widgets/add_transaction_dialog.dart';
 import '../widgets/transaction_detail_sheet.dart';
 import '../widgets/transaction_filters_panel.dart';
+import '../widgets/export_dialog.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
@@ -89,9 +90,9 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           ),
         ),
 
-        // Title + Add button
+        // Title + Export button
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Transactions',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
             count.when(
@@ -100,7 +101,12 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
             ),
-          ]),
+          ])),
+          IconButton(
+            icon: Icon(LucideIcons.download, size: 18, color: colorScheme.onSurfaceVariant),
+            tooltip: 'Export CSV',
+            onPressed: () => showExportDialog(context),
+          ),
         ]),
         const SizedBox(height: 14),
 

@@ -6,6 +6,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/models/account.dart';
 import '../../../data/repositories/transaction_repository.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/transaction_providers.dart';
 import 'add_transaction_dialog.dart';
 
@@ -126,6 +127,26 @@ void showTransactionDetailSheet(
             ),
           )),
         ]),
+
+        // Split this (only for expenses)
+        if (!isIncome && !isTransfer) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                context.go('/split-bills');
+              },
+              icon: const Icon(LucideIcons.users, size: 16),
+              label: const Text('Split this'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
       ]),
     ),
   );

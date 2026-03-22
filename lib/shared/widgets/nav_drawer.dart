@@ -45,6 +45,7 @@ final _navGroups = [
   // More
   const _NavGroup(label: 'MORE', items: [
     _NavItem(label: 'Reports', icon: LucideIcons.fileText, path: '/reports'),
+    _NavItem(label: 'Split Bills', icon: LucideIcons.users, path: '/split-bills'),
     _NavItem(label: 'Achievements', icon: LucideIcons.award, path: '/achievements'),
   ]),
 ];

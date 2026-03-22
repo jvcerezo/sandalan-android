@@ -19,6 +19,7 @@ import '../widgets/planning_tab.dart';
 import '../widgets/health_tab.dart';
 import '../widgets/insights_tab.dart';
 import '../widgets/net_worth_chart.dart';
+import '../widgets/ai_insights_section.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -347,6 +348,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           // Tab content — lazy: only builds the active tab
           _buildTabContent(),
+
+          // ── AI INSIGHTS ────────────────────────────────────────
+          const SizedBox(height: 20),
+          const AiInsightsSection(),
 
           // Bottom padding so FAB doesn't cover content
           const SizedBox(height: 80),

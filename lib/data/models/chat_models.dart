@@ -25,6 +25,9 @@ enum QueryType {
   billsDue,
   recentTransactions,
   accountBalance,
+  spendingInsights,
+  exportCsv,
+  currencyConvert,
 }
 
 enum CorrectionType {

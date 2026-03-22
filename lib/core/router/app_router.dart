@@ -36,6 +36,8 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
+import '../../features/splits/screens/splits_screen.dart';
+import '../../features/tools/screens/currency_converter_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -149,6 +151,8 @@ final appRouter = GoRouter(
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: DebtManagerScreen())))),
     GoRoute(path: '/tools/taxes', parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: TaxTrackerScreen())))),
+    GoRoute(path: '/tools/currency', parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, s) => const MaterialPage(child: CurrencyConverterScreen())),
 
     // ─── App routes (with shell) ─────────────────────────────────────
     ShellRoute(
@@ -204,6 +208,12 @@ final appRouter = GoRouter(
           ),
         ),
         // Tool sub-routes removed from ShellRoute — see top-level routes
+        GoRoute(
+          path: '/split-bills',
+          pageBuilder: (context, state) => const MaterialPage(
+            child: SplitsScreen(),
+          ),
+        ),
         GoRoute(
           path: '/achievements',
           pageBuilder: (context, state) => const MaterialPage(

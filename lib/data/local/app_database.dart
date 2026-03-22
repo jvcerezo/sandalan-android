@@ -187,6 +187,22 @@ class AppDatabase {
       )
     ''');
 
+    // ─── Bill Splits ────────────────────────────────────────────────────────
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_bill_splits (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        description TEXT NOT NULL,
+        total_amount REAL NOT NULL,
+        split_method TEXT NOT NULL DEFAULT 'equal',
+        participants TEXT NOT NULL,
+        is_settled INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        sync_status TEXT NOT NULL DEFAULT 'pending'
+      )
+    ''');
+
     // ─── Net Worth Snapshots ────────────────────────────────────────────────
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS net_worth_snapshots (
@@ -276,6 +292,7 @@ class AppDatabase {
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bills_user ON local_bills(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_debts_user ON local_debts(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_insurance_user ON local_insurance(user_id)');
+    await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_bill_splits_user ON local_bill_splits(user_id)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_net_worth_user_date ON net_worth_snapshots(user_id, date DESC)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_learned_keyword ON learned_keywords(user_id, keyword)');
     await _db.customStatement('CREATE INDEX IF NOT EXISTS idx_chat_report_sync ON chat_report_queue(user_id, sync_status)');
@@ -333,7 +350,7 @@ class AppDatabase {
   static const _allowedTables = {
     'local_transactions', 'local_accounts', 'local_budgets', 'local_goals',
     'local_contributions', 'local_bills', 'local_debts', 'local_insurance',
-    'net_worth_snapshots', 'learned_keywords', 'chat_report_queue',
+    'local_bill_splits', 'net_worth_snapshots', 'learned_keywords', 'chat_report_queue',
   };
 
   Future<void> _upsert(String table, Map<String, dynamic> values) async {
@@ -835,6 +852,22 @@ class AppDatabase {
 
   Future<void> deleteInsurance(String id) async {
     await _db.customStatement('DELETE FROM local_insurance WHERE id = ?', [id]);
+  }
+
+  // ─── Bill Splits ─────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getBillSplits(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_bill_splits WHERE user_id = ? ORDER BY is_settled ASC, created_at DESC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertBillSplit(Map<String, dynamic> values) => _upsert('local_bill_splits', values);
+
+  Future<void> deleteBillSplit(String id) async {
+    await _db.customStatement('DELETE FROM local_bill_splits WHERE id = ?', [id]);
   }
 
   // ─── Investments ─────────────────────────────────────────────────────────
