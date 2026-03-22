@@ -71,7 +71,7 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(LucideIcons.arrowLeft, size: 14, color: cs.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text('Tools', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              Text('My Finances', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             ]),
           ),
         ),
@@ -291,76 +291,77 @@ class _PolicyRow extends StatelessWidget {
     final freq = _freqShort(policy.premiumFrequency);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(children: [
-        Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.toolTeal.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(LucideIcons.shield, size: 16, color: AppColors.toolTeal),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Text(policy.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(policy.type, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Top row: icon + name + type badge + premium
+        Row(children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.toolTeal.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ]),
-          Text([
-            if (policy.provider != null) '${policy.provider}',
-            '${formatCurrency(policy.premiumAmount)}/$freq',
-            if (policy.coverageAmount != null) 'Covered: ${formatCurrency(policy.coverageAmount!)}',
-          ].join(' · '), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-        ])),
-        Text('${formatCurrency(policy.premiumAmount)}/$freq',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-        const SizedBox(width: 4),
-        // Pay premium
-        IconButton(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              useSafeArea: true,
-              builder: (_) => PayInsuranceDialog(policy: policy),
-            ).then((result) {
-              if (result == true) {
-                ref.invalidate(insurancePoliciesProvider);
-                ref.invalidate(insuranceSummaryProvider);
-              }
-            });
-          },
-          icon: Icon(LucideIcons.circleDollarSign, size: 16, color: cs.onSurfaceVariant),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-        ),
-        // Renew
-        IconButton(
-          onPressed: () {},
-          icon: Icon(LucideIcons.refreshCw, size: 14, color: cs.onSurfaceVariant),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-        ),
-        // Delete
-        IconButton(
-          onPressed: () async {
-            await ref.read(insuranceRepositoryProvider).deletePolicy(policy.id);
-            ref.invalidate(insurancePoliciesProvider);
-            ref.invalidate(insuranceSummaryProvider);
-          },
-          icon: Icon(LucideIcons.trash2, size: 14, color: AppColors.expense.withValues(alpha: 0.5)),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-        ),
+            child: const Icon(LucideIcons.shield, size: 16, color: AppColors.toolTeal),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Flexible(child: Text(policy.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  maxLines: 1, overflow: TextOverflow.ellipsis)),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(policy.type, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+              ),
+            ]),
+            const SizedBox(height: 2),
+            Text([
+              if (policy.provider != null) policy.provider!,
+              'Covered: ${formatCurrency(policy.coverageAmount ?? 0)}',
+            ].join(' · '), style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+          ])),
+          const SizedBox(width: 8),
+          Text('${formatCurrency(policy.premiumAmount)}/$freq',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        ]),
+        // Action buttons row
+        const SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          _ActionChip(
+            icon: LucideIcons.circleDollarSign,
+            label: 'Pay',
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => PayInsuranceDialog(policy: policy),
+              ).then((result) {
+                if (result == true) {
+                  ref.invalidate(insurancePoliciesProvider);
+                  ref.invalidate(insuranceSummaryProvider);
+                }
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+          _ActionChip(
+            icon: LucideIcons.trash2,
+            label: 'Delete',
+            isDestructive: true,
+            onTap: () async {
+              await ref.read(insuranceRepositoryProvider).deletePolicy(policy.id);
+              ref.invalidate(insurancePoliciesProvider);
+              ref.invalidate(insuranceSummaryProvider);
+            },
+          ),
+        ]),
+        const Divider(height: 1),
       ]),
     );
   }
@@ -468,6 +469,36 @@ class _PendingInsuranceRow extends StatelessWidget {
           ),
         ),
       ]),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDestructive;
+  const _ActionChip({required this.icon, required this.label, required this.onTap, this.isDestructive = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final color = isDestructive ? cs.error : cs.onSurfaceVariant;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: color)),
+        ]),
+      ),
     );
   }
 }

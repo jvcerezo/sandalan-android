@@ -74,7 +74,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(LucideIcons.arrowLeft, size: 14, color: colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text('Tools', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+              Text('My Finances', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
             ]),
           ),
         ),
