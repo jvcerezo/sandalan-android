@@ -12,6 +12,7 @@ import '../widgets/currency_section.dart';
 import '../widgets/privacy_section.dart';
 import '../widgets/bug_report_section.dart';
 import '../widgets/account_section.dart';
+import '../widgets/feature_visibility_section.dart';
 
 // ─── Main Settings Menu ────────────────────────────────────────────────────────
 
@@ -107,6 +108,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             sub: 'Customize your Home',
             onTap: () => setState(() => _activeSection = 'homepage')),
         _MenuItem(
+            icon: LucideIcons.eyeOff,
+            title: 'Feature Visibility',
+            sub: 'Hide features you don\'t need',
+            onTap: () => setState(() => _activeSection = 'visibility')),
+        _MenuItem(
             icon: LucideIcons.refreshCw,
             title: 'Currency',
             sub: 'Rates & primary currency',
@@ -163,6 +169,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return NotificationsSection(back: back);
       case 'homepage':
         return HomePageSection(back: back);
+      case 'visibility':
+        return FeatureVisibilitySection(back: back);
       case 'currency':
         return CurrencySection(back: back);
       case 'privacy':

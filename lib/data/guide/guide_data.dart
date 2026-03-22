@@ -33,6 +33,7 @@ class Guide {
   final String description;
   final String category;
   final int readMinutes;
+  final List<String> summary; // TL;DR bullet points
   final List<ToolLink> toolLinks;
   final List<GuideSection> sections;
 
@@ -42,6 +43,7 @@ class Guide {
     required this.description,
     required this.category,
     required this.readMinutes,
+    this.summary = const [],
     this.toolLinks = const [],
     required this.sections,
   });

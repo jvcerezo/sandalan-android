@@ -118,6 +118,12 @@ class _ArticleScreenState extends State<ArticleScreen> {
             child: Text(guide.category, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: stage.color)),
           ),
         ]),
+        const SizedBox(height: 16),
+
+        // Quick Summary (TL;DR)
+        if (guide.summary.isNotEmpty)
+          _QuickSummaryCard(summary: guide.summary, stageColor: stage.color),
+
         const SizedBox(height: 20),
 
         // Sections
@@ -323,6 +329,80 @@ class _CalloutBox extends StatelessWidget {
         ]),
         const SizedBox(height: 6),
         Text(text, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85), height: 1.5)),
+      ]),
+    );
+  }
+}
+
+// ─── Quick Summary (TL;DR) ───────────────────────────────────────────────────
+
+class _QuickSummaryCard extends StatefulWidget {
+  final List<String> summary;
+  final Color stageColor;
+  const _QuickSummaryCard({required this.summary, required this.stageColor});
+
+  @override
+  State<_QuickSummaryCard> createState() => _QuickSummaryCardState();
+}
+
+class _QuickSummaryCardState extends State<_QuickSummaryCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: widget.stageColor, width: 3)),
+        color: widget.stageColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(children: [
+        // Header — always visible, tappable
+        InkWell(
+          onTap: () => setState(() => _expanded = !_expanded),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Row(children: [
+              Icon(LucideIcons.clipboardList, size: 14, color: widget.stageColor),
+              const SizedBox(width: 8),
+              Text('QUICK SUMMARY',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5, color: widget.stageColor)),
+              const Spacer(),
+              AnimatedRotation(
+                turns: _expanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 200),
+                child: Icon(LucideIcons.chevronDown, size: 16, color: cs.onSurfaceVariant),
+              ),
+            ]),
+          ),
+        ),
+
+        // Content — collapsible
+        AnimatedCrossFade(
+          firstChild: const SizedBox(width: double.infinity, height: 0),
+          secondChild: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              ...widget.summary.map((point) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(LucideIcons.checkCircle2, size: 14, color: widget.stageColor),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(point,
+                      style: TextStyle(fontSize: 12, color: cs.onSurface, height: 1.4))),
+                ]),
+              )),
+              const SizedBox(height: 4),
+              Text('Read full article below ↓',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontStyle: FontStyle.italic)),
+            ]),
+          ),
+          crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 250),
+        ),
       ]),
     );
   }
