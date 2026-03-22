@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
 import '../../features/transactions/screens/receipt_scanner_screen.dart';
 import '../../features/accounts/widgets/add_account_dialog.dart';
@@ -20,6 +21,7 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
   bool _isOpen = false;
   late final AnimationController _animController;
   late final Animation<double> _rotationAnim;
+  String _aiName = 'Sandalan AI';
 
   @override
   void initState() {
@@ -27,6 +29,15 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
     _animController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
     _rotationAnim = Tween<double>(begin: 0, end: 0.125).animate(
         CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _loadAiName();
+  }
+
+  Future<void> _loadAiName() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('ai_assistant_name');
+    if (name != null && name.isNotEmpty && mounted) {
+      setState(() => _aiName = name);
+    }
   }
 
   @override
@@ -106,7 +117,7 @@ class _ContextFABState extends State<ContextFAB> with SingleTickerProviderStateM
       return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
         if (_isOpen) ...[
           _FabMenuItem(
-            label: 'Sandalan AI',
+            label: _aiName,
             icon: LucideIcons.messageCircle,
             onTap: () { _close(); context.push('/chat'); },
           ),

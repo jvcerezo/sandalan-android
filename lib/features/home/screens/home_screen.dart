@@ -111,10 +111,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Color _flameColor(int s) {
-    if (s >= 100) return const Color(0xFFEF4444); // red
-    if (s >= 30) return const Color(0xFFF97316);  // orange
-    if (s >= 7) return const Color(0xFFF59E0B);   // amber
-    return const Color(0xFF9CA3AF);                // gray
+    if (s >= 100) return const Color(0xFFEF4444); // blazing red
+    if (s >= 30) return const Color(0xFFF97316);   // strong orange
+    if (s >= 7) return const Color(0xFFF59E0B);    // warm amber
+    if (s >= 1) return const Color(0xFFD97706);    // earthy amber (active, not gray)
+    return const Color(0xFF9CA3AF);                 // gray (only when 0)
   }
 
   /// Tier 2 contextual card slot logic:
@@ -213,7 +214,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        color: _flameColor(_streak).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -225,8 +226,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             '$_streak',
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w800,
+                              color: _flameColor(_streak),
                             ),
                           ),
                         ],
