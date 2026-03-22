@@ -27,6 +27,8 @@ import '../../features/tools/screens/rent_vs_buy_screen.dart';
 import '../../features/tools/screens/panganay_mode_screen.dart';
 import '../../features/tools/screens/calculators_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
+import '../../features/investments/screens/investments_screen.dart';
+import '../../features/settings/widgets/salary_allocation_screen.dart';
 import '../../features/achievements/screens/achievements_screen.dart';
 import '../../features/reports/screens/reports_list_screen.dart';
 import '../../features/reports/screens/monthly_report_screen.dart';
@@ -119,6 +121,12 @@ final appRouter = GoRouter(
         ),
       ),
     ),
+
+    // ─── Investments + Salary Allocation (full-screen push) ──────────
+    GoRoute(path: '/investments', parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, s) => const MaterialPage(child: InvestmentsScreen())),
+    GoRoute(path: '/salary-allocation', parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (_, s) => const MaterialPage(child: SalaryAllocationScreen())),
 
     // ─── Tool sub-pages (full-screen push, no shell) ────────────────
     GoRoute(path: '/tools/contributions', parentNavigatorKey: rootNavigatorKey,

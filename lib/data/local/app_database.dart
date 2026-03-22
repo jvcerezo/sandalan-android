@@ -200,6 +200,28 @@ class AppDatabase {
       )
     ''');
 
+    // ─── Investments ──────────────────────────────────────────────────────
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_investments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        amount_invested REAL NOT NULL DEFAULT 0,
+        current_value REAL NOT NULL DEFAULT 0,
+        account_id TEXT,
+        date_started TEXT NOT NULL,
+        notes TEXT,
+        navpu TEXT,
+        units REAL,
+        interest_rate REAL,
+        maturity_date TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        sync_status TEXT NOT NULL DEFAULT 'pending'
+      )
+    ''');
+
     // ─── Chat AI tables ───────────────────────────────────────────────────
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS learned_keywords (
@@ -813,6 +835,22 @@ class AppDatabase {
 
   Future<void> deleteInsurance(String id) async {
     await _db.customStatement('DELETE FROM local_insurance WHERE id = ?', [id]);
+  }
+
+  // ─── Investments ─────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getInvestments(String userId) async {
+    final results = await _db.customSelect(
+      'SELECT * FROM local_investments WHERE user_id = ? ORDER BY created_at DESC',
+      variables: [Variable.withString(userId)],
+    ).get();
+    return results.map((r) => r.data).toList();
+  }
+
+  Future<void> upsertInvestment(Map<String, dynamic> values) => _upsert('local_investments', values);
+
+  Future<void> deleteInvestment(String id) async {
+    await _db.customStatement('DELETE FROM local_investments WHERE id = ?', [id]);
   }
 
   // ─── Net Worth Snapshots ─────────────────────────────────────────────────
