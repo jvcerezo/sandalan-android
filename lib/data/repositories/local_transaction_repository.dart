@@ -270,47 +270,50 @@ class LocalTransactionRepository {
     required DateTime date,
     String? description,
   }) async {
-    final now = AppDatabase.now();
-    final dateStr = date.toIso8601String().substring(0, 10);
-    final transferId = _generateId();
+    // Wrap in DB transaction for atomicity — if any step fails, all are rolled back.
+    await _db.runInTransaction(() async {
+      final now = AppDatabase.now();
+      final dateStr = date.toIso8601String().substring(0, 10);
+      final transferId = _generateId();
 
-    // Debit from source
-    await _db.upsertTransaction({
-      'id': _generateId(),
-      'user_id': _userId,
-      'amount': -amount,
-      'category': 'Transfer',
-      'description': description ?? 'Transfer',
-      'date': dateStr,
-      'currency': 'PHP',
-      'account_id': fromAccountId,
-      'transfer_id': transferId,
-      'status': 'confirmed',
-      'sync_status': 'pending',
-      'created_at': now,
-      'updated_at': now,
+      // Debit from source
+      await _db.upsertTransaction({
+        'id': _generateId(),
+        'user_id': _userId,
+        'amount': -amount,
+        'category': 'Transfer',
+        'description': description ?? 'Transfer',
+        'date': dateStr,
+        'currency': 'PHP',
+        'account_id': fromAccountId,
+        'transfer_id': transferId,
+        'status': 'confirmed',
+        'sync_status': 'pending',
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      // Credit to destination
+      await _db.upsertTransaction({
+        'id': _generateId(),
+        'user_id': _userId,
+        'amount': amount,
+        'category': 'Transfer',
+        'description': description ?? 'Transfer',
+        'date': dateStr,
+        'currency': 'PHP',
+        'account_id': toAccountId,
+        'transfer_id': transferId,
+        'status': 'confirmed',
+        'sync_status': 'pending',
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      // Update balances
+      await _updateAccountBalance(fromAccountId, -amount);
+      await _updateAccountBalance(toAccountId, amount);
     });
-
-    // Credit to destination
-    await _db.upsertTransaction({
-      'id': _generateId(),
-      'user_id': _userId,
-      'amount': amount,
-      'category': 'Transfer',
-      'description': description ?? 'Transfer',
-      'date': dateStr,
-      'currency': 'PHP',
-      'account_id': toAccountId,
-      'transfer_id': transferId,
-      'status': 'confirmed',
-      'sync_status': 'pending',
-      'created_at': now,
-      'updated_at': now,
-    });
-
-    // Update balances
-    await _updateAccountBalance(fromAccountId, -amount);
-    await _updateAccountBalance(toAccountId, amount);
   }
 
   // ─── Budget threshold checks ───────────────────────────────────────────

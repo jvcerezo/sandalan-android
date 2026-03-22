@@ -18,7 +18,9 @@ class SyncService with WidgetsBindingObserver {
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isSyncing = false;
+  DateTime? _lastSyncAttempt;
   static const _lastSyncKey = 'last_sync_date';
+  static const _minSyncInterval = Duration(seconds: 60);
 
   SyncService(this._client, this._db);
 
@@ -70,9 +72,17 @@ class SyncService with WidgetsBindingObserver {
   }
 
   /// Full sync: pull from remote, then push local pending changes.
+  /// Rate-limited to at most once per 60 seconds.
   Future<void> fullSync() async {
     if (_isSyncing || _userId == null) return;
     if (!await _isOnline()) return;
+
+    // Rate limit: don't sync more than once per minute
+    if (_lastSyncAttempt != null &&
+        DateTime.now().difference(_lastSyncAttempt!) < _minSyncInterval) {
+      return;
+    }
+    _lastSyncAttempt = DateTime.now();
 
     _isSyncing = true;
     try {
@@ -81,9 +91,11 @@ class SyncService with WidgetsBindingObserver {
       // Sync chat error reports
       try {
         await ChatReportRepository(_db, _client).syncPendingReports();
-      } catch (_) {}
-    } catch (_) {
-      // Silently fail — we'll retry next cycle
+      } catch (e) {
+        if (kDebugMode) debugPrint('SyncService: chat report sync failed: $e');
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('SyncService: fullSync failed: $e');
     } finally {
       _isSyncing = false;
     }
@@ -112,26 +124,30 @@ class SyncService with WidgetsBindingObserver {
   Future<void> _pullTable(String remoteTable, String localTable, String userId) async {
     try {
       final data = await _client.from(remoteTable).select().eq('user_id', userId);
-      final remoteIds = <String>{};
 
+      // Batch: collect all pending IDs upfront (1 query instead of N)
+      final pendingIds = (await _db.getPendingRows(localTable))
+          .map((r) => r['id'] as String)
+          .toSet();
+
+      final remoteIds = <String>{};
       for (final row in data) {
         final id = row['id'] as String;
         remoteIds.add(id);
-        // Check if there's a pending local version — don't overwrite it
-        final existing = await _db.getRowById(localTable, id);
-        if (existing != null && existing['sync_status'] == 'pending') {
-          continue; // Local pending change takes priority until pushed
-        }
+        // Skip if local has pending changes for this row
+        if (pendingIds.contains(id)) continue;
 
         final localRow = _remoteToLocal(row, remoteTable);
         await _upsertToLocal(localTable, localRow);
       }
 
-      // Remove local 'synced' rows that no longer exist on remote (deleted on web).
-      // Skip pending/failed rows — those haven't been pushed yet.
-      await _removeDeletedRows(localTable, userId, remoteIds);
-    } catch (_) {
-      // Individual table pull failure shouldn't stop others
+      // Guard: only remove deleted rows if remote returned actual data.
+      // An empty response could mean API error, not "user deleted everything."
+      if (data.isNotEmpty) {
+        await _removeDeletedRows(localTable, userId, remoteIds);
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('SyncService: pull $remoteTable failed: $e');
     }
   }
 
@@ -144,8 +160,8 @@ class SyncService with WidgetsBindingObserver {
           await _db.deleteRow(localTable, localId);
         }
       }
-    } catch (_) {
-      // Non-critical — stale rows are harmless compared to data loss
+    } catch (e) {
+      if (kDebugMode) debugPrint('SyncService: removeDeletedRows $localTable failed: $e');
     }
   }
 
@@ -223,12 +239,13 @@ class SyncService with WidgetsBindingObserver {
           final remoteRow = _localToRemote(row, localTable);
           await _client.from(remoteTable).upsert(remoteRow);
           await _db.markSynced(localTable, row['id'] as String);
-        } catch (_) {
+        } catch (e) {
+          if (kDebugMode) debugPrint('SyncService: push $remoteTable row ${row['id']} failed: $e');
           await _db.markFailed(localTable, row['id'] as String);
         }
       }
-    } catch (_) {
-      // Individual table push failure shouldn't stop others
+    } catch (e) {
+      if (kDebugMode) debugPrint('SyncService: push $remoteTable failed: $e');
     }
   }
 

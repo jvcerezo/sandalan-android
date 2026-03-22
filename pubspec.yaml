@@ -1,7 +1,7 @@
 name: sandalan
 description: Sandalan — Your Filipino adulting guide and personal finance tracker.
 publish_to: 'none'
-version: 0.1.3+12
+version: 0.1.3+13
 
 environment:
   sdk: ^3.7.0
@@ -77,6 +77,8 @@ dependencies:
 
   # Dynamic color (Material You)
   dynamic_color: ^1.7.0
+  flutter_secure_storage: ^10.0.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

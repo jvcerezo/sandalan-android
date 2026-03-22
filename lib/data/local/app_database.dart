@@ -306,7 +306,17 @@ class AppDatabase {
 
   // ─── Generic upsert ─────────────────────────────────────────────────────
 
+  /// Whitelisted table names to prevent SQL injection via table name interpolation.
+  static const _allowedTables = {
+    'local_transactions', 'local_accounts', 'local_budgets', 'local_goals',
+    'local_contributions', 'local_bills', 'local_debts', 'local_insurance',
+    'net_worth_snapshots', 'learned_keywords', 'chat_report_queue',
+  };
+
   Future<void> _upsert(String table, Map<String, dynamic> values) async {
+    assert(_allowedTables.contains(table), 'Invalid table name: $table');
+    if (!_allowedTables.contains(table)) return;
+
     final columns = values.keys.join(', ');
     final placeholders = values.keys.map((_) => '?').join(', ');
     final updateClauses = values.keys
@@ -319,6 +329,11 @@ class AppDatabase {
       'ON CONFLICT(id) DO UPDATE SET $updateClauses',
       values.values.toList(),
     );
+  }
+
+  /// Run multiple operations atomically.
+  Future<T> runInTransaction<T>(Future<T> Function() action) {
+    return _db.transaction(action);
   }
 
   // ─── Transactions ────────────────────────────────────────────────────────
@@ -726,7 +741,13 @@ class AppDatabase {
 
   // ─── Pending sync queries ────────────────────────────────────────────────
 
+  void _assertTable(String table) {
+    assert(_allowedTables.contains(table), 'Invalid table name: $table');
+  }
+
   Future<List<Map<String, dynamic>>> getPendingRows(String table) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return [];
     final results = await _db.customSelect(
       "SELECT * FROM $table WHERE sync_status IN ('pending', 'failed')",
     ).get();
@@ -734,6 +755,8 @@ class AppDatabase {
   }
 
   Future<void> markSynced(String table, String id) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return;
     await _db.customStatement(
       "UPDATE $table SET sync_status = 'synced' WHERE id = ?",
       [id],
@@ -741,6 +764,8 @@ class AppDatabase {
   }
 
   Future<void> markFailed(String table, String id) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return;
     await _db.customStatement(
       "UPDATE $table SET sync_status = 'failed' WHERE id = ?",
       [id],
@@ -749,6 +774,8 @@ class AppDatabase {
 
   /// Get IDs of all synced rows for a user in a table (for remote deletion detection).
   Future<List<String>> getSyncedRowIds(String table, String userId) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return [];
     final results = await _db.customSelect(
       "SELECT id FROM $table WHERE user_id = ? AND sync_status = 'synced'",
       variables: [Variable.withString(userId)],
@@ -758,6 +785,8 @@ class AppDatabase {
 
   /// Delete a single row by ID from a table.
   Future<void> deleteRow(String table, String id) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return;
     await _db.customStatement('DELETE FROM $table WHERE id = ?', [id]);
   }
 
