@@ -105,7 +105,43 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
         const Text('Full Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
         TextField(controller: _nameCtl, decoration: const InputDecoration(isDense: true)),
+        const SizedBox(height: 16),
+        const Divider(),
         const SizedBox(height: 12),
+        // Life Stage
+        const Text('Life Stage', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<String>(
+          value: _lifeStageOptions.containsKey(profile?.lifeStage) ? profile?.lifeStage : null,
+          decoration: const InputDecoration(isDense: true, hintText: 'Select your life stage'),
+          items: _lifeStageOptions.entries
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .toList(),
+          onChanged: (v) async {
+            if (v == null) return;
+            await ref.read(authRepositoryProvider).updateProfile(lifeStage: v);
+            ref.invalidate(profileProvider);
+          },
+        ),
+        const SizedBox(height: 14),
+        // User Type
+        const Text('I am a...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        DropdownButtonFormField<String>(
+          value: _userTypeOptions.containsKey(profile?.userType) ? profile?.userType : null,
+          decoration: const InputDecoration(isDense: true, hintText: 'Select what describes you'),
+          items: _userTypeOptions.entries
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .toList(),
+          onChanged: (v) async {
+            if (v == null) return;
+            await ref.read(authRepositoryProvider).updateProfile(userType: v);
+            ref.invalidate(profileProvider);
+          },
+        ),
+        Text('Changing this updates which guides are recommended for you.',
+            style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 16),
         FilledButton(
             onPressed: () async {
               await ref
@@ -116,7 +152,7 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
             style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 minimumSize: const Size(double.infinity, 0)),
-            child: const Text('Save')),
+            child: const Text('Save Name')),
         const SizedBox(height: 8),
         Text('Member since ${profile?.createdAt.substring(0, 10) ?? ''}',
             style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
@@ -124,3 +160,22 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
     ]);
   }
 }
+
+const _lifeStageOptions = {
+  'unang-hakbang': 'Unang Hakbang — Fresh grad / First job',
+  'pundasyon': 'Pundasyon — Building foundations',
+  'tahanan': 'Tahanan — Establishing a home',
+  'tugatog': 'Tugatog — Career peak',
+  'paghahanda': 'Paghahanda — Pre-retirement',
+  'gintong-taon': 'Gintong Taon — Golden years',
+};
+
+const _userTypeOptions = {
+  'student': 'Student',
+  'fresh-grad': 'Fresh Graduate',
+  'employee': 'Employee',
+  'freelancer': 'Freelancer / Self-Employed',
+  'ofw': 'OFW',
+  'business-owner': 'Business Owner',
+  'homemaker': 'Homemaker',
+};

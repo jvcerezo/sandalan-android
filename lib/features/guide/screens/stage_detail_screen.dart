@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/guide/guide_data.dart';
+import '../../../data/guide/guide_recommendations.dart';
 import '../../../shared/widgets/animated_counter.dart';
+import '../../auth/providers/auth_provider.dart';
 
-class StageDetailScreen extends StatefulWidget {
+class StageDetailScreen extends ConsumerStatefulWidget {
   final String stageSlug;
   const StageDetailScreen({super.key, required this.stageSlug});
 
   @override
-  State<StageDetailScreen> createState() => _StageDetailScreenState();
+  ConsumerState<StageDetailScreen> createState() => _StageDetailScreenState();
 }
 
-class _StageDetailScreenState extends State<StageDetailScreen>
+class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
     with SingleTickerProviderStateMixin {
   final Set<String> _completedItems = {};
   final Set<String> _skippedItems = {};
@@ -208,28 +211,33 @@ class _StageDetailScreenState extends State<StageDetailScreen>
           ),
         ),
       ],
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Guides tab
-          _GuidesTab(
-            stage: stage,
-            readGuides: _readGuides,
-            onReturn: _loadProgress,
-          ),
-          // Checklist tab
-          _ChecklistTab(
-            stage: stage,
-            stageSlug: widget.stageSlug,
-            completedItems: _completedItems,
-            skippedItems: _skippedItems,
-            color: stage.color,
-            filter: _checklistFilter,
-            onFilterChanged: (f) => setState(() => _checklistFilter = f),
-            onLoadProgress: _loadProgress,
-          ),
-        ],
-      ),
+      body: Builder(builder: (context) {
+        final userType = ref.watch(profileProvider).valueOrNull?.userType;
+        return TabBarView(
+          controller: _tabController,
+          children: [
+            // Guides tab
+            _GuidesTab(
+              stage: stage,
+              readGuides: _readGuides,
+              onReturn: _loadProgress,
+              userType: userType,
+            ),
+            // Checklist tab
+            _ChecklistTab(
+              stage: stage,
+              stageSlug: widget.stageSlug,
+              completedItems: _completedItems,
+              skippedItems: _skippedItems,
+              color: stage.color,
+              filter: _checklistFilter,
+              onFilterChanged: (f) => setState(() => _checklistFilter = f),
+              onLoadProgress: _loadProgress,
+              userType: userType,
+            ),
+          ],
+        );
+      }),
       ),
     ),
     );
@@ -321,11 +329,13 @@ class _GuidesTab extends StatelessWidget {
   final LifeStage stage;
   final Set<String> readGuides;
   final VoidCallback onReturn;
+  final String? userType;
 
   const _GuidesTab({
     required this.stage,
     required this.readGuides,
     required this.onReturn,
+    this.userType,
   });
 
   @override
@@ -334,16 +344,28 @@ class _GuidesTab extends StatelessWidget {
     final readCount =
         stage.guides.where((g) => readGuides.contains(g.slug)).length;
 
+    // Sort: recommended first, then the rest
+    final sorted = List<Guide>.from(stage.guides);
+    if (userType != null && userType!.isNotEmpty) {
+      sorted.sort((a, b) {
+        final aRec = isGuideRecommended(userType, a.slug, a.category) ? 0 : 1;
+        final bRec = isGuideRecommended(userType, b.slug, b.category) ? 0 : 1;
+        return aRec.compareTo(bRec);
+      });
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
       children: [
-        ...stage.guides.map((guide) {
+        ...sorted.map((guide) {
           final isRead = readGuides.contains(guide.slug);
+          final isRec = isGuideRecommended(userType, guide.slug, guide.category);
           return _GuideItem(
             guide: guide,
             stageSlug: stage.slug,
             color: stage.color,
             isRead: isRead,
+            isRecommended: isRec,
             onReturn: onReturn,
           );
         }),
@@ -370,6 +392,7 @@ class _GuideItem extends StatelessWidget {
   final String stageSlug;
   final Color color;
   final bool isRead;
+  final bool isRecommended;
   final VoidCallback onReturn;
 
   const _GuideItem({
@@ -377,6 +400,7 @@ class _GuideItem extends StatelessWidget {
     required this.stageSlug,
     required this.color,
     required this.isRead,
+    this.isRecommended = false,
     required this.onReturn,
   });
 
@@ -457,6 +481,22 @@ class _GuideItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
                     Row(children: [
+                      if (isRecommended) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(LucideIcons.sparkles, size: 9, color: color),
+                            const SizedBox(width: 3),
+                            Text('Recommended',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+                          ]),
+                        ),
+                      ],
                       Icon(LucideIcons.clock,
                           size: 10,
                           color:
@@ -511,6 +551,7 @@ class _ChecklistTab extends StatelessWidget {
   final String filter;
   final ValueChanged<String> onFilterChanged;
   final VoidCallback onLoadProgress;
+  final String? userType;
 
   const _ChecklistTab({
     required this.stage,
@@ -521,6 +562,7 @@ class _ChecklistTab extends StatelessWidget {
     required this.filter,
     required this.onFilterChanged,
     required this.onLoadProgress,
+    this.userType,
   });
 
   @override
@@ -543,9 +585,14 @@ class _ChecklistTab extends StatelessWidget {
       groups[key]!.add(item);
     }
 
-    // Sort within groups: incomplete first, then done, then skipped
+    // Sort within groups: recommended first, then incomplete, then done, then skipped
     for (final key in groups.keys) {
       groups[key]!.sort((a, b) {
+        // Recommended items float to top
+        final aRec = isChecklistRecommended(userType, a.id) ? 0 : 1;
+        final bRec = isChecklistRecommended(userType, b.id) ? 0 : 1;
+        if (aRec != bRec) return aRec.compareTo(bRec);
+
         int rank(ChecklistItem i) {
           if (skippedItems.contains(i.id)) return 2;
           if (completedItems.contains(i.id)) return 1;
@@ -653,10 +700,12 @@ class _ChecklistTab extends StatelessWidget {
               ...items.map((item) {
                 final isDone = completedItems.contains(item.id);
                 final isSkipped = skippedItems.contains(item.id);
+                final isRec = isChecklistRecommended(userType, item.id);
                 return _ChecklistRow(
                   item: item,
                   isDone: isDone,
                   isSkipped: isSkipped,
+                  isRecommended: isRec,
                   color: color,
                   onTap: () async {
                     await GoRouter.of(context)
@@ -693,6 +742,7 @@ class _ChecklistRow extends StatelessWidget {
   final ChecklistItem item;
   final bool isDone;
   final bool isSkipped;
+  final bool isRecommended;
   final Color color;
   final VoidCallback onTap;
 
@@ -700,6 +750,7 @@ class _ChecklistRow extends StatelessWidget {
     required this.item,
     required this.isDone,
     required this.isSkipped,
+    this.isRecommended = false,
     required this.color,
     required this.onTap,
   });
@@ -767,6 +818,24 @@ class _ChecklistRow extends StatelessWidget {
                         fontSize: 11, color: cs.onSurfaceVariant, height: 1.3),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis),
+                if (isRecommended && !isDone && !isSkipped) ...[
+                  const SizedBox(height: 4),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(LucideIcons.sparkles, size: 9, color: color),
+                        const SizedBox(width: 3),
+                        Text('Recommended',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+                      ]),
+                    ),
+                  ]),
+                ],
               ])),
           const SizedBox(width: 6),
           if (isDone)
