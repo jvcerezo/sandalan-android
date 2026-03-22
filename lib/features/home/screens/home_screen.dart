@@ -361,19 +361,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+// ─── Stage data lookup for home card ──────────────────────────────────────────
+
+class _StageInfo {
+  final String title;
+  final IconData icon;
+  final Color color;
+  const _StageInfo(this.title, this.icon, this.color);
+}
+
+const _stageMap = <String, _StageInfo>{
+  'unang-hakbang': _StageInfo('Unang Hakbang', LucideIcons.graduationCap, StageColors.blue),
+  'pundasyon': _StageInfo('Pundasyon', LucideIcons.toyBrick, StageColors.emerald),
+  'tahanan': _StageInfo('Tahanan', LucideIcons.home, StageColors.violet),
+  'tugatog': _StageInfo('Tugatog', LucideIcons.mountain, StageColors.amber),
+  'paghahanda': _StageInfo('Paghahanda', LucideIcons.clock, StageColors.rose),
+  'gintong-taon': _StageInfo('Gintong Taon', LucideIcons.gem, StageColors.yellow),
+};
+
 // ─── Current Stage Card ────────────────────────────────────────────────────────
 
-class _CurrentStageCard extends StatelessWidget {
+class _CurrentStageCard extends ConsumerWidget {
   final VoidCallback onTap;
   const _CurrentStageCard({required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    const stageColor = StageColors.blue; // Unang Hakbang = blue
+    final profile = ref.watch(profileProvider).valueOrNull;
+    final stageId = profile?.lifeStage ?? 'unang-hakbang';
+    final stage = _stageMap[stageId] ??
+        const _StageInfo('Unang Hakbang', LucideIcons.graduationCap, StageColors.blue);
 
     return Semantics(
-      label: 'Current stage: Unang Hakbang, 0 of 58 steps complete',
+      label: 'Current stage: ${stage.title}',
       button: true,
       child: InkWell(
         onTap: onTap,
@@ -390,10 +411,10 @@ class _CurrentStageCard extends StatelessWidget {
               Container(
                 width: 48, height: 48,
                 decoration: BoxDecoration(
-                  color: stageColor.withValues(alpha: 0.1),
+                  color: stage.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(LucideIcons.bookOpen, size: 20, color: stageColor),
+                child: Icon(stage.icon, size: 20, color: stage.color),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -406,8 +427,8 @@ class _CurrentStageCard extends StatelessWidget {
                           letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
                         )),
                     const SizedBox(height: 3),
-                    const Text('Unang Hakbang',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(stage.title,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -420,7 +441,7 @@ class _CurrentStageCard extends StatelessWidget {
                                 value: 0,
                                 minHeight: 6,
                                 backgroundColor: colorScheme.surfaceContainerHighest,
-                                color: stageColor,
+                                color: stage.color,
                               ),
                             ),
                           ),

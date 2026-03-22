@@ -71,14 +71,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      // Sign out any existing session first (switching accounts)
+      // Sign out any existing session first (clears local data for old user)
       try { await ref.read(authRepositoryProvider).signOut(); } catch (_) {}
       await ref.read(authRepositoryProvider).signInWithEmail(
         email: email,
         password: password,
       );
       await _migrateGuestDataIfNeeded();
-      // Always pull fresh data from Supabase after login
+      // Pull fresh data from Supabase for the newly logged-in user
       final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
       await syncService.fullSync();
       if (mounted) context.go('/home');

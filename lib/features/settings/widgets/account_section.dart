@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../shared/widgets/tour_overlay.dart';
+import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
 
 class AccountSection extends ConsumerWidget {
@@ -145,8 +146,11 @@ class AccountSection extends ConsumerWidget {
         if (!isGuest) ...[
           const SizedBox(height: 8),
           OutlinedButton.icon(
-              onPressed: () {
-                context.go('/login');
+              onPressed: () async {
+                try {
+                  await ref.read(authRepositoryProvider).signOut();
+                } catch (_) {}
+                if (context.mounted) context.go('/login');
               },
               icon: const Icon(LucideIcons.logOut, size: 16, color: AppColors.expense),
               label:

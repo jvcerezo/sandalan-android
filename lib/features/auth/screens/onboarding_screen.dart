@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
@@ -47,6 +48,38 @@ final _lifeStages = [
       description: 'Enjoying retirement, legacy planning', icon: LucideIcons.gem),
 ];
 
+class _UserTypeOption {
+  final String id;
+  final String label;
+  final String description;
+  final IconData icon;
+  const _UserTypeOption({required this.id, required this.label, required this.description, required this.icon});
+}
+
+final _userTypes = [
+  _UserTypeOption(
+      id: 'student', label: 'Student', icon: LucideIcons.bookOpen,
+      description: 'Managing baon, part-time income, school expenses'),
+  _UserTypeOption(
+      id: 'fresh-grad', label: 'Fresh Graduate', icon: LucideIcons.graduationCap,
+      description: 'First job, first salary, first adulting steps'),
+  _UserTypeOption(
+      id: 'employee', label: 'Employee', icon: LucideIcons.briefcase,
+      description: 'Regular salary, benefits, payslip deductions'),
+  _UserTypeOption(
+      id: 'freelancer', label: 'Freelancer / Self-Employed', icon: LucideIcons.laptop,
+      description: 'Irregular income, own taxes, no employer benefits'),
+  _UserTypeOption(
+      id: 'ofw', label: 'OFW', icon: LucideIcons.plane,
+      description: 'Remittances, dual currency, family support'),
+  _UserTypeOption(
+      id: 'business-owner', label: 'Business Owner', icon: LucideIcons.store,
+      description: 'Revenue vs personal, BIR compliance, payroll'),
+  _UserTypeOption(
+      id: 'homemaker', label: 'Homemaker', icon: LucideIcons.home,
+      description: 'Household budget, family finances, side income'),
+];
+
 class _FocusArea {
   final String id;
   final String label;
@@ -89,9 +122,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   String _selectedStage = '';
 
   // Step 2
-  final Set<String> _selectedFocusAreas = {};
+  String _selectedUserType = '';
 
   // Step 3
+  final Set<String> _selectedFocusAreas = {};
+
+  // Step 4
   final List<_AddedAccount> _addedAccounts = [];
   bool _showCustomForm = false;
   final _customNameController = TextEditingController();
@@ -131,7 +167,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final isGuest = GuestModeService.isGuestSync();
 
       if (isGuest) {
-        // Guest mode: skip Supabase calls, go straight to home + tour
+        // Guest mode: save selections locally via SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        if (_selectedStage.isNotEmpty) await prefs.setString('life_stage', _selectedStage);
+        if (_selectedUserType.isNotEmpty) await prefs.setString('user_type', _selectedUserType);
+        if (_selectedFocusAreas.isNotEmpty) {
+          await prefs.setStringList('focus_areas', _selectedFocusAreas.toList());
+        }
         await scheduleTour();
         if (mounted) context.go('/home');
         return;
@@ -140,6 +182,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final client = ref.read(supabaseClientProvider);
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;
+
+      // Save profile personalization
+      final authRepo = ref.read(authRepositoryProvider);
+      await authRepo.updateProfile(
+        lifeStage: _selectedStage.isNotEmpty ? _selectedStage : null,
+        userType: _selectedUserType.isNotEmpty ? _selectedUserType : null,
+        focusAreas: _selectedFocusAreas.isNotEmpty ? _selectedFocusAreas.toList() : null,
+      );
 
       // Create accounts
       for (final acc in _addedAccounts) {
@@ -154,7 +204,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       }
 
       // Complete onboarding
-      await ref.read(authRepositoryProvider).completeOnboarding();
+      await authRepo.completeOnboarding();
 
       // Schedule the tour to auto-start on the home screen.
       await scheduleTour();
@@ -276,9 +326,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: _StepProgress(current: _step, total: 4)),
+          Expanded(child: _StepProgress(current: _step, total: 5)),
           const SizedBox(width: 12),
-          Text('$_step/3',
+          Text('$_step/4',
               style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ]),
       ),
@@ -287,8 +337,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: _step == 1
             ? _buildStep1()
             : _step == 2
-                ? _buildStep2()
-                : _buildStep3(),
+                ? _buildStep2UserType()
+                : _step == 3
+                    ? _buildStep3FocusAreas()
+                    : _buildStep4Accounts(),
       ),
     ]);
   }
@@ -368,9 +420,79 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ]);
   }
 
-  // ─── Step 2: Focus Areas ────────────────────────────────────────────
+  // ─── Step 2: User Type ──────────────────────────────────────────────
 
-  Widget _buildStep2() {
+  Widget _buildStep2UserType() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('What best describes you?',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text('This helps us tailor tools, tips, and guides to your situation.',
+              style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+        ]),
+      ),
+      const SizedBox(height: 16),
+      Expanded(
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: _userTypes.length,
+          itemBuilder: (context, i) {
+            final type = _userTypes[i];
+            final isSelected = _selectedUserType == type.id;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedUserType = type.id),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.15),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  color: isSelected ? colorScheme.primary.withValues(alpha: 0.05) : null,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                      color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(type.icon, size: 20,
+                        color: isSelected ? colorScheme.onPrimary : colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(type.label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Text(type.description,
+                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                    ]),
+                  ),
+                  if (isSelected)
+                    Icon(LucideIcons.checkCircle2, size: 20, color: colorScheme.primary),
+                ]),
+              ),
+            );
+          },
+        ),
+      ),
+      _buildFooterButtons(
+        onSkip: () => setState(() => _step = 3),
+        onContinue: _selectedUserType.isNotEmpty ? () => setState(() => _step = 3) : null,
+      ),
+    ]);
+  }
+
+  // ─── Step 3: Focus Areas ────────────────────────────────────────────
+
+  Widget _buildStep3FocusAreas() {
     final colorScheme = Theme.of(context).colorScheme;
     return Column(children: [
       Padding(
@@ -431,15 +553,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
       ),
       _buildFooterButtons(
-        onSkip: () => setState(() => _step = 3),
-        onContinue: _selectedFocusAreas.isNotEmpty ? () => setState(() => _step = 3) : null,
+        onSkip: () => setState(() => _step = 4),
+        onContinue: _selectedFocusAreas.isNotEmpty ? () => setState(() => _step = 4) : null,
       ),
     ]);
   }
 
-  // ─── Step 3: Add Accounts ───────────────────────────────────────────
+  // ─── Step 4: Add Accounts ───────────────────────────────────────────
 
-  Widget _buildStep3() {
+  Widget _buildStep4Accounts() {
     final colorScheme = Theme.of(context).colorScheme;
     return Column(children: [
       Padding(

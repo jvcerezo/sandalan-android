@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../local/app_database.dart';
 
 class AuthRepository {
   final SupabaseClient _client;
@@ -40,14 +41,34 @@ class AuthRepository {
     );
   }
 
-  /// Sign out.
+  /// Sign out — clears local data to prevent cross-user leakage.
   Future<void> signOut() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId != null) {
+      await AppDatabase.instance.clearAllData(userId);
+    }
     await _client.auth.signOut();
   }
 
   /// Complete onboarding via RPC.
   Future<void> completeOnboarding() async {
     await _client.rpc('complete_onboarding');
+  }
+
+  /// Update profile fields (life_stage, user_type, focus_areas).
+  Future<void> updateProfile({
+    String? lifeStage,
+    String? userType,
+    List<String>? focusAreas,
+  }) async {
+    final userId = currentUser?.id;
+    if (userId == null) return;
+    final updates = <String, dynamic>{};
+    if (lifeStage != null) updates['life_stage'] = lifeStage;
+    if (userType != null) updates['user_type'] = userType;
+    if (focusAreas != null) updates['focus_areas'] = focusAreas;
+    if (updates.isEmpty) return;
+    await _client.from('profiles').update(updates).eq('id', userId);
   }
 
   /// Delete account (signs out first, then deletes via edge function or RPC).
