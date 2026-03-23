@@ -40,17 +40,16 @@ class _AppScaffoldState extends State<AppScaffold> {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
 
-    return BackButtonListener(
-      onBackButtonPressed: () async {
+    return _NativeBackHandler(
+      onBack: () {
         // Settings handles its own back (sub-sections)
-        if (location == '/settings') return false;
+        if (location == '/settings') return;
 
         if (location == '/home') {
           // On /home → double back to exit
           final now = DateTime.now();
           if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
             SystemNavigator.pop();
-            return true;
           } else {
             _lastBackPress = now;
             if (context.mounted) {
@@ -62,12 +61,10 @@ class _AppScaffoldState extends State<AppScaffold> {
                 ),
               );
             }
-            return true; // consumed — don't close app
           }
         } else {
           // ANY other screen → go to home
           context.go('/home');
-          return true; // consumed — don't close app
         }
       },
       child: TourHost(
@@ -140,4 +137,39 @@ class _AppScaffoldState extends State<AppScaffold> {
       ),
     );
   }
+}
+
+/// Listens for native Android back presses via MethodChannel.
+/// This bypasses Flutter's PopScope which doesn't work on Android 13+
+/// with predictive back gestures.
+class _NativeBackHandler extends StatefulWidget {
+  final VoidCallback onBack;
+  final Widget child;
+  const _NativeBackHandler({required this.onBack, required this.child});
+
+  @override
+  State<_NativeBackHandler> createState() => _NativeBackHandlerState();
+}
+
+class _NativeBackHandlerState extends State<_NativeBackHandler> {
+  static const _channel = MethodChannel('com.jvcerezo.sandalan/back');
+
+  @override
+  void initState() {
+    super.initState();
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onBackPressed') {
+        widget.onBack();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _channel.setMethodCallHandler(null);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
