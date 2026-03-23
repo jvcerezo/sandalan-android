@@ -44,43 +44,28 @@ class _AppScaffoldState extends State<AppScaffold> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        // Non-root paths (e.g. /reports/2026/3) — let child PopScope handle
-        if (!_isRootPath(location)) return;
-        if (_isRootPath(location)) {
-          // Settings handles its own back (sub-sections)
-          if (location == '/settings') return;
-          if (location != '/home') {
-            // On a root tab that isn't home → go to home
-            context.go('/home');
+
+        // Settings handles its own back (sub-sections)
+        if (location == '/settings') return;
+
+        if (location == '/home') {
+          // On /home → double back to exit
+          final now = DateTime.now();
+          if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+            SystemNavigator.pop();
           } else {
-            // On /home → double back to exit
-            final now = DateTime.now();
-            if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
-              SystemNavigator.pop();
-            } else {
-              _lastBackPress = now;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Press back again to exit'),
-                  duration: Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
+            _lastBackPress = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Press back again to exit'),
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
           }
         } else {
-          // On sub-page, navigate back
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            // Fallback: go to parent route
-            final segments = location.split('/');
-            if (segments.length > 2) {
-              context.go(segments.sublist(0, segments.length - 1).join('/'));
-            } else {
-              context.go('/home');
-            }
-          }
+          // ANY other screen → go to home
+          context.go('/home');
         }
       },
       child: TourHost(
