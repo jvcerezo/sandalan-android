@@ -136,7 +136,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.75,
+      initialChildSize: 0.9,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,
@@ -145,115 +145,127 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
           color: cs.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        child: ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          children: [
-            Center(child: Container(
-              width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
+        child: Column(children: [
+          // Drag handle + title
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Center(child: Container(
+              width: 36, height: 4,
               decoration: BoxDecoration(
                 color: cs.outline.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
+          ),
+          const Center(child: Text('Add Debt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 8),
 
-            const Text('Add Debt', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-
-            _label('Name *'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _nameCtl,
-              maxLength: 100,
-              decoration: _inputDecoration(cs, 'e.g. BPI Credit Card'),
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            _label('Balance / Amount *'),
-            const SizedBox(height: 6),
-            _amountField(cs, _balanceCtl, 'Amount'),
-            const SizedBox(height: 12),
-
-            _label('Interest Rate % (annual)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _rateCtl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
-              decoration: _inputDecoration(cs, '0'),
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            _label('Minimum Monthly Payment'),
-            const SizedBox(height: 6),
-            _amountField(cs, _minPayCtl, '0'),
-            const SizedBox(height: 12),
-
-            _label('Type'),
-            const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 4, children: _types.entries.map((e) {
-              final selected = _type == e.key;
-              return GestureDetector(
-                onTap: () => setState(() => _type = e.key),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                    border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(e.value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
-                      color: selected ? cs.primary : cs.onSurfaceVariant)),
-                ),
-              );
-            }).toList()),
-            const SizedBox(height: 12),
-
-            _label('Lender (optional)'),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _lenderCtl,
-              maxLength: 100,
-              decoration: _inputDecoration(cs, 'e.g. BPI, SSS'),
-              style: const TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _label('Due Day (1-31)'),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _dueDayCtl,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
-                  decoration: _inputDecoration(cs, 'e.g. 15'),
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ])),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _label('Linked Account'),
-                const SizedBox(height: 6),
-                _accountDropdown(cs, accounts),
-              ])),
-            ]),
-            const SizedBox(height: 16),
-
-            FilledButton(
-              onPressed: _saving ? null : _handleSave,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          // Scrollable form fields
+          Expanded(child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            children: [
+              _label('Name *'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _nameCtl,
+                maxLength: 100,
+                decoration: _inputDecoration(cs, 'e.g. BPI Credit Card'),
+                style: const TextStyle(fontSize: 13),
               ),
-              child: _saving
-                  ? const SizedBox(height: 18, width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Add Debt'),
+              const SizedBox(height: 12),
+
+              _label('Balance / Amount *'),
+              const SizedBox(height: 6),
+              _amountField(cs, _balanceCtl, 'Amount'),
+              const SizedBox(height: 12),
+
+              _label('Interest Rate % (annual)'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _rateCtl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+                decoration: _inputDecoration(cs, '0'),
+                style: const TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+
+              _label('Minimum Monthly Payment'),
+              const SizedBox(height: 6),
+              _amountField(cs, _minPayCtl, '0'),
+              const SizedBox(height: 12),
+
+              _label('Type'),
+              const SizedBox(height: 8),
+              Wrap(spacing: 6, runSpacing: 4, children: _types.entries.map((e) {
+                final selected = _type == e.key;
+                return GestureDetector(
+                  onTap: () => setState(() => _type = e.key),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
+                      border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(e.value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                        color: selected ? cs.primary : cs.onSurfaceVariant)),
+                  ),
+                );
+              }).toList()),
+              const SizedBox(height: 12),
+
+              _label('Lender (optional)'),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _lenderCtl,
+                maxLength: 100,
+                decoration: _inputDecoration(cs, 'e.g. BPI, SSS'),
+                style: const TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _label('Due Day (1-31)'),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _dueDayCtl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+                    decoration: _inputDecoration(cs, 'e.g. 15'),
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ])),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _label('Linked Account'),
+                  const SizedBox(height: 6),
+                  _accountDropdown(cs, accounts),
+                ])),
+              ]),
+            ],
+          )),
+
+          // Sticky button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _saving ? null : _handleSave,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: _saving
+                    ? const SizedBox(height: 18, width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Add Debt'),
+              ),
             ),
-          ],
-        ),
+          ),
+        ]),
       ),
     );
   }

@@ -122,6 +122,34 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
             onChanged: _onDailyLogChanged),
       ])),
       const SizedBox(height: 12),
+      // Test Notification
+      SettingsCard(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(LucideIcons.bellRing, size: 18, color: cs.onSurface),
+          const SizedBox(width: 8),
+          const Text('Test', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ]),
+        Text('Send a test notification to verify your setup',
+            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              await NotificationService.instance.sendTestNotification();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Test notification sent!')),
+                );
+              }
+            },
+            icon: const Icon(LucideIcons.send, size: 16),
+            label: const Text('Send Test Notification'),
+          ),
+        ),
+      ])),
+      const SizedBox(height: 12),
       // Quiet Hours
       SettingsCard(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

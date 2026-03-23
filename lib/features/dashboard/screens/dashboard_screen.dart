@@ -205,28 +205,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final activeDebts = debtSummary.valueOrNull?.activeCount ?? 0;
 
             return Row(children: [
-              GestureDetector(
-                onTap: () => context.go('/accounts'),
-                child: QuickStat(icon: LucideIcons.landmark,
-                    label: 'Accounts',
-                    value: fc(totalBalance),
-                    subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.go('/accounts'),
+                  child: _QuickStatContent(icon: LucideIcons.landmark,
+                      label: 'Accounts',
+                      value: fc(totalBalance),
+                      subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
+                ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => context.go('/goals'),
-                child: QuickStat(icon: LucideIcons.target,
-                    label: 'Goals',
-                    value: fc(goalSaved),
-                    subtitle: '$activeGoals active'),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.go('/goals'),
+                  child: _QuickStatContent(icon: LucideIcons.target,
+                      label: 'Goals',
+                      value: fc(goalSaved),
+                      subtitle: '$activeGoals active'),
+                ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => context.go('/budgets'),
-                child: QuickStat(icon: LucideIcons.creditCard,
-                    label: 'Debts',
-                    value: fc(totalDebt),
-                    subtitle: '$activeDebts active'),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.go('/budgets'),
+                  child: _QuickStatContent(icon: LucideIcons.creditCard,
+                      label: 'Debts',
+                      value: fc(totalDebt),
+                      subtitle: '$activeDebts active'),
+                ),
               ),
             ]);
           }),
@@ -354,6 +360,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const AiInsightsSection(),
         ],
       ),
+    );
+  }
+}
+
+/// A QuickStat-like card without the built-in Expanded wrapper,
+/// so the parent can control sizing via its own Expanded.
+class _QuickStatContent extends StatelessWidget {
+  final IconData icon;
+  final String? label;
+  final String value;
+  final String subtitle;
+  const _QuickStatContent({required this.icon, this.label, required this.value, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border.all(color: colorScheme.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, size: 14, color: colorScheme.primary),
+          if (label != null) ...[
+            const SizedBox(width: 5),
+            Text(label!, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                letterSpacing: 0.5, color: colorScheme.onSurfaceVariant)),
+          ],
+        ]),
+        const SizedBox(height: 6),
+        Text(value,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        const SizedBox(height: 2),
+        Text(subtitle, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+      ]),
     );
   }
 }

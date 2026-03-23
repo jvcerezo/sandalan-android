@@ -156,17 +156,21 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           categoryFilter: _categoryFilter,
           onSearch: _applyFilters,
           onToggleFilters: () => setState(() => _showFilters = !_showFilters),
-          onDateRangeChanged: (v) => setState(() => _dateRange = v),
-          onCategoryChanged: (v) => setState(() => _categoryFilter = v),
-          onFiltersDone: () {
+          onDateRangeChanged: (v) {
+            setState(() => _dateRange = v);
             _applyFilters();
-            setState(() => _showFilters = false);
+          },
+          onCategoryChanged: (v) {
+            setState(() => _categoryFilter = v);
+            _applyFilters();
           },
         ),
         const SizedBox(height: 16),
 
         // Transaction list
-        transactions.when(
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: transactions.when(
           skipLoadingOnRefresh: true,
           skipLoadingOnReload: true,
           data: (txns) {
@@ -251,7 +255,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           },
           loading: () => const ShimmerList(itemCount: 6),
           error: (e, _) => Center(child: Text('Error: $e')),
-        ),
+        )),
       ],
     );
   }

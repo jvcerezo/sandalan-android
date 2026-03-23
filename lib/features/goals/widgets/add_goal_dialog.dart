@@ -148,7 +148,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
     }
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.3, expand: false,
+      initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),

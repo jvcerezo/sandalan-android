@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -99,15 +100,21 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final amount = double.tryParse(_amountCtl.text.replaceAll(',', '')) ?? 0;
     final converted = _convert(amount, _fromCode, _toCode);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/tools');
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft, size: 20),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.go('/tools'),
         ),
         title: const Text('Currency Converter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       ),
-      body: ListView(
+      body: SafeArea(
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Input amount
@@ -206,8 +213,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
             ]),
           ),
         ],
-      ),
-    );
+      )),
+    ));
   }
 }
 

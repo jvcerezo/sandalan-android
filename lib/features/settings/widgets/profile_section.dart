@@ -176,9 +176,10 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
           value: _lifeStageOptions.containsKey(profile?.lifeStage) ? profile?.lifeStage : null,
+          isExpanded: true,
           decoration: const InputDecoration(isDense: true, hintText: 'Select your life stage'),
           items: _lifeStageOptions.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis, maxLines: 1)))
               .toList(),
           onChanged: (v) async {
             if (v == null) return;
@@ -197,9 +198,10 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
         const SizedBox(height: 4),
         DropdownButtonFormField<String>(
           value: _userTypeOptions.containsKey(profile?.userType) ? profile?.userType : null,
+          isExpanded: true,
           decoration: const InputDecoration(isDense: true, hintText: 'Select what describes you'),
           items: _userTypeOptions.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis, maxLines: 1)))
               .toList(),
           onChanged: (v) async {
             if (v == null) return;

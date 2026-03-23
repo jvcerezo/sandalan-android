@@ -13,7 +13,6 @@ class TransactionFiltersPanel extends StatelessWidget {
   final VoidCallback onToggleFilters;
   final ValueChanged<String> onDateRangeChanged;
   final ValueChanged<String> onCategoryChanged;
-  final VoidCallback onFiltersDone;
 
   const TransactionFiltersPanel({
     super.key,
@@ -25,7 +24,6 @@ class TransactionFiltersPanel extends StatelessWidget {
     required this.onToggleFilters,
     required this.onDateRangeChanged,
     required this.onCategoryChanged,
-    required this.onFiltersDone,
   });
 
   @override
@@ -104,17 +102,6 @@ class TransactionFiltersPanel extends StatelessWidget {
               onTap: () => onCategoryChanged(c),
             )).toList(),
           )),
-          const SizedBox(height: 12),
-
-          // Done button
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: onFiltersDone,
-              child: Text('Done', style: TextStyle(fontSize: 14,
-                  fontWeight: FontWeight.w600, color: colorScheme.primary)),
-            ),
-          ),
         ],
       ]);
   }

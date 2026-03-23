@@ -81,9 +81,19 @@ class _State extends State<SalaryAllocationScreen> {
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Wrap(spacing: 6, children: [
             for (final t in [('budget', 'Budget'), ('goal', 'Goal'), ('savings', 'Savings')])
-              ChoiceChip(label: Text(t.$2, style: const TextStyle(fontSize: 12)),
-                  selected: type == t.$1,
-                  onSelected: (_) => setSt(() => type = t.$1)),
+              GestureDetector(
+                onTap: () => setSt(() => type = t.$1),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: type == t.$1 ? Theme.of(ctx).colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
+                    border: Border.all(color: type == t.$1 ? Theme.of(ctx).colorScheme.primary : Theme.of(ctx).colorScheme.outline.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(t.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                      color: type == t.$1 ? Theme.of(ctx).colorScheme.primary : Theme.of(ctx).colorScheme.onSurfaceVariant)),
+                ),
+              ),
           ]),
           const SizedBox(height: 8),
           TextField(decoration: InputDecoration(labelText: type == 'budget' ? 'Category' : 'Goal Name'),
@@ -159,11 +169,22 @@ class _State extends State<SalaryAllocationScreen> {
           // Frequency
           Text('Pay Frequency', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
           const SizedBox(height: 6),
-          Wrap(spacing: 6, children: [
+          Wrap(spacing: 6, runSpacing: 6, children: [
             for (final f in [('monthly', 'Monthly'), ('twice_monthly', 'Twice a Month'), ('biweekly', 'Biweekly'), ('weekly', 'Weekly')])
-              ChoiceChip(label: Text(f.$2, style: const TextStyle(fontSize: 12)),
-                  selected: _frequency == f.$1,
-                  onSelected: (_) => setState(() => _frequency = f.$1)),
+              GestureDetector(
+                onTap: () => setState(() => _frequency = f.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _frequency == f.$1 ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
+                    border: Border.all(color: _frequency == f.$1 ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(f.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+                      color: _frequency == f.$1 ? cs.primary : cs.onSurfaceVariant)),
+                ),
+              ),
           ]),
           if (_frequency == 'twice_monthly') ...[
             const SizedBox(height: 8),

@@ -151,6 +151,9 @@ class InvestmentsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      barrierColor: Colors.black54,
       backgroundColor: Colors.transparent,
       builder: (_) => AddInvestmentDialog(
         onSaved: () => ref.invalidate(investmentsProvider),
