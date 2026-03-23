@@ -122,6 +122,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Currency',
             sub: 'Rates & primary currency',
             onTap: () => setState(() => _activeSection = 'currency')),
+        _MenuItem(
+            icon: LucideIcons.piggyBank,
+            title: 'Salary Allocation',
+            sub: 'Auto-split your salary',
+            onTap: () => context.push('/salary-allocation')),
         if (!isGuest)
           _MenuItem(
               icon: LucideIcons.shield,
