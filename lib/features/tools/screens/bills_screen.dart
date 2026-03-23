@@ -68,7 +68,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
       children: [
         // ← Tools
         GestureDetector(
-          onTap: () { if (context.canPop()) context.pop(); else context.go('/tools'); },
+          onTap: () { if (context.canPop()) context.pop(); else context.go('/dashboard'); },
           child: Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [

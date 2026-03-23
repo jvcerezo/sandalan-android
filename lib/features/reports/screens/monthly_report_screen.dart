@@ -37,7 +37,12 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
       monthlyReportProvider((year: widget.year, month: widget.month)),
     );
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/reports');
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
@@ -60,7 +65,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error generating report: $e')),
       ),
-    );
+    ));
   }
 
   Widget _buildReport(BuildContext context, MonthlyReport report) {
