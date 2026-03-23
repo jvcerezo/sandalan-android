@@ -430,7 +430,36 @@ class DueThisWeekStrip extends ConsumerWidget {
           }).toList(),
         ),
         const SizedBox(height: 8),
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _StripLegendDot(color: const Color(0xFFEF4444), label: 'Bills'),
+            const SizedBox(width: 12),
+            _StripLegendDot(color: const Color(0xFFF97316), label: 'Debts'),
+            const SizedBox(width: 12),
+            _StripLegendDot(color: const Color(0xFF14B8A6), label: 'Insurance'),
+            const SizedBox(width: 12),
+            _StripLegendDot(color: const Color(0xFF8B5CF6), label: 'Contrib.'),
+          ],
+        ),
+        const SizedBox(height: 4),
       ],
     );
+  }
+}
+
+class _StripLegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _StripLegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 3),
+      Text(label, style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+    ]);
   }
 }
