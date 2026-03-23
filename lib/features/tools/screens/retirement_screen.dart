@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -45,18 +44,6 @@ class _RetirementScreenState extends State<RetirementScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
       children: [
-        GestureDetector(
-          onTap: () => context.go('/tools'),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.arrowLeft, size: 14, color: cs.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text('Tools', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-            ]),
-          ),
-        ),
-
         // Header
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(

@@ -81,6 +81,11 @@ class AutomationService {
       await _scheduleDailyLogReminder(db, client);
     }
 
+    // ── Schedule morning summary (9 AM) ──────────────────────────────────
+    if (prefs.getBool(AutomationKeys.morningSummary) ?? true) {
+      await _scheduleMorningSummary(db, client);
+    }
+
     // ── Record daily net worth snapshot ────────────────────────────────────
     await _recordNetWorthSnapshot(db, client);
 
@@ -466,11 +471,13 @@ class AutomationService {
       // If user already logged manual transactions today, skip
       if (hasManualToday) return;
 
-      // Schedule notification at 7:00 PM Manila time today
-      final target = DateTime(now.year, now.month, now.day, 19, 0);
-
-      // Only schedule if 7 PM hasn't passed yet
-      if (target.isAfter(now)) {
+      // Schedule notification at 7:00 PM Manila time
+      // If 7 PM today has passed, schedule for tomorrow
+      var target = DateTime(now.year, now.month, now.day, 19, 0);
+      if (!target.isAfter(now)) {
+        target = target.add(const Duration(days: 1));
+      }
+      {
         final notifId = 'daily-log-$todayStr'.hashCode;
 
         // Contextual, day-aware notification body
@@ -537,6 +544,44 @@ class AutomationService {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('AutomationService: daily log reminder failed: $e');
+    }
+  }
+
+  // ── Morning Summary (9 AM) ─────────────────────────────────────────────
+
+  static Future<void> _scheduleMorningSummary(AppDatabase db, SupabaseClient client) async {
+    try {
+      final now = DateTime.now();
+      var target = DateTime(now.year, now.month, now.day, 9, 0);
+      if (!target.isAfter(now)) {
+        target = target.add(const Duration(days: 1));
+      }
+
+      final txnRepo = LocalTransactionRepository(db, client);
+      final billRepo = LocalBillRepository(db, client);
+      final bills = await billRepo.getBills();
+      final dueSoon = bills.where((b) => b.isActive && b.dueDay != null).where((b) {
+        final daysUntilDue = (b.dueDay! - target.day).abs();
+        return daysUntilDue <= 3;
+      }).toList();
+
+      String body = "Good morning! ";
+      if (dueSoon.isNotEmpty) {
+        final names = dueSoon.take(2).map((b) => b.name).join(', ');
+        body += "${dueSoon.length} bill${dueSoon.length > 1 ? 's' : ''} due soon ($names). ";
+      }
+      body += "Have a productive day! ☀️";
+
+      final notifId = 'morning-${target.toIso8601String().substring(0, 10)}'.hashCode;
+      await NotificationService.instance.scheduleNotification(
+        id: notifId,
+        title: "Good Morning! ☀️",
+        body: body,
+        scheduledDate: target,
+      );
+      if (kDebugMode) debugPrint('AutomationService: morning summary scheduled for $target');
+    } catch (e) {
+      if (kDebugMode) debugPrint('AutomationService: morning summary failed: $e');
     }
   }
 

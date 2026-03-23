@@ -91,10 +91,7 @@ final appRouter = GoRouter(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
-    GoRoute(
-      path: '/chat',
-      builder: (context, state) => const ChatScreen(),
-    ),
+    // Chat moved into ShellRoute below for consistent header + menu FAB
 
     // ─── Guide sub-pages (full-screen push, no shell) ───────────────
     GoRoute(
@@ -231,6 +228,12 @@ final appRouter = GoRouter(
           path: '/settings',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: SettingsScreen(),
+          ),
+        ),
+        GoRoute(
+          path: '/chat',
+          pageBuilder: (context, state) => const MaterialPage(
+            child: ChatScreen(),
           ),
         ),
       ],

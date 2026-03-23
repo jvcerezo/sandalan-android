@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/formatters.dart';
@@ -72,19 +71,6 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
       children: [
-        // ← Tools
-        GestureDetector(
-          onTap: () { if (context.canPop()) context.pop(); else context.go('/dashboard'); },
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.arrowLeft, size: 14, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text('Dashboard', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-            ]),
-          ),
-        ),
-
         // Header
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(

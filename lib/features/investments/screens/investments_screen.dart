@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../app.dart';
@@ -40,16 +39,6 @@ class InvestmentsScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: [
-                // Back
-                GestureDetector(
-                  onTap: () => context.canPop() ? context.pop() : context.go('/dashboard'),
-                  child: Row(children: [
-                    Icon(LucideIcons.arrowLeft, size: 16, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Text('Dashboard', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-                  ]),
-                ),
-                const SizedBox(height: 12),
                 Row(children: [
                   Icon(LucideIcons.trendingUp, size: 24, color: cs.primary),
                   const SizedBox(width: 8),

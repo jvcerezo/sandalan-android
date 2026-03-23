@@ -25,10 +25,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final earnedAsync = ref.watch(earnedMilestonesProvider);
 
     return earnedAsync.when(
-        data: (earned) => _buildContent(context, earned, colorScheme),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-      );
+      data: (earned) => _buildContent(context, earned, colorScheme),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
   }
 
   Widget _buildContent(
@@ -46,20 +46,22 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       grouped.putIfAbsent(m.category, () => []).add(m);
     }
 
+    // All categories in display order
     final categoryOrder = [
+      MilestoneCategory.financial,
+      MilestoneCategory.debtFreedom,
       MilestoneCategory.streaks,
       MilestoneCategory.transactions,
       MilestoneCategory.goalsSavings,
       MilestoneCategory.adultingJourney,
+      MilestoneCategory.toolsFeatures,
+      MilestoneCategory.special,
     ];
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        // Title
-        const Text('Achievements', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        // Header
+        // Header — no separate title since shell provides it
         Text(
           '$earnedCount of $totalCount earned',
           style: TextStyle(
@@ -133,7 +135,8 @@ class _BadgeTile extends StatelessWidget {
     return GestureDetector(
       onTap: isEarned ? () => _showDetails(context) : null,
       child: Semantics(
-        label: '${milestone.title}${isEarned ? ', earned' : ', not yet earned'}',
+        label:
+            '${milestone.title}${isEarned ? ', earned' : ', not yet earned'}',
         child: Container(
           decoration: BoxDecoration(
             color: isEarned
@@ -182,7 +185,8 @@ class _BadgeTile extends StatelessWidget {
                     _formatDate(earnedDate!),
                     style: TextStyle(
                       fontSize: 9,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -212,12 +216,14 @@ class _BadgeTile extends StatelessWidget {
                   color: colorScheme.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(milestone.icon, size: 36, color: colorScheme.primary),
+                child:
+                    Icon(milestone.icon, size: 36, color: colorScheme.primary),
               ),
               const SizedBox(height: 16),
               Text(
                 milestone.title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w600),
               ),
               if (milestone.description != null) ...[
                 const SizedBox(height: 6),
@@ -236,7 +242,8 @@ class _BadgeTile extends StatelessWidget {
                   'Earned on ${_formatDateFull(earnedDate!)}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                    color:
+                        colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
                 ),
               ],

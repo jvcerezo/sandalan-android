@@ -1,20 +1,18 @@
 /// Main app scaffold with:
-/// 1. Top header bar (hamburger + logo + search)
-/// 2. Navigation drawer (3 groups: primary, money, tools)
-/// 3. Context-aware floating action button
+/// 1. Top header bar (logo + search)
+/// 2. Context-aware floating action button OR Menu FAB
+/// 3. Full-screen menu overlay (replaces nav drawer)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'brand_mark.dart';
-import 'nav_drawer.dart';
 import 'context_fab.dart';
 import 'sync_indicator.dart';
 import 'universal_search.dart';
 import 'tour_overlay.dart';
-
-final _scaffoldKey = GlobalKey<ScaffoldState>();
+import 'menu_overlay.dart';
 
 class AppScaffold extends StatefulWidget {
   final Widget child;
@@ -26,19 +24,53 @@ class AppScaffold extends StatefulWidget {
 }
 
 class _AppScaffoldState extends State<AppScaffold> {
-  /// Root tab paths — back button on these should not pop (they're top-level).
-  static const _rootPaths = ['/home', '/guide', '/dashboard', '/transactions', '/accounts', '/tools', '/settings', '/achievements', '/reports'];
-
   DateTime? _lastBackPress;
 
-  bool _isRootPath(String location) {
-    return _rootPaths.any((p) => location == p);
+  /// Pages where the context FAB should be shown instead of the menu FAB.
+  bool _showContextFab(String location) {
+    return location.startsWith('/accounts') ||
+        location.startsWith('/budgets') ||
+        location.startsWith('/goals');
+  }
+
+  void _showMenuOverlay(BuildContext context) {
+    HapticFeedback.lightImpact();
+    Navigator.of(context).push(PageRouteBuilder(
+      opaque: false,
+      barrierDismissible: true,
+      pageBuilder: (_, __, ___) => const MenuOverlay(),
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final hasModalAbove = ModalRoute.of(context)?.isCurrent != true;
+
+    // Determine which FAB to show
+    Widget? fab;
+    FloatingActionButtonLocation fabLocation = FloatingActionButtonLocation.centerFloat;
+
+    if (!keyboardVisible && !hasModalAbove) {
+      // Menu FAB on ALL screens — this is the primary navigation
+      fab = Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showMenuOverlay(context),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          icon: const Icon(LucideIcons.menu, size: 18),
+          label: const Text('Menu', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        ),
+      );
+    }
 
     return _NativeBackHandler(
       onBack: () {
@@ -69,8 +101,6 @@ class _AppScaffoldState extends State<AppScaffold> {
       },
       child: TourHost(
       child: Scaffold(
-        key: _scaffoldKey,
-        drawer: const NavDrawer(),
         body: Column(
           children: [
             // ─── Top Header Bar ──────────────────────────────────────
@@ -89,22 +119,15 @@ class _AppScaffoldState extends State<AppScaffold> {
                   height: 56,
                   child: Row(
                     children: [
-                      // Hamburger
-                      IconButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          _scaffoldKey.currentState?.openDrawer();
-                        },
-                        icon: const Icon(LucideIcons.menu, size: 22),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      const SizedBox(width: 16),
+
+                      // Logo (left-aligned) — tap to go home
+                      GestureDetector(
+                        onTap: () => context.go('/home'),
+                        child: const BrandMark(size: 28),
                       ),
 
-                      // Logo (centered)
-                      const Expanded(
-                        child: Center(
-                          child: BrandMark(size: 28),
-                        ),
-                      ),
+                      const Spacer(),
 
                       // Sync status indicator
                       const SyncIndicator(),
@@ -128,11 +151,8 @@ class _AppScaffoldState extends State<AppScaffold> {
             Expanded(child: widget.child),
           ],
         ),
-        floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: ContextFAB(currentPath: location),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: fab,
+        floatingActionButtonLocation: fabLocation,
       ),
       ),
     );

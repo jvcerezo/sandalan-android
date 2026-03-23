@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/services/salary_allocation_service.dart';
 import '../../../core/utils/formatters.dart';
@@ -135,15 +134,6 @@ class _State extends State<SalaryAllocationScreen> {
     return Scaffold(
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 100), children: [
-          GestureDetector(
-            onTap: () => context.canPop() ? context.pop() : context.go('/dashboard'),
-            child: Row(children: [
-              Icon(LucideIcons.arrowLeft, size: 16, color: cs.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text('Dashboard', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-            ]),
-          ),
-          const SizedBox(height: 12),
           Row(children: [
             Icon(LucideIcons.wallet, size: 24, color: cs.primary),
             const SizedBox(width: 8),

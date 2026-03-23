@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/input_sanitizer.dart';
@@ -114,6 +115,11 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  /// Check milestones using an external context (for after dialog is closed).
+  Future<void> _checkTransactionMilestonesWithContext(BuildContext ctx) async {
+    return _checkTransactionMilestones(ctx);
   }
 
   /// Check transaction-count milestones after a successful create.
@@ -297,8 +303,11 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             ),
           );
           Navigator.of(ctx).pop(true);
-          // Fire-and-forget milestone check after dialog closes
-          _checkTransactionMilestones(ctx);
+          // Check milestones using the root navigator context (dialog is already closed)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final rootCtx = rootNavigatorKey.currentContext;
+            if (rootCtx != null) _checkTransactionMilestonesWithContext(rootCtx);
+          });
         }
       } catch (e) {
         setState(() => _saving = false);
@@ -390,7 +399,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         Navigator.of(ctx).pop(true);
         // Fire-and-forget milestone check for new transactions (not edits)
         if (edit == null) {
-          _checkTransactionMilestones(ctx);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final rootCtx = rootNavigatorKey.currentContext;
+            if (rootCtx != null) _checkTransactionMilestonesWithContext(rootCtx);
+          });
         }
       }
     } catch (e) {
