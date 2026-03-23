@@ -43,15 +43,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
           // Header
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Goals', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          FilledButton.icon(
-            onPressed: () => _showAddGoal(context),
-            icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('Add'),
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-          ),
-        ]),
         const SizedBox(height: 16),
 
         // Summary cards
@@ -319,10 +311,13 @@ class _GoalCard extends ConsumerWidget {
               controller: amountCtl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
+              maxLength: 12,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
               decoration: InputDecoration(
                 prefixText: '₱ ',
                 hintText: '0.00',
                 labelText: 'Amount',
+                counterText: '',
                 helperText: goal.accountId != null ? 'Will be deducted from linked account' : null,
               ),
             ),
@@ -413,10 +408,13 @@ class _GoalCard extends ConsumerWidget {
               controller: amountCtl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               autofocus: true,
+              maxLength: 12,
+              maxLengthEnforcement: MaxLengthEnforcement.enforced,
               decoration: InputDecoration(
                 prefixText: '₱ ',
                 hintText: '0.00',
                 labelText: 'Amount',
+                counterText: '',
                 helperText: goal.accountId != null ? 'Will be returned to linked account' : null,
               ),
             ),

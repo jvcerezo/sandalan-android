@@ -1011,6 +1011,19 @@ class AppDatabase {
     return results.map((r) => r.data).toList();
   }
 
+  /// Count rows with permanent failure status across all sync tables.
+  Future<int> getPermanentFailureCount(String userId) async {
+    int total = 0;
+    for (final table in _syncTables) {
+      final results = await _db.customSelect(
+        "SELECT COUNT(*) as cnt FROM $table WHERE user_id = ? AND sync_status = 'failed_permanent'",
+        variables: [Variable.withString(userId)],
+      ).get();
+      total += (results.first.data['cnt'] as int? ?? 0);
+    }
+    return total;
+  }
+
   Future<void> markSynced(String table, String id) async {
     _assertTable(table);
     if (!_allowedTables.contains(table)) return;
@@ -1041,6 +1054,31 @@ class AppDatabase {
         [reason, id],
       );
     }
+  }
+
+  /// Mark a row as permanently failed — it will not be retried.
+  Future<void> markFailedPermanent(String table, String id, {String? reason}) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return;
+    await _db.customStatement(
+      "UPDATE $table SET sync_status = 'failed_permanent' WHERE id = ?",
+      [id],
+    );
+    if (reason != null && table == 'local_transactions') {
+      await _db.customStatement(
+        'UPDATE local_transactions SET failure_reason = ? WHERE id = ?',
+        [reason, id],
+      );
+    }
+  }
+
+  /// Clear all permanently failed rows by marking them as synced (user acknowledges).
+  Future<void> clearPermanentlyFailed(String table) async {
+    _assertTable(table);
+    if (!_allowedTables.contains(table)) return;
+    await _db.customStatement(
+      "UPDATE $table SET sync_status = 'synced', failure_reason = NULL WHERE sync_status = 'failed_permanent'",
+    );
   }
 
   /// Get IDs of all synced rows for a user in a table (for remote deletion detection).

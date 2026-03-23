@@ -14,6 +14,8 @@ class SalaryAllocationScreen extends StatefulWidget {
 
 class _State extends State<SalaryAllocationScreen> {
   final _salaryCtl = TextEditingController();
+  late final TextEditingController _payDate1Ctl;
+  late final TextEditingController _payDate2Ctl;
   String _frequency = 'twice_monthly';
   int _payDate1 = 15;
   int _payDate2 = 30;
@@ -23,12 +25,16 @@ class _State extends State<SalaryAllocationScreen> {
   @override
   void initState() {
     super.initState();
+    _payDate1Ctl = TextEditingController(text: '$_payDate1');
+    _payDate2Ctl = TextEditingController(text: '$_payDate2');
     _load();
   }
 
   @override
   void dispose() {
     _salaryCtl.dispose();
+    _payDate1Ctl.dispose();
+    _payDate2Ctl.dispose();
     super.dispose();
   }
 
@@ -40,6 +46,8 @@ class _State extends State<SalaryAllocationScreen> {
       if (config.payDates.length >= 2) {
         _payDate1 = config.payDates[0];
         _payDate2 = config.payDates[1];
+        _payDate1Ctl.text = '$_payDate1';
+        _payDate2Ctl.text = '$_payDate2';
       }
       _rules = List.from(config.rules);
     }
@@ -81,8 +89,9 @@ class _State extends State<SalaryAllocationScreen> {
           TextField(decoration: InputDecoration(labelText: type == 'budget' ? 'Category' : 'Goal Name'),
               onChanged: (v) => label = v, textCapitalization: TextCapitalization.words),
           const SizedBox(height: 8),
-          TextField(decoration: const InputDecoration(labelText: 'Amount (₱)', prefixText: '₱ '),
+          TextField(decoration: const InputDecoration(labelText: 'Amount (₱)', prefixText: '₱ ', counterText: ''),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              maxLength: 12, maxLengthEnforcement: MaxLengthEnforcement.enforced,
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
               onChanged: (v) => amount = v),
         ]),
@@ -138,8 +147,10 @@ class _State extends State<SalaryAllocationScreen> {
           // Salary input
           TextField(
             controller: _salaryCtl,
-            decoration: const InputDecoration(labelText: 'Monthly Salary (₱)', prefixText: '₱ '),
+            decoration: const InputDecoration(labelText: 'Monthly Salary (₱)', prefixText: '₱ ', counterText: ''),
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            maxLength: 12,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
             onChanged: (_) => setState(() {}),
           ),
@@ -160,14 +171,14 @@ class _State extends State<SalaryAllocationScreen> {
               Expanded(child: TextField(
                 decoration: const InputDecoration(labelText: '1st payday'),
                 keyboardType: TextInputType.number,
-                controller: TextEditingController(text: '$_payDate1'),
+                controller: _payDate1Ctl,
                 onChanged: (v) => _payDate1 = int.tryParse(v) ?? 15,
               )),
               const SizedBox(width: 8),
               Expanded(child: TextField(
                 decoration: const InputDecoration(labelText: '2nd payday'),
                 keyboardType: TextInputType.number,
-                controller: TextEditingController(text: '$_payDate2'),
+                controller: _payDate2Ctl,
                 onChanged: (v) => _payDate2 = int.tryParse(v) ?? 30,
               )),
             ]),

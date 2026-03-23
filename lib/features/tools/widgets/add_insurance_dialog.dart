@@ -402,12 +402,14 @@ class _AddInsuranceDialogState extends ConsumerState<AddInsuranceDialog> {
         Expanded(child: TextField(
           controller: ctl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          maxLength: 12,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
             _ThousandsSeparatorFormatter(),
           ],
           decoration: InputDecoration(
-            hintText: hint, isDense: true,
+            hintText: hint, isDense: true, counterText: '',
             border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
           ),
           style: const TextStyle(fontSize: 14),

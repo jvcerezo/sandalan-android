@@ -6,6 +6,8 @@ import '../../core/theme/color_tokens.dart';
 
 /// Show the appropriate celebration for a milestone based on its tier.
 void showMilestoneCelebration(BuildContext context, Milestone milestone) {
+  debugPrint('showMilestoneCelebration: ${milestone.id} tier=${milestone.tier} mounted=${context.mounted}');
+  if (!context.mounted) return;
   switch (milestone.tier) {
     case MilestoneTier.a:
       HapticFeedback.heavyImpact();

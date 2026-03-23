@@ -8,22 +8,26 @@ class SyncStatusState {
   final SyncState state;
   final DateTime? lastSyncTime;
   final String? lastError;
+  final int permanentFailureCount;
 
   const SyncStatusState({
     this.state = SyncState.idle,
     this.lastSyncTime,
     this.lastError,
+    this.permanentFailureCount = 0,
   });
 
   SyncStatusState copyWith({
     SyncState? state,
     DateTime? lastSyncTime,
     String? lastError,
+    int? permanentFailureCount,
   }) {
     return SyncStatusState(
       state: state ?? this.state,
       lastSyncTime: lastSyncTime ?? this.lastSyncTime,
       lastError: lastError ?? this.lastError,
+      permanentFailureCount: permanentFailureCount ?? this.permanentFailureCount,
     );
   }
 }
@@ -49,6 +53,10 @@ class SyncStatusNotifier extends StateNotifier<SyncStatusState> {
 
   void markIdle() {
     state = state.copyWith(state: SyncState.idle);
+  }
+
+  void updatePermanentFailureCount(int count) {
+    state = state.copyWith(permanentFailureCount: count);
   }
 }
 

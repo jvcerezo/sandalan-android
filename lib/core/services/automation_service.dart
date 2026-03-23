@@ -285,6 +285,7 @@ class AutomationService {
     required double amount,
     required DateTime dueDate,
   }) async {
+    debugPrint('AutomationService: _schedulePaymentReminders for "$title" due=$dueDate idPrefix=$idPrefix');
     final baseId = idPrefix.hashCode;
 
     await NotificationService.instance.scheduleNotification(
@@ -324,12 +325,15 @@ class AutomationService {
   // ── Bill notifications ────────────────────────────────────────────────────
 
   static Future<void> _scheduleBillNotifications(AppDatabase db, SupabaseClient client) async {
+    debugPrint('AutomationService: _scheduleBillNotifications started');
     try {
       final repo = LocalBillRepository(db, client);
       final bills = await repo.getBills();
+      debugPrint('AutomationService: found ${bills.length} bills to check for notifications');
 
       for (final bill in bills) {
         if (!bill.isActive || bill.dueDay == null) continue;
+        debugPrint('AutomationService: scheduling notifications for bill "${bill.name}" due day=${bill.dueDay}');
         final dueDate = _nextDueDate(bill.dueDay!);
         await _schedulePaymentReminders(
           idPrefix: 'bill-${bill.id}',
@@ -346,6 +350,7 @@ class AutomationService {
   // ── Debt notifications ────────────────────────────────────────────────────
 
   static Future<void> _scheduleDebtNotifications(AppDatabase db, SupabaseClient client) async {
+    debugPrint('AutomationService: _scheduleDebtNotifications started');
     try {
       final repo = LocalDebtRepository(db, client);
       final debts = await repo.getDebts();
@@ -368,6 +373,7 @@ class AutomationService {
   // ── Insurance notifications ───────────────────────────────────────────────
 
   static Future<void> _scheduleInsuranceNotifications(AppDatabase db, SupabaseClient client) async {
+    debugPrint('AutomationService: _scheduleInsuranceNotifications started');
     try {
       final repo = LocalInsuranceRepository(db, client);
       final policies = await repo.getPolicies();

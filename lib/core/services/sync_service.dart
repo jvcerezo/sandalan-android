@@ -328,37 +328,77 @@ class SyncService with WidgetsBindingObserver {
     }
   }
 
+  static const _maxRetryCount = 3;
+
   Future<void> _pushTable(String localTable, String remoteTable) async {
     try {
       final pending = await _db.getPendingRows(localTable);
       for (final row in pending) {
+        // Skip rows that have permanently failed
+        final syncStatus = row['sync_status'] as String? ?? '';
+        if (syncStatus == 'failed_permanent') continue;
+
+        // Track retry count via failure_reason prefix
+        final failureReason = row['failure_reason'] as String? ?? '';
+        final retryCount = _parseRetryCount(failureReason);
+        if (retryCount >= _maxRetryCount) {
+          // Mark as permanently failed — stop retrying
+          await _db.markFailedPermanent(localTable, row['id'] as String,
+              reason: 'Max retries ($retryCount) exceeded. Last error: $failureReason');
+          continue;
+        }
+
         try {
           final remoteRow = _localToRemote(row, localTable);
           await _client.from(remoteTable).upsert(remoteRow);
           await _db.markSynced(localTable, row['id'] as String);
         } catch (e) {
           final errorMsg = e.toString();
-          debugPrint('SyncService: push $remoteTable row ${row['id']} failed: $errorMsg');
+          debugPrint('SyncService: push $remoteTable row ${row['id']} failed (attempt ${retryCount + 1}): $errorMsg');
 
           // Distinguish validation errors (non-retryable) from network errors.
-          // Postgres constraint violations (23xxx) and 400 errors won't fix on retry.
           final isValidationError = errorMsg.contains('violates check constraint') ||
-              errorMsg.contains('23') || // Postgres integrity constraint class
+              errorMsg.contains('23') ||
               errorMsg.contains('400') ||
               errorMsg.contains('not-null') ||
               errorMsg.contains('invalid input');
 
-          await _db.markFailed(
-            localTable,
-            row['id'] as String,
-            reason: isValidationError
-                ? 'Validation error: $errorMsg'
-                : 'Network error: $errorMsg',
-          );
+          if (isValidationError) {
+            // Validation errors will never succeed — mark permanent immediately
+            await _db.markFailedPermanent(
+              localTable,
+              row['id'] as String,
+              reason: 'Validation error: $errorMsg',
+            );
+          } else {
+            await _db.markFailed(
+              localTable,
+              row['id'] as String,
+              reason: 'retry:${retryCount + 1} Network error: $errorMsg',
+            );
+          }
         }
       }
     } catch (e) {
       if (kDebugMode) debugPrint('SyncService: push $remoteTable failed: $e');
+    }
+  }
+
+  /// Parse the retry count from a failure_reason string that starts with "retry:N ".
+  static int _parseRetryCount(String failureReason) {
+    final match = RegExp(r'^retry:(\d+)\s').firstMatch(failureReason);
+    return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
+  }
+
+  /// Clear all permanently failed rows by marking them as synced.
+  Future<void> clearFailedRows() async {
+    final tables = [
+      'local_transactions', 'local_accounts', 'local_budgets', 'local_goals',
+      'local_contributions', 'local_bills', 'local_debts', 'local_insurance',
+      'local_investments',
+    ];
+    for (final table in tables) {
+      await _db.clearPermanentlyFailed(table);
     }
   }
 

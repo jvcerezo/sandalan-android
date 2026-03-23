@@ -321,12 +321,14 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
         Expanded(child: TextField(
           controller: _amountCtl,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          maxLength: 12,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
             _ThousandsSeparatorFormatter(),
           ],
           decoration: const InputDecoration(
-            hintText: '0.00', isDense: true,
+            hintText: '0.00', isDense: true, counterText: '',
             border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
           ),
           style: const TextStyle(fontSize: 14),

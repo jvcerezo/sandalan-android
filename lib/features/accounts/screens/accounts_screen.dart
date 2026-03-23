@@ -42,8 +42,7 @@ class AccountsScreen extends ConsumerWidget {
               SizedBox(height: 2),
               Text('Manage your wallets and bank accounts', style: TextStyle(fontSize: 13)),
             ])),
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            OutlinedButton.icon(
+          OutlinedButton.icon(
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -60,14 +59,6 @@ class AccountsScreen extends ConsumerWidget {
               label: const Text('Transfer'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
             ),
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              onPressed: () => _showAddAccount(context, ref),
-              icon: const Icon(LucideIcons.plus, size: 16),
-              label: const Text('Add'),
-              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-            ),
-          ]),
         ]),
         const SizedBox(height: 4),
         AnimatedCurrency(

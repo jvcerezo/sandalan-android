@@ -640,6 +640,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 child: TextField(
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  maxLength: 12,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
                     ThousandsSeparatorFormatter(),
@@ -651,6 +653,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     hintStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
                     border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
+                    counterText: '',
                   ),
                 ),
               ),
