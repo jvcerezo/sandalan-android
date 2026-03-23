@@ -350,7 +350,7 @@ class AppDatabase {
   static const _allowedTables = {
     'local_transactions', 'local_accounts', 'local_budgets', 'local_goals',
     'local_contributions', 'local_bills', 'local_debts', 'local_insurance',
-    'local_bill_splits', 'net_worth_snapshots', 'learned_keywords', 'chat_report_queue',
+    'local_investments', 'local_bill_splits', 'net_worth_snapshots', 'learned_keywords', 'chat_report_queue',
   };
 
   Future<void> _upsert(String table, Map<String, dynamic> values) async {
