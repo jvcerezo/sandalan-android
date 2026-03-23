@@ -36,7 +36,7 @@ final _navGroups = [
   const _NavGroup(label: 'MONEY', items: [
     _NavItem(label: 'Dashboard', icon: LucideIcons.barChart3, path: '/dashboard'),
     _NavItem(label: 'Transactions', icon: LucideIcons.arrowLeftRight, path: '/transactions'),
-    _NavItem(label: 'My Finances', icon: LucideIcons.wallet, path: '/accounts'),
+    _NavItem(label: 'Accounts', icon: LucideIcons.wallet, path: '/accounts'),
     _NavItem(label: 'Budgets', icon: LucideIcons.pieChart, path: '/budgets'),
     _NavItem(label: 'Goals', icon: LucideIcons.target, path: '/goals'),
   ]),

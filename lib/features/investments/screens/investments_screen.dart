@@ -42,11 +42,11 @@ class InvestmentsScreen extends ConsumerWidget {
               children: [
                 // Back
                 GestureDetector(
-                  onTap: () => context.canPop() ? context.pop() : context.go('/accounts'),
+                  onTap: () => context.canPop() ? context.pop() : context.go('/dashboard'),
                   child: Row(children: [
                     Icon(LucideIcons.arrowLeft, size: 16, color: cs.onSurfaceVariant),
                     const SizedBox(width: 4),
-                    Text('My Finances', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+                    Text('Dashboard', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
                   ]),
                 ),
                 const SizedBox(height: 12),

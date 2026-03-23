@@ -38,7 +38,7 @@ class AccountsScreen extends ConsumerWidget {
           // Header
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('My Finances', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text('Accounts', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               SizedBox(height: 2),
               Text('Manage your wallets and bank accounts', style: TextStyle(fontSize: 13)),
             ])),

@@ -45,6 +45,8 @@ class _AppScaffoldState extends State<AppScaffold> {
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_isRootPath(location)) {
+          // Settings handles its own back (sub-sections)
+          if (location == '/settings') return;
           if (location != '/home') {
             // On a root tab that isn't home → go to home
             context.go('/home');
