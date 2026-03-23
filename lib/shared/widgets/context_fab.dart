@@ -196,10 +196,10 @@ class _FabMenuItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: cs.surface,
-            border: Border.all(color: cs.surfaceContainerHighest),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2))],
+            color: cs.surfaceContainerHigh,
+            border: Border.all(color: cs.outline.withValues(alpha: 0.3), width: 1),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(icon, size: 16, color: cs.onSurface),
