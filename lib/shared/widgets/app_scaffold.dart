@@ -40,32 +40,34 @@ class _AppScaffoldState extends State<AppScaffold> {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-
+    return BackButtonListener(
+      onBackButtonPressed: () async {
         // Settings handles its own back (sub-sections)
-        if (location == '/settings') return;
+        if (location == '/settings') return false;
 
         if (location == '/home') {
           // On /home → double back to exit
           final now = DateTime.now();
           if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
             SystemNavigator.pop();
+            return true;
           } else {
             _lastBackPress = now;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Press back again to exit'),
-                duration: Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Press back again to exit'),
+                  duration: Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+            return true; // consumed — don't close app
           }
         } else {
           // ANY other screen → go to home
           context.go('/home');
+          return true; // consumed — don't close app
         }
       },
       child: TourHost(
