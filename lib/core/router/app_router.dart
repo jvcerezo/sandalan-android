@@ -38,6 +38,7 @@ import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/splits/screens/splits_screen.dart';
 import '../../features/tools/screens/currency_converter_screen.dart';
+import '../../shared/widgets/safe_back_wrapper.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -99,60 +100,79 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/guide/:stageSlug',
       parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => MaterialPage(
-        child: StageDetailScreen(stageSlug: state.pathParameters['stageSlug']!),
-      ),
+      pageBuilder: (context, state) {
+        final slug = state.pathParameters['stageSlug']!;
+        return MaterialPage(child: SafeBackWrapper(
+          fallbackRoute: '/guide',
+          child: StageDetailScreen(stageSlug: slug),
+        ));
+      },
     ),
     GoRoute(
       path: '/guide/:stageSlug/checklist/:itemId',
       parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => MaterialPage(
-        child: ChecklistDetailScreen(
-          stageSlug: state.pathParameters['stageSlug']!,
-          itemId: state.pathParameters['itemId']!,
-        ),
-      ),
+      pageBuilder: (context, state) {
+        final slug = state.pathParameters['stageSlug']!;
+        return MaterialPage(child: SafeBackWrapper(
+          fallbackRoute: '/guide/$slug',
+          child: ChecklistDetailScreen(stageSlug: slug, itemId: state.pathParameters['itemId']!),
+        ));
+      },
     ),
     GoRoute(
       path: '/guide/:stageSlug/:guideSlug',
       parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => MaterialPage(
-        child: ArticleScreen(
-          stageSlug: state.pathParameters['stageSlug']!,
-          guideSlug: state.pathParameters['guideSlug']!,
-        ),
-      ),
+      pageBuilder: (context, state) {
+        final slug = state.pathParameters['stageSlug']!;
+        return MaterialPage(child: SafeBackWrapper(
+          fallbackRoute: '/guide/$slug',
+          child: ArticleScreen(stageSlug: slug, guideSlug: state.pathParameters['guideSlug']!),
+        ));
+      },
     ),
 
     // ─── Investments + Salary Allocation (full-screen push) ──────────
     GoRoute(path: '/investments', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => const MaterialPage(child: InvestmentsScreen())),
+      pageBuilder: (_, s) => const MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/dashboard', child: InvestmentsScreen()))),
     GoRoute(path: '/salary-allocation', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => const MaterialPage(child: SalaryAllocationScreen())),
+      pageBuilder: (_, s) => const MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/dashboard', child: SalaryAllocationScreen()))),
 
     // ─── Tool sub-pages (full-screen push, no shell) ────────────────
     GoRoute(path: '/tools/contributions', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: ContributionsScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: ContributionsScreen()))))),
     GoRoute(path: '/tools/13th-month', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: ThirteenthMonthScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: ThirteenthMonthScreen()))))),
     GoRoute(path: '/tools/retirement', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: RetirementScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: RetirementScreen()))))),
     GoRoute(path: '/tools/rent-vs-buy', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: RentVsBuyScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: RentVsBuyScreen()))))),
     GoRoute(path: '/tools/panganay', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: PanganayModeScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: PanganayModeScreen()))))),
     GoRoute(path: '/tools/calculators', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: CalculatorsScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: CalculatorsScreen()))))),
     GoRoute(path: '/tools/insurance', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: InsuranceScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: InsuranceScreen()))))),
     GoRoute(path: '/tools/bills', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: BillsScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: BillsScreen()))))),
     GoRoute(path: '/tools/debts', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: DebtManagerScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: DebtManagerScreen()))))),
     GoRoute(path: '/tools/taxes', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: Scaffold(body: SafeArea(child: TaxTrackerScreen())))),
+      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: TaxTrackerScreen()))))),
     GoRoute(path: '/tools/currency', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => const MaterialPage(child: CurrencyConverterScreen())),
+      pageBuilder: (_, s) => const MaterialPage(child: SafeBackWrapper(
+        fallbackRoute: '/tools', child: CurrencyConverterScreen()))),
 
     // ─── App routes (with shell) ─────────────────────────────────────
     ShellRoute(

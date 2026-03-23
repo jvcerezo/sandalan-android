@@ -44,6 +44,8 @@ class _AppScaffoldState extends State<AppScaffold> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
+        // Non-root paths (e.g. /reports/2026/3) — let child PopScope handle
+        if (!_isRootPath(location)) return;
         if (_isRootPath(location)) {
           // Settings handles its own back (sub-sections)
           if (location == '/settings') return;
