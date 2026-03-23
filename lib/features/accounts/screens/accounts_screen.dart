@@ -175,14 +175,12 @@ class _AccountCard extends ConsumerWidget {
                 ]),
               ]),
             ),
-            Flexible(
-              child: Text(formatCurrency(account.balance, currencyCode: account.currency),
-                  style: TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w700,
-                    color: account.balance >= 0 ? colorScheme.onSurface : AppColors.expense,
-                  ),
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
+            Text(formatCurrency(account.balance, currencyCode: account.currency),
+                style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w700,
+                  color: account.balance >= 0 ? colorScheme.onSurface : AppColors.expense,
+                ),
+                maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(width: 4),
             // Delete button
             IconButton(

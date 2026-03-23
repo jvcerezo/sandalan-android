@@ -24,7 +24,14 @@ class FeatureVisibilitySection extends ConsumerWidget {
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
           Switch(
             value: visible,
-            onChanged: (_) => notifier.toggle(key),
+            onChanged: (_) {
+              notifier.toggle(key);
+              final nowVisible = !(visibility[key] ?? true);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(nowVisible ? '$label is now visible' : '$label hidden from menu'),
+                duration: const Duration(seconds: 2),
+              ));
+            },
           ),
         ]),
       );

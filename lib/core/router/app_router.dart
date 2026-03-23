@@ -131,48 +131,7 @@ final appRouter = GoRouter(
       },
     ),
 
-    // ─── Investments + Salary Allocation (full-screen push) ──────────
-    GoRoute(path: '/investments', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => const MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/dashboard', child: InvestmentsScreen()))),
-    GoRoute(path: '/salary-allocation', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => const MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/dashboard', child: SalaryAllocationScreen()))),
-
-    // ─── Tool sub-pages (full-screen push, no shell) ────────────────
-    GoRoute(path: '/tools/contributions', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: ContributionsScreen()))))),
-    GoRoute(path: '/tools/13th-month', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: ThirteenthMonthScreen()))))),
-    GoRoute(path: '/tools/retirement', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: RetirementScreen()))))),
-    GoRoute(path: '/tools/rent-vs-buy', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: RentVsBuyScreen()))))),
-    GoRoute(path: '/tools/panganay', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: PanganayModeScreen()))))),
-    GoRoute(path: '/tools/calculators', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: CalculatorsScreen()))))),
-    GoRoute(path: '/tools/insurance', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: InsuranceScreen()))))),
-    GoRoute(path: '/tools/bills', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: BillsScreen()))))),
-    GoRoute(path: '/tools/debts', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/dashboard', child: Scaffold(body: SafeArea(child: DebtManagerScreen()))))),
-    GoRoute(path: '/tools/taxes', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: Scaffold(body: SafeArea(child: TaxTrackerScreen()))))),
-    GoRoute(path: '/tools/currency', parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (_, s) => const MaterialPage(child: SafeBackWrapper(
-        fallbackRoute: '/tools', child: CurrencyConverterScreen()))),
+    // Tool/finance sub-pages moved into ShellRoute below for consistent header
 
     // ─── App routes (with shell) ─────────────────────────────────────
     ShellRoute(
@@ -227,7 +186,20 @@ final appRouter = GoRouter(
             child: ToolsHubScreen(),
           ),
         ),
-        // Tool sub-routes removed from ShellRoute — see top-level routes
+        // ─── Finance & Tool sub-pages (inside shell for consistent header) ─
+        GoRoute(path: '/investments', pageBuilder: (_, s) => const MaterialPage(child: InvestmentsScreen())),
+        GoRoute(path: '/salary-allocation', pageBuilder: (_, s) => const MaterialPage(child: SalaryAllocationScreen())),
+        GoRoute(path: '/tools/contributions', pageBuilder: (_, s) => MaterialPage(child: ContributionsScreen())),
+        GoRoute(path: '/tools/13th-month', pageBuilder: (_, s) => MaterialPage(child: ThirteenthMonthScreen())),
+        GoRoute(path: '/tools/retirement', pageBuilder: (_, s) => MaterialPage(child: RetirementScreen())),
+        GoRoute(path: '/tools/rent-vs-buy', pageBuilder: (_, s) => MaterialPage(child: RentVsBuyScreen())),
+        GoRoute(path: '/tools/panganay', pageBuilder: (_, s) => MaterialPage(child: PanganayModeScreen())),
+        GoRoute(path: '/tools/calculators', pageBuilder: (_, s) => MaterialPage(child: CalculatorsScreen())),
+        GoRoute(path: '/tools/insurance', pageBuilder: (_, s) => MaterialPage(child: InsuranceScreen())),
+        GoRoute(path: '/tools/bills', pageBuilder: (_, s) => MaterialPage(child: BillsScreen())),
+        GoRoute(path: '/tools/debts', pageBuilder: (_, s) => MaterialPage(child: DebtManagerScreen())),
+        GoRoute(path: '/tools/taxes', pageBuilder: (_, s) => MaterialPage(child: TaxTrackerScreen())),
+        GoRoute(path: '/tools/currency', pageBuilder: (_, s) => const MaterialPage(child: CurrencyConverterScreen())),
         GoRoute(
           path: '/split-bills',
           pageBuilder: (context, state) => const MaterialPage(
