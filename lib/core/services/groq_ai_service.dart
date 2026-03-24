@@ -154,9 +154,14 @@ IMPORTANT RULES:
       final action = json['action'] as String?;
       if (action == null) return null;
 
-      // Extract the message (everything before the JSON block)
-      final messageEnd = content.indexOf(jsonMatch.group(0)!);
-      final message = content.substring(0, messageEnd).trim();
+      // Extract the message — strip the JSON block and any markdown fencing
+      var message = content
+          .replaceAll(RegExp(r'```json\s*\{[^{}]*\}\s*```', dotAll: true), '')
+          .replaceAll(RegExp(r'```\s*\{[^{}]*\}\s*```', dotAll: true), '')
+          .replaceAll(jsonMatch.group(0)!, '')
+          .replaceAll(RegExp(r'```json\s*'), '')
+          .replaceAll(RegExp(r'```\s*'), '')
+          .trim();
 
       return _AiAction(
         type: action,
