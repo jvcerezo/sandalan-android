@@ -201,9 +201,12 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     _showConfirmation(updated, state.pendingRawInput ?? '');
   }
 
+  bool _actionInProgress = false;
+
   Future<void> confirmTransaction() async {
     final pending = state.pendingResult;
-    if (pending == null) return;
+    if (pending == null || _actionInProgress) return;
+    _actionInProgress = true;
 
     final amount = pending.amount!;
     final signedAmount = pending.isIncome ? amount.abs() : -amount.abs();
@@ -245,6 +248,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       parseResult: pending,
     ));
 
+    _actionInProgress = false;
     state = state.copyWith(
       conversationState: ChatConversationState.idle,
       clearPending: true,
@@ -252,7 +256,10 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
   }
 
   void cancelTransaction() {
+    if (_actionInProgress) return;
+    _actionInProgress = true;
     _addBotMessage("Cancelled.");
+    _actionInProgress = false;
     state = state.copyWith(
       conversationState: ChatConversationState.idle,
       clearPending: true,
