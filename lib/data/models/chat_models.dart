@@ -13,6 +13,7 @@ enum ChatConversationState {
   pendingClarification,
   pendingAmountConfirmation,
   pendingIncomeConfirmation,
+  pendingAccountSelection,
 }
 
 enum QueryType {

@@ -114,6 +114,9 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       case ChatConversationState.pendingIncomeConfirmation:
         await _handleIncomeConfirmationResponse(trimmed);
         return;
+      case ChatConversationState.pendingAccountSelection:
+        await _handleAccountSelectionResponse(trimmed);
+        return;
       case ChatConversationState.idle:
         break;
     }
@@ -185,7 +188,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     await _handleParseResult(result, trimmed);
   }
 
-  void selectCategory(String category) {
+  Future<void> selectCategory(String category) async {
     final pending = state.pendingResult;
     if (pending == null) return;
 
@@ -198,7 +201,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     }
 
     // Show confirmation
-    _showConfirmation(updated, state.pendingRawInput ?? '');
+    await _showConfirmation(updated, state.pendingRawInput ?? '');
   }
 
   bool _actionInProgress = false;
@@ -587,7 +590,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
           return;
         }
 
-        _showConfirmation(result, rawInput);
+        await _showConfirmation(result, rawInput);
         break;
     }
   }
@@ -756,22 +759,95 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     await _handleParseResult(result, text);
   }
 
+  Future<void> _handleAccountSelectionResponse(String text) async {
+    final pending = state.pendingResult;
+    if (pending == null) return;
+
+    final accounts = await accountRepo.getAccounts();
+    final lower = text.toLowerCase().trim();
+
+    // Try matching by number (1, 2, 3...)
+    final num = int.tryParse(lower);
+    String? matchedId;
+    String? matchedName;
+
+    if (num != null && num >= 1 && num <= accounts.length) {
+      matchedId = accounts[num - 1].id;
+      matchedName = accounts[num - 1].name;
+    } else {
+      // Try matching by name
+      for (final acc in accounts) {
+        if (acc.name.toLowerCase().contains(lower) || lower.contains(acc.name.toLowerCase())) {
+          matchedId = acc.id;
+          matchedName = acc.name;
+          break;
+        }
+      }
+    }
+
+    if (matchedId != null) {
+      final updated = pending.copyWith(accountId: matchedId, accountName: matchedName);
+      state = state.copyWith(
+        conversationState: ChatConversationState.pendingConfirmation,
+        pendingResult: updated,
+        pendingRawInput: state.pendingRawInput,
+      );
+      _addMessage(ChatMessage(
+        id: _nextId(),
+        type: ChatMessageType.confirmation,
+        text: '',
+        timestamp: DateTime.now(),
+        parseResult: updated,
+      ));
+    } else {
+      _addBotMessage('Hindi ko nahanap yan. Reply with the number (1, 2, 3...) or the account name.');
+    }
+  }
+
   // ─── Helpers ───────────────────────────────────────────────────────────
 
-  void _showConfirmation(ParseResult result, String rawInput) {
-    state = state.copyWith(
-      conversationState: ChatConversationState.pendingConfirmation,
-      pendingResult: result,
-      pendingRawInput: rawInput,
-    );
+  Future<void> _showConfirmation(ParseResult result, String rawInput) async {
+    // Always ask which account to use
+    final accounts = await accountRepo.getAccounts();
+    if (accounts.isEmpty) {
+      _addBotMessage(
+        'You need to create an account first before logging transactions. '
+        'Go to Menu → Accounts → Add to create one!'
+      );
+      return;
+    }
 
-    _addMessage(ChatMessage(
-      id: _nextId(),
-      type: ChatMessageType.confirmation,
-      text: '',
-      timestamp: DateTime.now(),
-      parseResult: result,
-    ));
+    if (accounts.length == 1) {
+      // Only one account — use it automatically
+      final updated = result.copyWith(
+        accountId: accounts.first.id,
+        accountName: accounts.first.name,
+      );
+      state = state.copyWith(
+        conversationState: ChatConversationState.pendingConfirmation,
+        pendingResult: updated,
+        pendingRawInput: rawInput,
+      );
+      _addMessage(ChatMessage(
+        id: _nextId(),
+        type: ChatMessageType.confirmation,
+        text: '',
+        timestamp: DateTime.now(),
+        parseResult: updated,
+      ));
+    } else {
+      // Multiple accounts — ask user to pick
+      state = state.copyWith(
+        conversationState: ChatConversationState.pendingAccountSelection,
+        pendingResult: result,
+        pendingRawInput: rawInput,
+      );
+      final accountList = accounts.asMap().entries
+          .map((e) => '${e.key + 1}. ${e.value.name} (₱${_formatAmount(e.value.balance)})')
+          .join('\n');
+      final action = result.isIncome ? 'add this to' : 'deduct this from';
+      _addBotMessage('Which account should I $action?\n\n$accountList\n\nReply with the number or name.');
+    }
   }
 
   String _buildGuideResponse(List<GuideSearchResult> results) {
