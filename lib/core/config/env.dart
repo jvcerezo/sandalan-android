@@ -14,4 +14,7 @@ abstract class Env {
 
   @EnviedField(varName: 'GOOGLE_WEB_CLIENT_ID')
   static const String googleWebClientId = _Env.googleWebClientId;
+
+  @EnviedField(varName: 'GROQ_API_KEY')
+  static const String groqApiKey = _Env.groqApiKey;
 }

@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:ui' show VoidCallback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/chat_dictionary.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/services/chat_engine.dart';
+import '../../../core/services/groq_ai_service.dart';
 import '../../../data/chat/personality_templates.dart';
 import '../../../data/models/chat_models.dart';
 import '../../../data/repositories/chat_report_repository.dart';
@@ -47,6 +49,40 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     return GuestModeService.getGuestIdSync() ?? 'guest';
   }
 
+  /// Build a JSON summary of user's financial state for the AI.
+  Future<String> _buildFinancialContext() async {
+    try {
+      final accounts = await accountRepo.getAccounts();
+      final summary = await transactionRepo.getTransactionsSummary();
+      final recentTx = await transactionRepo.getTransactions();
+
+      final ctx = {
+        'accounts': accounts.map((a) => {'name': a.name, 'type': a.type, 'balance': a.balance}).toList(),
+        'total_balance': summary.balance,
+        'this_month_income': summary.income,
+        'this_month_expenses': summary.expenses,
+        'recent_transactions': recentTx.map((t) => {
+          'description': t.description, 'amount': t.amount,
+          'category': t.category, 'date': t.date,
+        }).toList(),
+      };
+      return jsonEncode(ctx);
+    } catch (_) {
+      return '{"error": "Could not load financial data"}';
+    }
+  }
+
+  /// Search guides for relevant context based on user's query.
+  String _buildGuideContext(String query) {
+    try {
+      final results = GuideSearchService.search(query);
+      if (results.isEmpty) return '';
+      return results.take(2).map((r) => '${r.title}: ${r.excerpt}').join('\n\n');
+    } catch (_) {
+      return '';
+    }
+  }
+
   // ─── Public API ────────────────────────────────────────────────────────
 
   Future<void> sendMessage(String text) async {
@@ -82,11 +118,67 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
         break;
     }
 
-    // Parse new input
+    // Try Groq AI first, fall back to local dictionary engine
     state = state.copyWith(isProcessing: true);
+
+    try {
+      final financialContext = await _buildFinancialContext();
+      final guideContext = _buildGuideContext(trimmed);
+
+      await engine.ensurePersonalityLoaded();
+      final groqResponse = await GroqAiService.chat(
+        userMessage: trimmed,
+        personality: engine.personality.key,
+        assistantName: engine.assistantName,
+        financialContext: financialContext,
+        guideContext: guideContext,
+      );
+
+      state = state.copyWith(isProcessing: false);
+
+      if (!groqResponse.isError) {
+        // Groq responded successfully
+        if (groqResponse.action != null) {
+          // AI wants to create a transaction — use the local engine to handle it
+          final action = groqResponse.action!;
+          if (action.type == 'add_expense' || action.type == 'add_income') {
+            final isIncome = action.type == 'add_income';
+            final result = ParseResult(
+              intent: isIncome ? ChatIntent.logIncome : ChatIntent.logExpense,
+              amount: action.amount ?? 0,
+              category: action.category,
+              description: action.description,
+              isIncome: isIncome,
+              categorySource: 'ai',
+            );
+            // Show the AI's message first
+            _addMessage(ChatMessage(
+              id: _nextId(),
+              type: ChatMessageType.bot,
+              text: groqResponse.message,
+              timestamp: DateTime.now(),
+            ));
+            // Then handle the transaction
+            await _handleParseResult(result, trimmed);
+            return;
+          }
+        }
+        // Plain text response from AI
+        _addMessage(ChatMessage(
+          id: _nextId(),
+          type: ChatMessageType.bot,
+          text: groqResponse.message,
+          timestamp: DateTime.now(),
+        ));
+        return;
+      }
+    } catch (_) {
+      // Groq failed — fall through to local engine
+    }
+
+    // Fallback: local dictionary engine
     final result = await engine.parse(trimmed);
     state = state.copyWith(isProcessing: false);
-
     await _handleParseResult(result, trimmed);
   }
 
