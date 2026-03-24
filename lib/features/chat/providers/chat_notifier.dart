@@ -123,7 +123,6 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
 
     // Try Groq AI first, fall back to local dictionary engine
     state = state.copyWith(isProcessing: true);
-    print('SANDALAN-AI: Attempting Groq for: "$trimmed"');
 
     try {
       final financialContext = await _buildFinancialContext();
@@ -140,7 +139,6 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
 
       state = state.copyWith(isProcessing: false);
 
-      print('SANDALAN-AI: Groq response: isError=${groqResponse.isError}, msg=${groqResponse.message.substring(0, groqResponse.message.length.clamp(0, 100))}');
       if (!groqResponse.isError) {
         // Groq responded successfully
         if (groqResponse.action != null) {
@@ -148,6 +146,20 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
           final action = groqResponse.action!;
           if (action.type == 'add_expense' || action.type == 'add_income') {
             final isIncome = action.type == 'add_income';
+
+            // Try to match account name from user's message
+            final accounts = await accountRepo.getAccounts();
+            String? matchedAccountId;
+            String? matchedAccountName;
+            final lowerMsg = trimmed.toLowerCase();
+            for (final acc in accounts) {
+              if (lowerMsg.contains(acc.name.toLowerCase())) {
+                matchedAccountId = acc.id;
+                matchedAccountName = acc.name;
+                break;
+              }
+            }
+
             final result = ParseResult(
               intent: isIncome ? ChatIntent.logIncome : ChatIntent.logExpense,
               amount: action.amount ?? 0,
@@ -155,15 +167,11 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
               description: action.description,
               isIncome: isIncome,
               categorySource: 'ai',
+              accountId: matchedAccountId,
+              accountName: matchedAccountName,
+              message: groqResponse.message, // Save AI message for after confirmation
             );
-            // Show the AI's message first
-            _addMessage(ChatMessage(
-              id: _nextId(),
-              type: ChatMessageType.bot,
-              text: groqResponse.message,
-              timestamp: DateTime.now(),
-            ));
-            // Then handle the transaction
+            // DON'T show AI message here — it will show after confirmation
             await _handleParseResult(result, trimmed);
             return;
           }
@@ -179,7 +187,6 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       }
     } catch (e) {
       // Groq failed — fall through to local engine
-      print('SANDALAN-AI: Groq failed: $e');
     }
 
     // Fallback: local dictionary engine
@@ -258,19 +265,16 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       addFiller: false,
     );
 
-    // Replace the confirmation card message with a completed bot message
-    _replaceLastConfirmation('✓ ${pending.isIncome ? "Income" : "Expense"} logged: ₱${_formatAmount(amount)} (${pending.category ?? "Other"})');
+    // Find account name for the confirmation message
+    final accName = accounts.firstWhere((a) => a.id == accountId, orElse: () => accounts.first).name;
 
-    _addMessage(ChatMessage(
-      id: _nextId(),
-      type: ChatMessageType.bot,
-      text: personalityMsg,
-      timestamp: DateTime.now(),
-      transactionId: tx.id,
-      reportable: true,
-      rawUserInput: state.pendingRawInput,
-      parseResult: pending,
-    ));
+    // Replace the confirmation card with a single clean message
+    final savedAiMsg = pending.message;
+    final confirmText = savedAiMsg != null && savedAiMsg.isNotEmpty
+        ? '$savedAiMsg\n\n✓ ${pending.isIncome ? "Added" : "Deducted"} ₱${_formatAmount(amount)} (${pending.category ?? "Other"}) → $accName'
+        : '$personalityMsg\n\n✓ ${pending.isIncome ? "Added" : "Deducted"} ₱${_formatAmount(amount)} (${pending.category ?? "Other"}) → $accName';
+
+    _replaceLastConfirmation(confirmText);
 
     _actionInProgress = false;
     state = state.copyWith(
