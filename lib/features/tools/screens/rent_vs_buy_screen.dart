@@ -200,7 +200,7 @@ class _InfoRow extends StatelessWidget {
 class _Th extends StatelessWidget {
   final String t; const _Th(this.t);
   @override
-  Widget build(BuildContext c) => Expanded(child: Text(t,
+  Widget build(BuildContext c) => SizedBox(width: 90, child: Text(t,
       style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.3,
           color: Theme.of(c).colorScheme.onSurfaceVariant)));
 }
@@ -208,9 +208,8 @@ class _Th extends StatelessWidget {
 class _Td extends StatelessWidget {
   final String t; final Color? color; const _Td(this.t, {this.color});
   @override
-  Widget build(BuildContext c) => Expanded(child: FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
+  Widget build(BuildContext c) => SizedBox(
+      width: 90,
       child: Text(t,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color))));
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color)));
 }
