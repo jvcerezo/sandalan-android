@@ -2,7 +2,6 @@
 /// Replaces the navigation drawer with a GoTyme-style overlay menu.
 
 import 'dart:convert';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/router/app_router.dart';
 import 'package:flutter/services.dart';
@@ -186,13 +185,13 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
     final cs = Theme.of(context).colorScheme;
 
     final menuGroups = [
-      _MenuGroupData(title: 'Adulting', items: [
+      _MenuGroupData(title: 'Adulting', color: Colors.amber, items: [
         _MenuItemData(icon: LucideIcons.bookOpen, label: 'Guide', route: '/guide'),
         _MenuItemData(icon: LucideIcons.landmark, label: 'Gov\'t', route: '/tools/contributions'),
         _MenuItemData(icon: LucideIcons.fileText, label: 'Taxes', route: '/tools/taxes'),
         _MenuItemData(icon: LucideIcons.gift, label: '13th Month', route: '/tools/13th-month'),
       ]),
-      _MenuGroupData(title: 'Money', items: [
+      _MenuGroupData(title: 'Money', color: const Color(0xFF2D8B5E), items: [
         _MenuItemData(icon: LucideIcons.home, label: 'Home', route: '/home'),
         _MenuItemData(icon: LucideIcons.barChart3, label: 'Dashboard', route: '/dashboard'),
         _MenuItemData(icon: LucideIcons.arrowLeftRight, label: 'Transactions', route: '/transactions'),
@@ -202,13 +201,13 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
         _MenuItemData(icon: LucideIcons.trendingUp, label: 'Investments', route: '/investments'),
         _MenuItemData(icon: LucideIcons.banknote, label: 'Salary', route: '/salary-allocation'),
       ]),
-      _MenuGroupData(title: 'Manage', items: [
+      _MenuGroupData(title: 'Manage', color: Colors.blue, items: [
         _MenuItemData(icon: LucideIcons.receipt, label: 'Bills', route: '/tools/bills'),
         _MenuItemData(icon: LucideIcons.creditCard, label: 'Debts', route: '/tools/debts'),
         _MenuItemData(icon: LucideIcons.shield, label: 'Insurance', route: '/tools/insurance'),
         _MenuItemData(icon: LucideIcons.users, label: 'Split Bills', route: '/split-bills'),
       ]),
-      _MenuGroupData(title: 'Tools & More', items: [
+      _MenuGroupData(title: 'Tools & More', color: Colors.purple, items: [
         _MenuItemData(icon: LucideIcons.globe, label: 'Currency', route: '/tools/currency'),
         _MenuItemData(icon: LucideIcons.sunset, label: 'Retirement', route: '/tools/retirement'),
         _MenuItemData(icon: LucideIcons.home, label: 'Rent vs Buy', route: '/tools/rent-vs-buy'),
@@ -232,10 +231,7 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
             Positioned.fill(
               child: GestureDetector(
                 onTap: _close,
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(color: Colors.black.withValues(alpha: 0.85)),
-                ),
+                child: Container(color: Colors.black.withValues(alpha: 0.92)),
               ),
             ),
 
@@ -317,7 +313,8 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
 class _MenuGroupData {
   final String title;
   final List<_MenuItemData> items;
-  const _MenuGroupData({required this.title, required this.items});
+  final Color color;
+  const _MenuGroupData({required this.title, required this.items, this.color = Colors.grey});
 }
 
 class _MenuItemData {
@@ -494,6 +491,7 @@ class _MenuGroup extends StatelessWidget {
                   for (final item in data.items)
                     _MenuItem(
                       data: item,
+                      groupColor: data.color,
                       isActive: currentRoute == item.route ||
                           (item.route != '/' &&
                               currentRoute.startsWith(item.route) &&
@@ -524,6 +522,7 @@ class _MenuItem extends StatelessWidget {
   final _MenuItemData data;
   final bool isActive;
   final bool isFavorite;
+  final Color groupColor;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
@@ -531,6 +530,7 @@ class _MenuItem extends StatelessWidget {
     required this.data,
     required this.isActive,
     required this.isFavorite,
+    required this.groupColor,
     required this.onTap,
     required this.onLongPress,
   });
@@ -555,15 +555,13 @@ class _MenuItem extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? cs.primary.withValues(alpha: 0.15)
-                        : cs.surfaceContainerHighest,
+                    color: groupColor.withValues(alpha: isActive ? 0.25 : 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     data.icon,
                     size: 20,
-                    color: isActive ? cs.primary : cs.onSurfaceVariant,
+                    color: isActive ? groupColor : groupColor.withValues(alpha: 0.8),
                   ),
                 ),
                 if (isFavorite)
