@@ -163,16 +163,32 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
             final result = ParseResult(
               intent: isIncome ? ChatIntent.logIncome : ChatIntent.logExpense,
               amount: action.amount ?? 0,
-              category: action.category,
+              category: action.category ?? (isIncome ? 'Salary' : 'Other'),
               description: action.description,
               isIncome: isIncome,
               categorySource: 'ai',
               accountId: matchedAccountId,
               accountName: matchedAccountName,
-              message: groqResponse.message, // Save AI message for after confirmation
             );
-            // DON'T show AI message here — it will show after confirmation
-            await _handleParseResult(result, trimmed);
+
+            if (matchedAccountId != null) {
+              // User specified account → show confirmation card directly
+              state = state.copyWith(
+                conversationState: ChatConversationState.pendingConfirmation,
+                pendingResult: result,
+                pendingRawInput: trimmed,
+              );
+              _addMessage(ChatMessage(
+                id: _nextId(),
+                type: ChatMessageType.confirmation,
+                text: '',
+                timestamp: DateTime.now(),
+                parseResult: result,
+              ));
+            } else {
+              // No account specified → ask which account first
+              await _showConfirmation(result, trimmed);
+            }
             return;
           }
         }
