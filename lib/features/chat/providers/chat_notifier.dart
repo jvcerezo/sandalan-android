@@ -208,15 +208,33 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     if (pending == null || _actionInProgress) return;
     _actionInProgress = true;
 
+    // Check if user has at least one account
+    final accounts = await accountRepo.getAccounts();
+    if (accounts.isEmpty) {
+      _actionInProgress = false;
+      _addBotMessage(
+        'You need to create an account first before logging transactions. '
+        'Go to Menu → Accounts → Add to create one!'
+      );
+      state = state.copyWith(
+        conversationState: ChatConversationState.idle,
+        clearPending: true,
+      );
+      return;
+    }
+
     final amount = pending.amount!;
     final signedAmount = pending.isIncome ? amount.abs() : -amount.abs();
+
+    // Use the first account if none specified
+    final accountId = pending.accountId ?? accounts.first.id;
 
     final tx = await transactionRepo.createTransaction(
       amount: signedAmount,
       category: pending.category ?? 'Other',
       description: pending.description ?? '',
       date: DateTime.now(),
-      accountId: pending.accountId,
+      accountId: accountId,
     );
 
     invalidateProviders();
@@ -236,6 +254,9 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       data: {'amount': formatted, 'category': catLabel},
       addFiller: false,
     );
+
+    // Replace the confirmation card message with a completed bot message
+    _replaceLastConfirmation('✓ ${pending.isIncome ? "Income" : "Expense"} logged: ₱${_formatAmount(amount)} (${pending.category ?? "Other"})');
 
     _addMessage(ChatMessage(
       id: _nextId(),
@@ -258,12 +279,30 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
   void cancelTransaction() {
     if (_actionInProgress) return;
     _actionInProgress = true;
-    _addBotMessage("Cancelled.");
+
+    // Replace the confirmation card with a cancelled message
+    _replaceLastConfirmation('✗ Transaction cancelled');
+
     _actionInProgress = false;
     state = state.copyWith(
       conversationState: ChatConversationState.idle,
       clearPending: true,
     );
+  }
+
+  /// Replace the last confirmation-type message with a plain bot message.
+  void _replaceLastConfirmation(String text) {
+    final messages = List<ChatMessage>.from(state.messages);
+    final idx = messages.lastIndexWhere((m) => m.type == ChatMessageType.confirmation);
+    if (idx >= 0) {
+      messages[idx] = ChatMessage(
+        id: messages[idx].id,
+        type: ChatMessageType.bot,
+        text: text,
+        timestamp: messages[idx].timestamp,
+      );
+      state = state.copyWith(messages: messages);
+    }
   }
 
   /// Report an error on a committed transaction.
