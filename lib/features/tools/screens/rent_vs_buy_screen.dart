@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -148,8 +147,9 @@ class _RentVsBuyScreenState extends State<RentVsBuyScreen> {
   }
 
   String _compactCurrency(double value) {
-    final compact = NumberFormat.compactCurrency(locale: 'en_PH', symbol: '₱', decimalDigits: 1);
-    return compact.format(value);
+    if (value.abs() >= 1000000) return '₱${(value / 1000000).toStringAsFixed(1)}M';
+    if (value.abs() >= 1000) return '₱${(value / 1000).toStringAsFixed(0)}K';
+    return '₱${value.toStringAsFixed(0)}';
   }
 
   double _calcTotalBuy(int years, double amort) {

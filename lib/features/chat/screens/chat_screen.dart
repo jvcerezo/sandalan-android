@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../data/models/chat_models.dart';
 import '../providers/chat_providers.dart';
@@ -111,14 +112,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: Text(_assistantName),
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => GoRouter.of(context).go('/home'),
         ),
         actions: [
           IconButton(
             icon: const Icon(LucideIcons.settings2, size: 20),
             onPressed: () async {
-              await Navigator.of(context).push<bool>(
-                MaterialPageRoute(builder: (_) => const AiSetupScreen()),
+              await showModalBottomSheet<bool>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => DraggableScrollableSheet(
+                  initialChildSize: 0.9,
+                  maxChildSize: 0.95,
+                  minChildSize: 0.3,
+                  builder: (ctx, ctrl) => AiSetupScreen(onComplete: () => Navigator.of(ctx).pop(true)),
+                ),
               );
               if (mounted) {
                 final name = await AiSetupScreen.getAssistantName();
