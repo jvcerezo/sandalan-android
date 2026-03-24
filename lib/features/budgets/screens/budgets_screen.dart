@@ -205,7 +205,15 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         // Header
-        const Text('Budgets', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Budgets', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          FilledButton.icon(
+            icon: const Icon(Icons.add, size: 14),
+            label: const Text('Add'),
+            onPressed: () => _showAddBudget(context),
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+          ),
+        ]),
         const SizedBox(height: 12),
 
         // Period filter tabs

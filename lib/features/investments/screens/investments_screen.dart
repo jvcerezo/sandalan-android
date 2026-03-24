@@ -42,7 +42,13 @@ class InvestmentsScreen extends ConsumerWidget {
                 Row(children: [
                   Icon(LucideIcons.trendingUp, size: 24, color: cs.primary),
                   const SizedBox(width: 8),
-                  const Text('Investments', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  const Expanded(child: Text('Investments', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.add, size: 14),
+                    label: const Text('Add'),
+                    onPressed: () => _showAddDialog(context, ref),
+                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  ),
                 ]),
                 const SizedBox(height: 4),
                 Text('Track your portfolio growth',

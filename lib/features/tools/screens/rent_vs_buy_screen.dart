@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -102,24 +103,32 @@ class _RentVsBuyScreenState extends State<RentVsBuyScreen> {
         _Card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Rent vs Buy Over Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          Row(children: [
-            _Th('Years'), _Th('Total Rent'), _Th('Total Buy Cost'), _Th('Property Value'),
-          ]),
-          const Divider(height: 8),
-          ...[5, 10, 15, 20, 30].map((yr) {
-            final totalRent = _calcTotalRent(yr);
-            final totalBuy = _calcTotalBuy(yr, amort);
-            final propValue = _price * math.pow(1 + _appreciation, yr);
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(children: [
-                _Td('$yr yr'),
-                _Td(formatCurrency(totalRent)),
-                _Td(formatCurrency(totalBuy)),
-                _Td(formatCurrency(propValue), color: AppColors.income),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 64),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: const [
+                  _Th('Years'), _Th('Total Rent'), _Th('Total Buy Cost'), _Th('Property Value'),
+                ]),
+                const Divider(height: 8),
+                ...[5, 10, 15, 20, 30].map((yr) {
+                  final totalRent = _calcTotalRent(yr);
+                  final totalBuy = _calcTotalBuy(yr, amort);
+                  final propValue = _price * math.pow(1 + _appreciation, yr);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(children: [
+                      _Td('$yr yr'),
+                      _Td(_compactCurrency(totalRent)),
+                      _Td(_compactCurrency(totalBuy)),
+                      _Td(_compactCurrency(propValue), color: AppColors.income),
+                    ]),
+                  );
+                }),
               ]),
-            );
-          }),
+            ),
+          ),
           const SizedBox(height: 8),
           Text('Assumes ${(_appreciation * 100).toInt()}% annual property appreciation and ${(_propertyTax * 100).toInt()}% annual property tax. Pag-IBIG rate at ${(_rate * 100).toStringAsFixed(2)}% for $_term-year term.',
               style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
@@ -136,6 +145,11 @@ class _RentVsBuyScreenState extends State<RentVsBuyScreen> {
       monthly *= (1 + _rentInc);
     }
     return total;
+  }
+
+  String _compactCurrency(double value) {
+    final compact = NumberFormat.compactCurrency(locale: 'en_PH', symbol: '₱', decimalDigits: 1);
+    return compact.format(value);
   }
 
   double _calcTotalBuy(int years, double amort) {
@@ -194,6 +208,9 @@ class _Th extends StatelessWidget {
 class _Td extends StatelessWidget {
   final String t; final Color? color; const _Td(this.t, {this.color});
   @override
-  Widget build(BuildContext c) => Expanded(child: Text(t,
-      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color)));
+  Widget build(BuildContext c) => Expanded(child: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Text(t,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color))));
 }

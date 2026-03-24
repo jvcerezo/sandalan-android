@@ -32,15 +32,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _checkSetup() async {
     final isComplete = await AiSetupScreen.isSetupComplete();
     if (!isComplete && mounted) {
-      final result = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(builder: (_) => const AiSetupScreen()),
-      );
-      // If user dismissed without completing, still show the chat
-      if (result != true && mounted) {
-        // Use defaults
-      }
-    }
-    if (mounted) {
+      // Use WidgetsBinding to push after the build is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        try {
+          await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const AiSetupScreen()),
+          );
+        } catch (_) {
+          // Navigation cancelled or context unmounted
+        }
+        if (mounted) {
+          final name = await AiSetupScreen.getAssistantName();
+          setState(() {
+            _assistantName = name;
+            _checkingSetup = false;
+          });
+        }
+      });
+    } else if (mounted) {
       final name = await AiSetupScreen.getAssistantName();
       setState(() {
         _assistantName = name;

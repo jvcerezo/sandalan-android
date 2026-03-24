@@ -65,16 +65,17 @@ class ReportsListScreen extends ConsumerWidget {
                         Text('Monthly financial summaries', style: TextStyle(fontSize: 13)),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(LucideIcons.plusCircle),
-                      tooltip: 'Generate this month\'s report',
+                    FilledButton.icon(
+                      icon: const Icon(LucideIcons.plusCircle, size: 14),
+                      label: const Text('Generate'),
                       onPressed: () {
                         final now = DateTime.now();
                         final targetMonth = now.day <= 3 ? now.month - 1 : now.month;
                         final targetYear = targetMonth <= 0 ? now.year - 1 : now.year;
                         final month = targetMonth <= 0 ? 12 + targetMonth : targetMonth;
-                        context.go('/reports/$targetYear/$month');
+                        context.push('/reports/$targetYear/$month');
                       },
+                      style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                     ),
                   ],
                 );

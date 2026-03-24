@@ -9,8 +9,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../features/transactions/widgets/add_transaction_dialog.dart';
-import '../../features/transactions/screens/receipt_scanner_screen.dart';
 
 class MenuOverlay extends StatefulWidget {
   const MenuOverlay({super.key});
@@ -59,6 +57,10 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
         });
       } catch (_) {}
     }
+    if (_favorites.isEmpty) {
+      _favorites = ['/home', '/dashboard', '/guide', '/settings'];
+      _saveFavorites();
+    }
   }
 
   Future<void> _saveFavorites() async {
@@ -100,15 +102,6 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
       parent: _controller,
       curve: Interval(start, end, curve: Curves.easeOutBack),
     ));
-  }
-
-  Animation<double> _quickActionScale(int index) {
-    final start = 0.05 + (index * 0.08);
-    final end = (start + 0.4).clamp(0.0, 1.0);
-    return CurvedAnimation(
-      parent: _controller,
-      curve: Interval(start, end, curve: Curves.easeOutBack),
-    );
   }
 
   Future<void> _close() async {
@@ -192,33 +185,6 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final quickActions = [
-      _QuickActionData(
-        icon: LucideIcons.arrowDownLeft,
-        label: 'Add\nIncome',
-        color: const Color(0xFF22C55E),
-        onTap: () => _openSheet(const AddTransactionDialog(isIncome: true)),
-      ),
-      _QuickActionData(
-        icon: LucideIcons.arrowUpRight,
-        label: 'Add\nExpense',
-        color: cs.primary,
-        onTap: () => _openSheet(const AddTransactionDialog(isIncome: false)),
-      ),
-      _QuickActionData(
-        icon: LucideIcons.scanLine,
-        label: 'Scan\nReceipt',
-        color: const Color(0xFFF59E0B),
-        onTap: () => _openSheet(const ReceiptScannerScreen()),
-      ),
-      _QuickActionData(
-        icon: LucideIcons.messageCircle,
-        label: 'Ask\nAI',
-        color: const Color(0xFF3B82F6),
-        onTap: () => _navigate('/chat'),
-      ),
-    ];
-
     final menuGroups = [
       _MenuGroupData(title: 'Adulting', items: [
         _MenuItemData(icon: LucideIcons.bookOpen, label: 'Guide', route: '/guide'),
@@ -301,23 +267,6 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
 
                     const SizedBox(height: 8),
 
-                    // Quick Actions
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          for (int i = 0; i < quickActions.length; i++)
-                            ScaleTransition(
-                              scale: _quickActionScale(i),
-                              child: _QuickAction(data: quickActions[i]),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
                     // Favorites section
                     _FavoritesRow(
                       favorites: _favorites,
@@ -364,19 +313,6 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
 }
 
 // ─── Data classes ──────────────────────────────────────────────
-
-class _QuickActionData {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _QuickActionData({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-}
 
 class _MenuGroupData {
   final String title;
@@ -486,48 +422,6 @@ class _FavoritesRow extends StatelessWidget {
                 },
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Quick Action Widget ───────────────────────────────────────
-
-class _QuickAction extends StatelessWidget {
-  final _QuickActionData data;
-  const _QuickAction({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        data.onTap();
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: data.color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(data.icon, size: 24, color: data.color),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            data.label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white70,
-              height: 1.3,
-            ),
-          ),
         ],
       ),
     );
