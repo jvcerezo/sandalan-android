@@ -29,27 +29,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _checkSetup();
   }
 
+  bool _showSetup = false;
+
   Future<void> _checkSetup() async {
     final isComplete = await AiSetupScreen.isSetupComplete();
     if (!isComplete && mounted) {
-      // Use WidgetsBinding to push after the build is complete
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        try {
-          await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (_) => const AiSetupScreen()),
-          );
-        } catch (_) {
-          // Navigation cancelled or context unmounted
-        }
-        if (mounted) {
-          final name = await AiSetupScreen.getAssistantName();
-          setState(() {
-            _assistantName = name;
-            _checkingSetup = false;
-          });
-        }
-      });
+      setState(() => _showSetup = true);
     } else if (mounted) {
       final name = await AiSetupScreen.getAssistantName();
       setState(() {
@@ -91,9 +76,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     if (_checkingSetup) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Sandalan AI')),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_showSetup) {
+      return AiSetupScreen(
+        onComplete: () async {
+          final name = await AiSetupScreen.getAssistantName();
+          if (mounted) {
+            setState(() {
+              _assistantName = name;
+              _showSetup = false;
+              _checkingSetup = false;
+            });
+          }
+        },
       );
     }
 

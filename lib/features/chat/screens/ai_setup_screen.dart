@@ -7,7 +7,8 @@ import '../../../data/chat/personality_templates.dart';
 /// First-time setup flow for the Sandalan AI assistant.
 /// Shows a 3-step onboarding: name, personality, tutorial.
 class AiSetupScreen extends StatefulWidget {
-  const AiSetupScreen({super.key});
+  final VoidCallback? onComplete;
+  const AiSetupScreen({super.key, this.onComplete});
 
   /// Check if AI setup has been completed.
   static Future<bool> isSetupComplete() async {
@@ -61,7 +62,11 @@ class _AiSetupScreenState extends State<AiSetupScreen> {
     await prefs.setBool('ai_setup_complete', true);
 
     if (mounted) {
-      Navigator.of(context).pop(true);
+      if (widget.onComplete != null) {
+        widget.onComplete!();
+      } else {
+        Navigator.of(context).pop(true);
+      }
     }
   }
 
