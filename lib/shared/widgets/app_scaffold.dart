@@ -1,18 +1,19 @@
 /// Main app scaffold with:
 /// 1. Top header bar (logo + search)
-/// 2. Context-aware floating action button OR Menu FAB
-/// 3. Full-screen menu overlay (replaces nav drawer)
+/// 2. Bottom action bar (Income, Expense, Menu, Scan, AI)
+/// 3. Full-screen menu overlay
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'brand_mark.dart';
-import 'context_fab.dart';
 import 'sync_indicator.dart';
 import 'universal_search.dart';
 import 'tour_overlay.dart';
 import 'menu_overlay.dart';
+import '../../features/transactions/widgets/add_transaction_dialog.dart';
+import '../../features/transactions/screens/receipt_scanner_screen.dart';
 
 class AppScaffold extends StatefulWidget {
   final Widget child;
@@ -26,16 +27,9 @@ class AppScaffold extends StatefulWidget {
 class _AppScaffoldState extends State<AppScaffold> {
   DateTime? _lastBackPress;
 
-  /// Pages where the context FAB should be shown instead of the menu FAB.
-  bool _showContextFab(String location) {
-    return location.startsWith('/accounts') ||
-        location.startsWith('/budgets') ||
-        location.startsWith('/goals');
-  }
-
-  void _showMenuOverlay(BuildContext context) {
+  void _showMenuOverlay(BuildContext ctx) {
     HapticFeedback.lightImpact();
-    Navigator.of(context).push(PageRouteBuilder(
+    Navigator.of(ctx).push(PageRouteBuilder(
       opaque: false,
       barrierDismissible: true,
       pageBuilder: (_, __, ___) => const MenuOverlay(),
@@ -45,40 +39,27 @@ class _AppScaffoldState extends State<AppScaffold> {
     ));
   }
 
+  void _showAddTransaction(BuildContext ctx, bool isIncome) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddTransactionDialog(isIncome: isIncome),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final location = GoRouterState.of(context).uri.toString();
     final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-    final hasModalAbove = ModalRoute.of(context)?.isCurrent != true;
-
-    // Determine which FAB to show
-    Widget? fab;
-    FloatingActionButtonLocation fabLocation = FloatingActionButtonLocation.centerFloat;
-
-    if (!keyboardVisible && !hasModalAbove) {
-      // Menu FAB on ALL screens — this is the primary navigation
-      fab = Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: FloatingActionButton.extended(
-          onPressed: () => _showMenuOverlay(context),
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          elevation: 8,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          icon: const Icon(LucideIcons.menu, size: 18),
-          label: const Text('Menu', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-        ),
-      );
-    }
 
     return _NativeBackHandler(
       onBack: () {
-        // Settings handles its own back (sub-sections)
         if (location == '/settings') return;
 
         if (location == '/home') {
-          // On /home → double back to exit
           final now = DateTime.now();
           if (_lastBackPress != null && now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
             SystemNavigator.pop();
@@ -95,73 +76,185 @@ class _AppScaffoldState extends State<AppScaffold> {
             }
           }
         } else {
-          // ANY other screen → go to home
           context.go('/home');
         }
       },
       child: TourHost(
-      child: Scaffold(
-        body: Column(
+        child: Scaffold(
+          body: Column(
+            children: [
+              // ─── Top Header Bar ──────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface.withValues(alpha: 0.95),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: colorScheme.outline.withValues(alpha: 0.15),
+                    ),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    height: 56,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 16),
+                        GestureDetector(
+                          onTap: () => context.go('/home'),
+                          child: const BrandMark(size: 28),
+                        ),
+                        const Spacer(),
+                        const SyncIndicator(),
+                        IconButton(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            showUniversalSearch(context);
+                          },
+                          icon: const Icon(LucideIcons.search, size: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ─── Page Content ────────────────────────────────────────
+              Expanded(child: widget.child),
+            ],
+          ),
+
+          // ─── Bottom Action Bar ─────────────────────────────────────
+          bottomNavigationBar: keyboardVisible
+              ? null
+              : Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    border: Border(
+                      top: BorderSide(
+                        color: colorScheme.outline.withValues(alpha: 0.15),
+                      ),
+                    ),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      height: 56,
+                      child: Row(
+                        children: [
+                          // Income
+                          _BottomBarItem(
+                            icon: LucideIcons.arrowDownLeft,
+                            label: 'Income',
+                            color: const Color(0xFF2D8B5E),
+                            onTap: () => _showAddTransaction(context, true),
+                          ),
+                          // Expense
+                          _BottomBarItem(
+                            icon: LucideIcons.arrowUpRight,
+                            label: 'Expense',
+                            color: colorScheme.onSurface,
+                            onTap: () => _showAddTransaction(context, false),
+                          ),
+                          // Menu (center, prominent)
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _showMenuOverlay(context),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      LucideIcons.menu,
+                                      size: 20,
+                                      color: colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text('Menu',
+                                      style: TextStyle(
+                                          fontSize: 9,
+                                          color: colorScheme.primary,
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Scan
+                          _BottomBarItem(
+                            icon: LucideIcons.scanLine,
+                            label: 'Scan',
+                            color: colorScheme.onSurfaceVariant,
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                builder: (_) => const ReceiptScannerScreen(),
+                              ));
+                            },
+                          ),
+                          // AI
+                          _BottomBarItem(
+                            icon: LucideIcons.messageCircle,
+                            label: 'AI',
+                            color: colorScheme.onSurfaceVariant,
+                            onTap: () => context.go('/chat'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomBarItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _BottomBarItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ─── Top Header Bar ──────────────────────────────────────
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface.withValues(alpha: 0.95),
-                border: Border(
-                  bottom: BorderSide(
-                    color: colorScheme.outline.withValues(alpha: 0.15),
-                  ),
-                ),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: SizedBox(
-                  height: 56,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 16),
-
-                      // Logo (left-aligned) — tap to go home
-                      GestureDetector(
-                        onTap: () => context.go('/home'),
-                        child: const BrandMark(size: 28),
-                      ),
-
-                      const Spacer(),
-
-                      // Sync status indicator
-                      const SyncIndicator(),
-
-                      // Search
-                      IconButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          showUniversalSearch(context);
-                        },
-                        icon: const Icon(LucideIcons.search, size: 20),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            // ─── Page Content ────────────────────────────────────────
-            Expanded(child: widget.child),
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 2),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 9,
+                    color: color,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
-        floatingActionButton: fab,
-        floatingActionButtonLocation: fabLocation,
-      ),
       ),
     );
   }
 }
 
 /// Listens for native Android back presses via MethodChannel.
-/// This bypasses Flutter's PopScope which doesn't work on Android 13+
-/// with predictive back gestures.
 class _NativeBackHandler extends StatefulWidget {
   final VoidCallback onBack;
   final Widget child;
