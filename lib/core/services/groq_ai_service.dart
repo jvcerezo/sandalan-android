@@ -49,7 +49,10 @@ class GroqAiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'] as String;
+        var content = data['choices'][0]['message']['content'] as String;
+
+        // Strip <think>...</think> reasoning blocks from Qwen 3 responses
+        content = content.replaceAll(RegExp(r'<think>[\s\S]*?</think>\s*', multiLine: true), '').trim();
 
         // Check if the response contains a JSON action
         final action = _parseAction(content);
