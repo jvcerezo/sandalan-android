@@ -232,7 +232,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/chat',
-          pageBuilder: (context, state) => const MaterialPage(
+          pageBuilder: (context, state) => const NoTransitionPage(
             child: ChatScreen(),
           ),
         ),

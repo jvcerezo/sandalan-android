@@ -37,11 +37,23 @@ class ReportsListScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Tap + to generate your first monthly report',
+                    'Generate your first monthly report',
                     style: TextStyle(
                       fontSize: 13,
                       color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    icon: const Icon(LucideIcons.plusCircle, size: 14),
+                    label: const Text('Generate Report'),
+                    onPressed: () {
+                      final now = DateTime.now();
+                      final targetMonth = now.day <= 3 ? now.month - 1 : now.month;
+                      final targetYear = targetMonth <= 0 ? now.year - 1 : now.year;
+                      final month = targetMonth <= 0 ? 12 + targetMonth : targetMonth;
+                      context.push('/reports/$targetYear/$month');
+                    },
                   ),
                 ],
               ),

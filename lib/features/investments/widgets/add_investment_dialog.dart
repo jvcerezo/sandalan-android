@@ -92,7 +92,8 @@ class _State extends ConsumerState<AddInvestmentDialog> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return DraggableScrollableSheet(
-      initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.3,
+      initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.0,
+      snap: true, snapSizes: const [0.0, 0.85],
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
           color: cs.surface,
