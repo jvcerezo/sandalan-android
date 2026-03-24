@@ -58,7 +58,7 @@ class _MenuOverlayState extends State<MenuOverlay> with TickerProviderStateMixin
       } catch (_) {}
     }
     if (_favorites.isEmpty) {
-      _favorites = ['/home', '/dashboard', '/guide', '/settings'];
+      _favorites = ['/home', '/dashboard', '/guide', '/transactions', '/settings'];
       _saveFavorites();
     }
   }
