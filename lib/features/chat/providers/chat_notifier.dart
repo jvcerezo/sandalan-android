@@ -120,6 +120,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
 
     // Try Groq AI first, fall back to local dictionary engine
     state = state.copyWith(isProcessing: true);
+    print('SANDALAN-AI: Attempting Groq for: "$trimmed"');
 
     try {
       final financialContext = await _buildFinancialContext();
@@ -136,6 +137,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
 
       state = state.copyWith(isProcessing: false);
 
+      print('SANDALAN-AI: Groq response: isError=${groqResponse.isError}, msg=${groqResponse.message.substring(0, groqResponse.message.length.clamp(0, 100))}');
       if (!groqResponse.isError) {
         // Groq responded successfully
         if (groqResponse.action != null) {
@@ -172,8 +174,9 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
         ));
         return;
       }
-    } catch (_) {
+    } catch (e) {
       // Groq failed — fall through to local engine
+      print('SANDALAN-AI: Groq failed: $e');
     }
 
     // Fallback: local dictionary engine

@@ -6,7 +6,7 @@ import '../config/env.dart';
 /// with Sandalan-specific system prompt and user financial context.
 class GroqAiService {
   static const _baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
-  static const _model = 'qwen-qwq-32b'; // Best Qwen model on Groq
+  static const _model = 'qwen/qwen3-32b'; // Qwen 3 32B on Groq
 
   /// Send a message to Groq and get an AI response.
   ///
