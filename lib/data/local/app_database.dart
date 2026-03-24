@@ -722,6 +722,14 @@ class AppDatabase {
     return results.first.data['cnt'] as int;
   }
 
+  Future<double> sumTransactionsByAccountId(String accountId) async {
+    final results = await _db.customSelect(
+      'SELECT COALESCE(SUM(amount), 0) as total FROM local_transactions WHERE account_id = ?',
+      variables: [Variable.withString(accountId)],
+    ).get();
+    return (results.first.data['total'] as num).toDouble();
+  }
+
   // ─── Accounts ────────────────────────────────────────────────────────────
 
   Future<List<Map<String, dynamic>>> getAccounts(String userId, {bool archived = false}) async {

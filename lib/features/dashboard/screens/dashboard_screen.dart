@@ -32,6 +32,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedTab = 0;
   static const _tabLabels = ['Trends', 'Planning', 'Health', 'Insights'];
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Invalidate providers to force refresh when returning from other screens
+    ref.invalidate(transactionsSummaryProvider);
+    ref.invalidate(currentMonthTransactionsProvider);
+    ref.invalidate(last6MonthsTransactionsProvider);
+    ref.invalidate(categoryTotalsProvider);
+    ref.invalidate(monthlyTotalsProvider);
+    ref.invalidate(monthlyNetTotalsProvider);
+    ref.invalidate(accountsProvider);
+    ref.invalidate(goalsSummaryProvider);
+  }
+
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
     ref.invalidate(transactionsSummaryProvider);

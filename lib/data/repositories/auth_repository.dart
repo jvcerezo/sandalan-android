@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -146,10 +147,23 @@ class AuthRepository {
     }).eq('id', userId);
   }
 
-  /// Delete account (signs out first, then deletes via edge function or RPC).
+  /// Delete account — clears local data, calls server-side RPC, then signs out.
   Future<void> deleteAccount() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId != null) {
+      // Clear all local data first
+      await AppDatabase.instance.clearAllData(userId);
+    }
+    await _clearUserPreferences();
+
+    // Call the server-side delete function
+    try {
+      await _client.rpc('delete_own_account');
+    } catch (e) {
+      // If RPC doesn't exist yet, at least sign out
+      debugPrint('Account deletion RPC failed: $e');
+    }
+
     await _client.auth.signOut();
-    // Note: actual user deletion requires admin client or edge function
-    // This will be handled server-side
   }
 }

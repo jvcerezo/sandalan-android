@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -180,6 +181,97 @@ class _InvestmentCard extends StatelessWidget {
   final VoidCallback onUpdate;
   const _InvestmentCard({required this.investment, required this.hide, required this.onUpdate});
 
+  void _showEditDialog(BuildContext context) {
+    final inv = investment;
+    final nameCtl = TextEditingController(text: inv.name);
+    final amountCtl = TextEditingController(text: inv.amountInvested.toStringAsFixed(0));
+    final valueCtl = TextEditingController(text: inv.currentValue.toStringAsFixed(0));
+    final notesCtl = TextEditingController(text: inv.notes ?? '');
+    bool saving = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setSt) => AlertDialog(
+        title: const Text('Edit Investment', style: TextStyle(fontSize: 16)),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name'),
+              textCapitalization: TextCapitalization.words),
+          const SizedBox(height: 8),
+          TextField(controller: amountCtl,
+              decoration: const InputDecoration(labelText: 'Amount Invested (\u20B1)', prefixText: '\u20B1 '),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))]),
+          const SizedBox(height: 8),
+          TextField(controller: valueCtl,
+              decoration: const InputDecoration(labelText: 'Current Value (\u20B1)', prefixText: '\u20B1 '),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))]),
+          const SizedBox(height: 8),
+          TextField(controller: notesCtl, decoration: const InputDecoration(labelText: 'Notes'),
+              maxLines: 2),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: saving ? null : () async {
+              final name = nameCtl.text.trim();
+              final amount = double.tryParse(amountCtl.text.replaceAll(',', '')) ?? 0;
+              final value = double.tryParse(valueCtl.text.replaceAll(',', '')) ?? 0;
+              if (name.isEmpty || amount <= 0) return;
+              setSt(() => saving = true);
+              try {
+                final repo = LocalInvestmentRepository(
+                    AppDatabase.instance, Supabase.instance.client);
+                final now = DateTime.now();
+                await repo.createInvestment(Investment(
+                  id: inv.id, userId: inv.userId,
+                  name: name, type: inv.type,
+                  amountInvested: amount, currentValue: value,
+                  dateStarted: inv.dateStarted,
+                  notes: notesCtl.text.trim().isEmpty ? null : notesCtl.text.trim(),
+                  navpu: inv.navpu, units: inv.units,
+                  interestRate: inv.interestRate, maturityDate: inv.maturityDate,
+                  createdAt: inv.createdAt, updatedAt: now,
+                ));
+                onUpdate();
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                setSt(() => saving = false);
+              }
+            },
+            child: saving
+                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Save'),
+          ),
+        ],
+      )),
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete?'),
+        content: Text('Are you sure you want to delete "${investment.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final repo = LocalInvestmentRepository(
+                  AppDatabase.instance, Supabase.instance.client);
+              await repo.deleteInvestment(investment.id);
+              onUpdate();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -194,39 +286,75 @@ class _InvestmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
       ),
-      child: Row(children: [
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(
-            color: cs.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(LucideIcons.trendingUp, size: 18, color: cs.primary),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(inv.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 2),
-          Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(inv.typeLabel, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+      child: Column(children: [
+        Row(children: [
+          Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+              color: cs.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(width: 6),
-            Text('Invested: ${hide ? "••••" : formatCurrency(inv.amountInvested)}',
-                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            child: Icon(LucideIcons.trendingUp, size: 18, color: cs.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(inv.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(inv.typeLabel, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+              ),
+              const SizedBox(width: 6),
+              Text('Invested: ${hide ? "\u2022\u2022\u2022\u2022" : formatCurrency(inv.amountInvested)}',
+                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+            ]),
+          ])),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(hide ? '\u2022\u2022\u2022\u2022' : formatCurrency(inv.currentValue),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Text('${isUp ? '+' : ''}${inv.gainLossPercent.toStringAsFixed(1)}%',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                    color: isUp ? Colors.green : Colors.red)),
           ]),
-        ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(hide ? '••••' : formatCurrency(inv.currentValue),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-          Text('${isUp ? '+' : ''}${inv.gainLossPercent.toStringAsFixed(1)}%',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
-                  color: isUp ? Colors.green : Colors.red)),
+        ]),
+        const SizedBox(height: 8),
+        Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          GestureDetector(
+            onTap: () => _showEditDialog(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(LucideIcons.pencil, size: 12, color: cs.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text('Edit', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              ]),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _confirmDelete(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: cs.error.withValues(alpha: 0.2)),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(LucideIcons.trash2, size: 12, color: cs.error),
+                const SizedBox(width: 4),
+                Text('Delete', style: TextStyle(fontSize: 11, color: cs.error)),
+              ]),
+            ),
+          ),
         ]),
       ]),
     );

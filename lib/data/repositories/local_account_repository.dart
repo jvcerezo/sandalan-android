@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/utils/id_generator.dart';
@@ -100,6 +101,23 @@ class LocalAccountRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertAccount(updated);
+  }
+
+  /// Reconciliation check: compares each account's stored balance against
+  /// the sum of its transactions. Logs a warning for any mismatch.
+  Future<void> reconcileBalances() async {
+    final accounts = await getAccounts();
+    for (final account in accounts) {
+      final txSum = await _db.sumTransactionsByAccountId(account.id);
+      final diff = (account.balance - txSum).abs();
+      if (diff > 0.01) {
+        debugPrint(
+          'RECONCILE WARNING: Account "${account.name}" (${account.id}) '
+          'balance=${account.balance} but transaction sum=$txSum '
+          '(diff=${account.balance - txSum})',
+        );
+      }
+    }
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

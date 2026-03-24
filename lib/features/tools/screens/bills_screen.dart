@@ -451,10 +451,27 @@ class _BillRow extends StatelessWidget {
         ),
         // Delete
         IconButton(
-          onPressed: () async {
-            await ref.read(billRepositoryProvider).deleteBill(bill.id);
-            ref.invalidate(billsProvider);
-            ref.invalidate(billsSummaryProvider);
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete?'),
+                content: Text('Are you sure you want to delete "${bill.name}"? This cannot be undone.'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      await ref.read(billRepositoryProvider).deleteBill(bill.id);
+                      ref.invalidate(billsProvider);
+                      ref.invalidate(billsSummaryProvider);
+                    },
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            );
           },
           icon: Icon(LucideIcons.trash2, size: 16, color: AppColors.expense.withValues(alpha: 0.5)),
           padding: EdgeInsets.zero,

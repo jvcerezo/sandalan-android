@@ -380,7 +380,34 @@ class _DebtRow extends StatelessWidget {
                 maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
           const SizedBox(width: 8),
-          Icon(LucideIcons.trash2, size: 14, color: AppColors.toolRed.withValues(alpha: 0.5)),
+          GestureDetector(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete?'),
+                  content: Text('Are you sure you want to delete "${debt.name}"? This cannot be undone.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(debtRepositoryProvider).deleteDebt(debt.id);
+                        ref.invalidate(debtsProvider);
+                        ref.invalidate(debtSummaryProvider);
+                      },
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(LucideIcons.trash2, size: 14, color: AppColors.toolRed.withValues(alpha: 0.5)),
+            ),
+          ),
         ]),
         const SizedBox(height: 8),
         // Progress

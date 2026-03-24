@@ -61,6 +61,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _updateHomeWidget();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Invalidate providers to force refresh when returning from other screens
+    ref.invalidate(transactionsSummaryProvider);
+    ref.invalidate(upcomingPaymentsProvider);
+    ref.invalidate(billsSummaryProvider);
+    ref.invalidate(debtSummaryProvider);
+  }
+
   /// Push latest data to the Android home screen widget.
   Future<void> _updateHomeWidget() async {
     final streak = await StreakService.instance.getStreak();

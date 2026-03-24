@@ -340,10 +340,27 @@ class _PolicyRow extends StatelessWidget {
             icon: LucideIcons.trash2,
             label: 'Delete',
             isDestructive: true,
-            onTap: () async {
-              await ref.read(insuranceRepositoryProvider).deletePolicy(policy.id);
-              ref.invalidate(insurancePoliciesProvider);
-              ref.invalidate(insuranceSummaryProvider);
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete?'),
+                  content: Text('Are you sure you want to delete "${policy.name}"? This cannot be undone.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await ref.read(insuranceRepositoryProvider).deletePolicy(policy.id);
+                        ref.invalidate(insurancePoliciesProvider);
+                        ref.invalidate(insuranceSummaryProvider);
+                      },
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ]),
