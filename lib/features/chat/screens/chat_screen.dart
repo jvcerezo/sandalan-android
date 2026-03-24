@@ -34,7 +34,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _checkSetup() async {
     final isComplete = await AiSetupScreen.isSetupComplete();
     if (!isComplete && mounted) {
-      setState(() => _showSetup = true);
+      setState(() {
+        _showSetup = true;
+        _checkingSetup = false;
+      });
     } else if (mounted) {
       final name = await AiSetupScreen.getAssistantName();
       setState(() {
