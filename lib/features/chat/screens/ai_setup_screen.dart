@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -80,7 +81,16 @@ class _AiSetupScreenState extends State<AiSetupScreen> {
         title: const Text('Set Up Your AI'),
         leading: IconButton(
           icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () {
+            if (widget.onComplete != null) {
+              // Inline mode — just skip setup and show chat
+              widget.onComplete!();
+            } else if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop(false);
+            } else {
+              GoRouter.of(context).go('/home');
+            }
+          },
         ),
       ),
       body: Column(
