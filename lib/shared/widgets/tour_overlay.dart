@@ -1,5 +1,4 @@
 /// Full-screen tour overlay that walks users through the app.
-/// Adapted from the web app's tour-overlay.tsx / use-tour.ts.
 ///
 /// Usage:
 ///   - Wrap inside a Stack on top of main content (in AppScaffold).
@@ -12,9 +11,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // ─── Tour Step Data ─────────────────────────────────────────────────────────
 
-enum TourTarget { none, bottomCenter, topRight }
+enum TourTarget {
+  none,
+  bottomNavGuide,   // Guide tab (2nd from left)
+  bottomNavCenter,  // + button (center)
+  bottomNavMoney,   // Money tab (4th from left)
+}
 
-enum TourPreview { logo, menuGrid, quickActions, journeyMap, dashboard, smartFeatures, streak, none }
+enum TourPreview { logo, journeyMap, dashboard, quickActions, smartFeatures, none }
 
 class TourStep {
   final String title;
@@ -41,72 +45,54 @@ const _tourSteps = [
   TourStep(
     title: 'Welcome to Sandalan!',
     description:
-        'Your Filipino adulting companion. Let\u2019s take a quick 30-second tour.',
+        'Your Filipino adulting companion. Let\u2019s take a quick tour.',
     icon: LucideIcons.map,
     preview: TourPreview.logo,
   ),
-  // Step 2: Menu FAB
-  TourStep(
-    title: 'This is your Menu',
-    description:
-        'Tap it anytime to navigate anywhere \u2014 finances, guides, tools, settings. Everything in one place.',
-    icon: LucideIcons.layoutGrid,
-    iconColor: Color(0xFF3B82F6),
-    target: TourTarget.bottomCenter,
-    preview: TourPreview.menuGrid,
-  ),
-  // Step 3: Quick Actions
-  TourStep(
-    title: 'Quick Actions',
-    description:
-        'Add expenses, income, or scan receipts right from the Menu. Your most common actions, one tap away.',
-    icon: LucideIcons.zap,
-    iconColor: Color(0xFFF59E0B),
-    target: TourTarget.bottomCenter,
-    preview: TourPreview.quickActions,
-  ),
-  // Step 4: Adulting Guide
+  // Step 2: Guide tab
   TourStep(
     title: 'Your Adulting Journey',
     description:
-        'Step-by-step guides for every life stage \u2014 from getting your first ID to retirement planning. All in Filipino context.',
+        'Step-by-step guides for every life stage \u2014 from getting your first ID to retirement planning. Tap the Guide tab anytime.',
     icon: LucideIcons.bookOpen,
     iconColor: Color(0xFF10B981),
+    target: TourTarget.bottomNavGuide,
     preview: TourPreview.journeyMap,
   ),
-  // Step 5: Financial Dashboard
+  // Step 3: Money tab
   TourStep(
     title: 'Track Your Money',
     description:
-        'See your net worth, spending patterns, budgets, and goals all in one dashboard.',
-    icon: LucideIcons.layoutDashboard,
+        'Tap Money to see your dashboard, transactions, accounts, and budgets \u2014 all in one place.',
+    icon: LucideIcons.wallet,
     iconColor: Color(0xFF3B82F6),
+    target: TourTarget.bottomNavMoney,
     preview: TourPreview.dashboard,
   ),
-  // Step 6: Smart Features
+  // Step 4: + button
   TourStep(
-    title: 'AI Assistant + Receipt Scanner',
+    title: 'Add Transactions Fast',
+    description:
+        'Tap + to log expenses, income, or scan a receipt. Your most common action, always one tap away.',
+    icon: LucideIcons.zap,
+    iconColor: Color(0xFFF59E0B),
+    target: TourTarget.bottomNavCenter,
+    preview: TourPreview.quickActions,
+  ),
+  // Step 5: Smart Features
+  TourStep(
+    title: 'AI + Receipt Scanner',
     description:
         'Ask your personal AI about finances in Taglish, or scan receipts to auto-log expenses. Parang magic!',
     icon: LucideIcons.sparkles,
     iconColor: Color(0xFF8B5CF6),
     preview: TourPreview.smartFeatures,
   ),
-  // Step 7: Streak & Achievements
-  TourStep(
-    title: 'Stay Consistent',
-    description:
-        'Build a daily streak, earn Pahinga Days for rest, and unlock 75+ achievements. Tuloy-tuloy lang!',
-    icon: LucideIcons.flame,
-    iconColor: Color(0xFFF97316),
-    target: TourTarget.topRight,
-    preview: TourPreview.streak,
-  ),
-  // Step 8: All Set
+  // Step 6: All Set
   TourStep(
     title: 'Tara, simulan na natin!',
     description:
-        'Tap the Menu to explore, or start by adding your first expense. Salamat sa pagtitiwala! \uD83E\uDEF6',
+        'Explore the Guide tab, or tap + to add your first expense. Salamat sa pagtitiwala! \uD83E\uDEF6',
     icon: LucideIcons.checkCircle2,
     iconColor: Color(0xFF10B981),
     buttonLabel: "Let's Go!",
@@ -192,7 +178,6 @@ class _TourHostState extends State<TourHost> {
   Future<void> _checkAutoStart() async {
     final shouldStart = await shouldAutoStartTour();
     if (shouldStart && mounted) {
-      // Small delay to let the home screen render first.
       await Future.delayed(const Duration(milliseconds: 600));
       if (mounted) {
         setState(() {
@@ -212,7 +197,6 @@ class _TourHostState extends State<TourHost> {
 
   void _next() {
     if (_currentStep >= _tourSteps.length - 1) {
-      // Last step -> finish
       setState(() => _active = false);
       _markTourCompleted();
       return;
@@ -325,9 +309,9 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
       color: Colors.transparent,
       child: Stack(
         children: [
-          // Dark backdrop with optional spotlight cutout
+          // Dark backdrop with spotlight
           GestureDetector(
-            onTap: () {}, // absorb taps
+            onTap: () {},
             child: CustomPaint(
               size: size,
               painter: _SpotlightPainter(
@@ -338,7 +322,7 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
             ),
           ),
 
-          // Card positioned based on target
+          // Card
           _buildPositionedCard(context, colorScheme, step, isFirst, isLast, size, bottomPadding),
         ],
       ),
@@ -347,22 +331,12 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
 
   Widget _buildPositionedCard(BuildContext context, ColorScheme colorScheme,
       TourStep step, bool isFirst, bool isLast, Size size, double bottomPadding) {
-    // For bottom-center targets, position card above the spotlight
-    if (step.target == TourTarget.bottomCenter) {
+    // For bottom nav targets, position card above the bottom bar
+    if (step.target != TourTarget.none) {
       return Positioned(
         left: 24,
         right: 24,
         bottom: 100 + bottomPadding,
-        child: _buildAnimatedCard(colorScheme, step, isFirst, isLast),
-      );
-    }
-
-    // For top-right targets, position card below the spotlight
-    if (step.target == TourTarget.topRight) {
-      return Positioned(
-        left: 24,
-        right: 24,
-        top: 100,
         child: _buildAnimatedCard(colorScheme, step, isFirst, isLast),
       );
     }
@@ -380,7 +354,6 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
       child: SlideTransition(
         position: _slideIn,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 0),
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
             color: colorScheme.surface,
@@ -399,19 +372,15 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Illustration area
-              _StepIllustration(
-                step: step,
-                colorScheme: colorScheme,
-              ),
+              // Illustration
+              _StepIllustration(step: step, colorScheme: colorScheme),
 
-              // Content area
+              // Content
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Title
                     Text(
                       step.title,
                       style: const TextStyle(
@@ -422,8 +391,6 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
-
-                    // Description
                     Text(
                       step.description,
                       style: TextStyle(
@@ -448,8 +415,7 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
                           decoration: BoxDecoration(
                             color: isCurrent
                                 ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.2),
+                                : colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -457,23 +423,17 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
                     ),
                     const SizedBox(height: 20),
 
-                    // Navigation row
+                    // Navigation
                     Row(
                       children: [
-                        // Skip
                         GestureDetector(
                           onTap: widget.onSkip,
                           child: Text(
                             'Skip tour',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                            style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
                           ),
                         ),
                         const Spacer(),
-
-                        // Back button
                         if (!isFirst)
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
@@ -484,36 +444,20 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
                                 onPressed: widget.onPrev,
                                 style: OutlinedButton.styleFrom(
                                   padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(10),
-                                  ),
-                                  side: BorderSide(
-                                    color: colorScheme.outline
-                                        .withValues(alpha: 0.2),
-                                  ),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
                                 ),
-                                child: Icon(
-                                  LucideIcons.arrowLeft,
-                                  size: 16,
-                                  color: colorScheme.onSurface,
-                                ),
+                                child: Icon(LucideIcons.arrowLeft, size: 16, color: colorScheme.onSurface),
                               ),
                             ),
                           ),
-
-                        // Next / Done button
                         SizedBox(
                           height: 40,
                           child: FilledButton(
                             onPressed: widget.onNext,
                             style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(10),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -521,8 +465,7 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
                                 Text(step.buttonLabel ?? (isLast ? 'Done' : 'Next')),
                                 if (!isLast && step.buttonLabel == null) ...[
                                   const SizedBox(width: 6),
-                                  const Icon(LucideIcons.arrowRight,
-                                      size: 14),
+                                  const Icon(LucideIcons.arrowRight, size: 14),
                                 ],
                               ],
                             ),
@@ -531,14 +474,12 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
                       ],
                     ),
 
-                    // Step counter
                     const SizedBox(height: 12),
                     Text(
                       '${widget.currentStep + 1} / ${widget.totalSteps}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: colorScheme.onSurfaceVariant
-                            .withValues(alpha: 0.5),
+                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -574,21 +515,39 @@ class _SpotlightPainter extends CustomPainter {
       return;
     }
 
-    // Create a path that covers the whole screen then cuts out the spotlight
-    final path = Path()
-      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
-    if (target == TourTarget.bottomCenter) {
-      // Spotlight on the Menu FAB pill at bottom center
-      final center = Offset(size.width / 2, size.height - 32 - bottomPadding);
+    // Bottom nav is 64px high + safe area. Tab items are evenly spaced in 5 columns.
+    final navTop = size.height - 64 - bottomPadding;
+    final tabWidth = size.width / 5;
+
+    Offset center;
+    switch (target) {
+      case TourTarget.bottomNavGuide:
+        // 2nd tab (index 1)
+        center = Offset(tabWidth * 1.5, navTop + 32);
+      case TourTarget.bottomNavCenter:
+        // Center + button (index 2)
+        center = Offset(tabWidth * 2.5, navTop + 32);
+      case TourTarget.bottomNavMoney:
+        // 4th tab (index 3)
+        center = Offset(tabWidth * 3.5, navTop + 32);
+      case TourTarget.none:
+        return;
+    }
+
+    if (target == TourTarget.bottomNavCenter) {
+      // Larger spotlight for the + button
       path.addRRect(RRect.fromRectAndRadius(
-        Rect.fromCenter(center: center, width: 100, height: 48),
-        const Radius.circular(24),
+        Rect.fromCenter(center: center, width: 60, height: 60),
+        const Radius.circular(18),
       ));
-    } else if (target == TourTarget.topRight) {
-      // Spotlight on streak badge area at top right
-      final center = Offset(size.width - 48, 52);
-      path.addOval(Rect.fromCircle(center: center, radius: 28));
+    } else {
+      // Pill spotlight for tab items
+      path.addRRect(RRect.fromRectAndRadius(
+        Rect.fromCenter(center: center, width: 64, height: 52),
+        const Radius.circular(16),
+      ));
     }
 
     path.fillType = PathFillType.evenOdd;
@@ -625,18 +584,14 @@ class _StepIllustration extends StatelessWidget {
     switch (preview) {
       case TourPreview.logo:
         return _MiniLogoPreview(colorScheme: colorScheme);
-      case TourPreview.menuGrid:
-        return _MiniMenuGridPreview(colorScheme: colorScheme);
-      case TourPreview.quickActions:
-        return _MiniQuickActionsPreview(colorScheme: colorScheme);
       case TourPreview.journeyMap:
         return _MiniJourneyMapPreview(colorScheme: colorScheme);
       case TourPreview.dashboard:
         return _MiniDashboardPreview(colorScheme: colorScheme);
+      case TourPreview.quickActions:
+        return _MiniQuickActionsPreview(colorScheme: colorScheme);
       case TourPreview.smartFeatures:
         return _MiniSmartFeaturesPreview(colorScheme: colorScheme);
-      case TourPreview.streak:
-        return _MiniStreakPreview(colorScheme: colorScheme);
       case TourPreview.none:
         return _buildIconFallback();
     }
@@ -675,7 +630,6 @@ class _MiniLogoPreview extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 8),
-          // Sandalan logo representation
           Container(
             width: 72,
             height: 72,
@@ -699,10 +653,8 @@ class _MiniLogoPreview extends StatelessWidget {
           const SizedBox(height: 12),
           Text('Sandalan',
               style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.3,
-                  color: colorScheme.onSurface)),
+                  fontSize: 16, fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3, color: colorScheme.onSurface)),
           const SizedBox(height: 2),
           Text('Your adulting companion',
               style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
@@ -713,74 +665,16 @@ class _MiniLogoPreview extends StatelessWidget {
   }
 }
 
-// ─── Mini Preview: Menu Grid ────────────────────────────────────────────────
-
-class _MiniMenuGridPreview extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _MiniMenuGridPreview({required this.colorScheme});
-
-  static const _items = [
-    (icon: LucideIcons.home, label: 'Home', color: Color(0xFF6366F1)),
-    (icon: LucideIcons.bookOpen, label: 'Guide', color: Color(0xFF10B981)),
-    (icon: LucideIcons.layoutDashboard, label: 'Dashboard', color: Color(0xFF3B82F6)),
-    (icon: LucideIcons.arrowLeftRight, label: 'Transactions', color: Color(0xFFF59E0B)),
-    (icon: LucideIcons.wrench, label: 'Tools', color: Color(0xFFEF4444)),
-    (icon: LucideIcons.settings, label: 'Settings', color: Color(0xFF8B5CF6)),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return _PreviewFrame(
-      colorScheme: colorScheme,
-      child: Column(
-        children: [
-          Text('Menu',
-              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface)),
-          const SizedBox(height: 8),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 1.0,
-            children: _items.map((item) => Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(item.icon, size: 16, color: item.color),
-                ),
-                const SizedBox(height: 4),
-                Text(item.label,
-                    style: TextStyle(fontSize: 7, color: colorScheme.onSurfaceVariant),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            )).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Mini Preview: Quick Actions ────────────────────────────────────────────
+// ─── Mini Preview: Quick Actions (Expense / Income / Scan) ──────────────────
 
 class _MiniQuickActionsPreview extends StatelessWidget {
   final ColorScheme colorScheme;
   const _MiniQuickActionsPreview({required this.colorScheme});
 
   static const _actions = [
-    (icon: LucideIcons.trendingDown, label: 'Expense', color: Color(0xFFEF4444)),
-    (icon: LucideIcons.trendingUp, label: 'Income', color: Color(0xFF22C55E)),
-    (icon: LucideIcons.camera, label: 'Scan', color: Color(0xFF6366F1)),
-    (icon: LucideIcons.arrowLeftRight, label: 'Transfer', color: Color(0xFF3B82F6)),
+    (icon: LucideIcons.arrowUpRight, label: 'Expense', color: Color(0xFF64748B)),
+    (icon: LucideIcons.arrowDownLeft, label: 'Income', color: Color(0xFF22C55E)),
+    (icon: LucideIcons.scanLine, label: 'Scan', color: Color(0xFF6366F1)),
   ];
 
   @override
@@ -799,16 +693,16 @@ class _MiniQuickActionsPreview extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: a.color.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
+                    color: a.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(a.icon, size: 18, color: a.color),
+                  child: Icon(a.icon, size: 20, color: a.color),
                 ),
                 const SizedBox(height: 6),
                 Text(a.label,
-                    style: TextStyle(fontSize: 7, color: colorScheme.onSurfaceVariant)),
+                    style: TextStyle(fontSize: 8, color: colorScheme.onSurfaceVariant)),
               ],
             )).toList(),
           ),
@@ -857,8 +751,6 @@ class _MiniJourneyMapPreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-
-          // Stage nodes
           SizedBox(
             height: 60,
             child: Row(
@@ -873,9 +765,7 @@ class _MiniJourneyMapPreview extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: s.color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: i == 0
-                            ? Border.all(color: s.color, width: 1.5)
-                            : null,
+                        border: i == 0 ? Border.all(color: s.color, width: 1.5) : null,
                       ),
                       child: Icon(s.icon, size: 12, color: s.color),
                     ),
@@ -883,29 +773,13 @@ class _MiniJourneyMapPreview extends StatelessWidget {
                     SizedBox(
                       width: 44,
                       child: Text(s.label,
-                          style: TextStyle(fontSize: 6,
-                              color: colorScheme.onSurfaceVariant),
+                          style: TextStyle(fontSize: 6, color: colorScheme.onSurfaceVariant),
                           textAlign: TextAlign.center,
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                   ],
                 );
               }),
-            ),
-          ),
-
-          // Connecting dots
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: List.generate(23, (i) => Expanded(
-                child: Container(
-                  height: 1,
-                  color: i % 2 == 0
-                      ? colorScheme.outline.withValues(alpha: 0.15)
-                      : Colors.transparent,
-                ),
-              )),
             ),
           ),
         ],
@@ -927,13 +801,38 @@ class _MiniDashboardPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Tabs preview
+          Row(
+            children: ['Overview', 'Transactions', 'Accounts', 'Budgets'].map((t) =>
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    color: t == 'Overview'
+                        ? colorScheme.surface
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: t == 'Overview' ? [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                    ] : null,
+                  ),
+                  child: Text(t,
+                      style: TextStyle(fontSize: 7,
+                          fontWeight: t == 'Overview' ? FontWeight.w600 : FontWeight.normal,
+                          color: t == 'Overview' ? colorScheme.onSurface : colorScheme.onSurfaceVariant),
+                      textAlign: TextAlign.center),
+                ),
+              ),
+            ).toList(),
+          ),
+          const SizedBox(height: 8),
+
           // Net worth card
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF3B82F6), Color(0xFF6366F1)],
-              ),
+              gradient: const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF6366F1)]),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Row(
@@ -944,49 +843,27 @@ class _MiniDashboardPreview extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Net Worth',
-                          style: TextStyle(fontSize: 7, color: Colors.white70)),
-                      Text('P42,800',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
-                              color: Colors.white)),
+                      Text('Net Worth', style: TextStyle(fontSize: 7, color: Colors.white70)),
+                      Text('P42,800', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
-          // Mini bar chart
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Mini chart
+          SizedBox(
+            height: 24,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('SPENDING TRENDS',
-                    style: TextStyle(fontSize: 7, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5, color: colorScheme.onSurfaceVariant)),
-                const SizedBox(height: 6),
-                SizedBox(
-                  height: 32,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _MiniBar(height: 16, color: const Color(0xFF22C55E), colorScheme: colorScheme),
-                      _MiniBar(height: 24, color: const Color(0xFFEF4444), colorScheme: colorScheme),
-                      _MiniBar(height: 12, color: const Color(0xFF22C55E), colorScheme: colorScheme),
-                      _MiniBar(height: 28, color: const Color(0xFFEF4444), colorScheme: colorScheme),
-                      _MiniBar(height: 20, color: const Color(0xFF22C55E), colorScheme: colorScheme),
-                      _MiniBar(height: 32, color: const Color(0xFFEF4444), colorScheme: colorScheme),
-                      _MiniBar(height: 14, color: const Color(0xFF22C55E), colorScheme: colorScheme),
-                    ],
-                  ),
-                ),
+                _MiniBar(height: 12, color: const Color(0xFF22C55E), colorScheme: colorScheme),
+                _MiniBar(height: 20, color: const Color(0xFFEF4444), colorScheme: colorScheme),
+                _MiniBar(height: 8, color: const Color(0xFF22C55E), colorScheme: colorScheme),
+                _MiniBar(height: 24, color: const Color(0xFFEF4444), colorScheme: colorScheme),
+                _MiniBar(height: 16, color: const Color(0xFF22C55E), colorScheme: colorScheme),
               ],
             ),
           ),
@@ -1008,7 +885,6 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
       colorScheme: colorScheme,
       child: Row(
         children: [
-          // Chat bubble side
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1023,7 +899,6 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                // User message
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -1034,7 +909,6 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
                       style: TextStyle(fontSize: 7, color: colorScheme.onSurface)),
                 ),
                 const SizedBox(height: 4),
-                // AI response
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -1048,7 +922,6 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          // Camera / scan side
           Column(
             children: [
               Container(
@@ -1057,7 +930,7 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
                   color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(LucideIcons.camera, size: 24, color: Color(0xFF6366F1)),
+                child: const Icon(LucideIcons.scanLine, size: 24, color: Color(0xFF6366F1)),
               ),
               const SizedBox(height: 4),
               Text('Scan',
@@ -1070,91 +943,8 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
   }
 }
 
-// ─── Mini Preview: Streak ───────────────────────────────────────────────────
-
-class _MiniStreakPreview extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _MiniStreakPreview({required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return _PreviewFrame(
-      colorScheme: colorScheme,
-      child: Column(
-        children: [
-          // Streak flame
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(LucideIcons.flame, size: 28, color: Color(0xFFF97316)),
-              const SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('7-day streak!',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface)),
-                  Text('Keep it going!',
-                      style: TextStyle(fontSize: 8, color: colorScheme.onSurfaceVariant)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Achievement badges
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _AchievementBadge(icon: LucideIcons.trophy, color: const Color(0xFFF59E0B), colorScheme: colorScheme),
-              const SizedBox(width: 8),
-              _AchievementBadge(icon: LucideIcons.target, color: const Color(0xFF10B981), colorScheme: colorScheme),
-              const SizedBox(width: 8),
-              _AchievementBadge(icon: LucideIcons.star, color: const Color(0xFF8B5CF6), colorScheme: colorScheme),
-              const SizedBox(width: 8),
-              _AchievementBadge(icon: LucideIcons.medal, color: const Color(0xFF3B82F6), colorScheme: colorScheme),
-              const SizedBox(width: 8),
-              Container(
-                width: 28, height: 28,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text('+71',
-                      style: TextStyle(fontSize: 7, fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurfaceVariant)),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AchievementBadge extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final ColorScheme colorScheme;
-  const _AchievementBadge({required this.icon, required this.color, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 28, height: 28,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 14, color: color),
-    );
-  }
-}
-
 // ─── Shared Mini Components ─────────────────────────────────────────────────
 
-/// Wrapper that looks like a mini phone screen.
 class _PreviewFrame extends StatelessWidget {
   final ColorScheme colorScheme;
   final Widget child;
@@ -1174,7 +964,6 @@ class _PreviewFrame extends StatelessWidget {
   }
 }
 
-/// Mini chart bar.
 class _MiniBar extends StatelessWidget {
   final double height;
   final Color color;

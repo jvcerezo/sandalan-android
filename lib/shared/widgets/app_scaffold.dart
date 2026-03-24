@@ -11,6 +11,23 @@ import 'sync_indicator.dart';
 import 'universal_search.dart';
 import 'tour_overlay.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
+import '../../features/transactions/screens/receipt_scanner_screen.dart';
+
+/// Allows child screens to register a custom back handler.
+/// When set, the AppScaffold will call this before its default back behavior.
+/// Return true if the handler consumed the back press, false to fall through.
+class AppBackHandler {
+  static bool Function()? _handler;
+
+  static void register(bool Function() handler) => _handler = handler;
+  static void unregister() => _handler = null;
+
+  /// Returns true if a registered handler consumed the back press.
+  static bool tryHandle() {
+    if (_handler != null) return _handler!();
+    return false;
+  }
+}
 
 class AppScaffold extends StatefulWidget {
   final Widget child;
@@ -24,13 +41,81 @@ class AppScaffold extends StatefulWidget {
 class _AppScaffoldState extends State<AppScaffold> {
   DateTime? _lastBackPress;
 
-  void _showAddTransaction(BuildContext ctx) {
+  void _showQuickActions(BuildContext ctx) {
     HapticFeedback.lightImpact();
+    final cs = Theme.of(ctx).colorScheme;
+
     showModalBottomSheet(
       context: ctx,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const AddTransactionDialog(isIncome: false),
+      builder: (sheetCtx) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                // Add Expense
+                Expanded(
+                  child: _QuickActionTile(
+                    icon: LucideIcons.arrowUpRight,
+                    label: 'Expense',
+                    color: cs.onSurface,
+                    onTap: () {
+                      Navigator.pop(sheetCtx);
+                      showModalBottomSheet(
+                        context: ctx,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const AddTransactionDialog(isIncome: false),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Add Income
+                Expanded(
+                  child: _QuickActionTile(
+                    icon: LucideIcons.arrowDownLeft,
+                    label: 'Income',
+                    color: const Color(0xFF2D8B5E),
+                    onTap: () {
+                      Navigator.pop(sheetCtx);
+                      showModalBottomSheet(
+                        context: ctx,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const AddTransactionDialog(isIncome: true),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Scan Receipt
+                Expanded(
+                  child: _QuickActionTile(
+                    icon: LucideIcons.scanLine,
+                    label: 'Scan',
+                    color: cs.primary,
+                    onTap: () {
+                      Navigator.pop(sheetCtx);
+                      Navigator.of(ctx).push(MaterialPageRoute(
+                        builder: (_) => const ReceiptScannerScreen(),
+                      ));
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -72,7 +157,8 @@ class _AppScaffoldState extends State<AppScaffold> {
 
     return _NativeBackHandler(
       onBack: () {
-        if (location == '/settings' || location == '/more') return;
+        // Let child screens handle back first (e.g. settings subsections)
+        if (AppBackHandler.tryHandle()) return;
 
         if (location == '/home') {
           final now = DateTime.now();
@@ -175,7 +261,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                           // Add (+) center button
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => _showAddTransaction(context),
+                              onTap: () => _showQuickActions(context),
                               behavior: HitTestBehavior.opaque,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -274,6 +360,47 @@ class _TabItem extends StatelessWidget {
                 color: color,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 24, color: color),
+            const SizedBox(height: 6),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: color)),
           ],
         ),
       ),

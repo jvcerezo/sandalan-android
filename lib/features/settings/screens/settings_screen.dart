@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/services/guest_mode_service.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 import '../widgets/profile_section.dart';
 import '../widgets/appearance_section.dart';
 import '../widgets/automation_section.dart';
@@ -25,17 +26,26 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _activeSection;
 
+  void _updateBackHandler() {
+    if (_activeSection != null) {
+      AppBackHandler.register(() {
+        _goBackToMenu();
+        return true;
+      });
+    } else {
+      AppBackHandler.unregister();
+    }
+  }
+
+  @override
+  void dispose() {
+    AppBackHandler.unregister();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: _activeSection == null,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _activeSection != null) {
-          setState(() => _activeSection = null);
-        }
-      },
-      child: _activeSection != null ? _buildSection(context) : _buildMenu(context),
-    );
+    return _activeSection != null ? _buildSection(context) : _buildMenu(context);
   }
 
   Widget _buildMenu(BuildContext context) {
@@ -91,37 +101,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: LucideIcons.user,
               title: 'Profile',
               sub: 'Name, avatar, email',
-              onTap: () => setState(() => _activeSection = 'profile')),
+              onTap: () => _goToSection('profile')),
         _MenuItem(
             icon: LucideIcons.settings2,
             title: 'Appearance',
             sub: 'Theme preferences',
-            onTap: () => setState(() => _activeSection = 'appearance')),
+            onTap: () => _goToSection('appearance')),
         _MenuItem(
             icon: LucideIcons.zap,
             title: 'Automation',
             sub: 'Reminders & auto-generation',
-            onTap: () => setState(() => _activeSection = 'automation')),
+            onTap: () => _goToSection('automation')),
         _MenuItem(
             icon: LucideIcons.bell,
             title: 'Notifications',
             sub: 'Push notification settings',
-            onTap: () => setState(() => _activeSection = 'notifications')),
+            onTap: () => _goToSection('notifications')),
         _MenuItem(
             icon: LucideIcons.layoutGrid,
             title: 'Home Page',
             sub: 'Customize your Home',
-            onTap: () => setState(() => _activeSection = 'homepage')),
+            onTap: () => _goToSection('homepage')),
         _MenuItem(
             icon: LucideIcons.eyeOff,
             title: 'Feature Visibility',
             sub: 'Hide features you don\'t need',
-            onTap: () => setState(() => _activeSection = 'visibility')),
+            onTap: () => _goToSection('visibility')),
         _MenuItem(
             icon: LucideIcons.refreshCw,
             title: 'Currency',
             sub: 'Rates & primary currency',
-            onTap: () => setState(() => _activeSection = 'currency')),
+            onTap: () => _goToSection('currency')),
         _MenuItem(
             icon: LucideIcons.piggyBank,
             title: 'Salary Allocation',
@@ -132,24 +142,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: LucideIcons.shield,
               title: 'Privacy & Data',
               sub: 'Export, delete, legal',
-              onTap: () => setState(() => _activeSection = 'privacy')),
+              onTap: () => _goToSection('privacy')),
         _MenuItem(
             icon: LucideIcons.bug,
             title: 'Report Bug',
             sub: 'Report issues',
-            onTap: () => setState(() => _activeSection = 'bug')),
+            onTap: () => _goToSection('bug')),
         _MenuItem(
             icon: LucideIcons.logOut,
             title: 'Account',
             sub: isGuest ? 'Tour, create account' : 'Sign out, tour, sync',
-            onTap: () => setState(() => _activeSection = 'account')),
+            onTap: () => _goToSection('account')),
       ],
     );
   }
 
+  void _goToSection(String section) {
+    setState(() => _activeSection = section);
+    _updateBackHandler();
+  }
+
+  void _goBackToMenu() {
+    setState(() => _activeSection = null);
+    _updateBackHandler();
+  }
+
   Widget _buildBackButton() {
     return InkWell(
-      onTap: () => setState(() => _activeSection = null),
+      onTap: _goBackToMenu,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 12),
