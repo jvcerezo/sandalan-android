@@ -451,40 +451,25 @@ class AutomationService {
 
   static Future<void> _scheduleDailyLogReminder(AppDatabase db, SupabaseClient client) async {
     try {
-      final txnRepo = LocalTransactionRepository(db, client);
       final now = DateTime.now();
-      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-      // Query today's confirmed transactions
-      final todayTxns = await txnRepo.getTransactions(TransactionFilters(
-        startDate: DateTime(now.year, now.month, now.day),
-        endDate: DateTime(now.year, now.month, now.day),
-      ));
+      // Schedule reminders for the NEXT 7 days at 7 PM each day.
+      // This ensures notifications fire even if the user doesn't open the app.
+      for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+        final targetDay = now.add(Duration(days: dayOffset));
+        final target = DateTime(targetDay.year, targetDay.month, targetDay.day, 19, 0);
 
-      // Check if any are manual (confirmed, no auto-generated tags)
-      final hasManualToday = todayTxns.any((t) {
-        if (!t.isConfirmed) return false;
-        final tags = t.tags ?? [];
-        return !tags.any((tag) => _autoTags.contains(tag.toLowerCase()));
-      });
+        // Skip if this time has already passed
+        if (!target.isAfter(now)) continue;
 
-      // If user already logged manual transactions today, skip
-      if (hasManualToday) return;
-
-      // Schedule notification at 7:00 PM Manila time
-      // If 7 PM today has passed, schedule for tomorrow
-      var target = DateTime(now.year, now.month, now.day, 19, 0);
-      if (!target.isAfter(now)) {
-        target = target.add(const Duration(days: 1));
-      }
-      {
-        final notifId = 'daily-log-$todayStr'.hashCode;
+        final dateStr = '${targetDay.year}-${targetDay.month.toString().padLeft(2, '0')}-${targetDay.day.toString().padLeft(2, '0')}';
+        final notifId = 'daily-log-$dateStr'.hashCode;
 
         // Contextual, day-aware notification body
         final streak = await StreakService.instance.getStreak();
-        final dayOfWeek = now.weekday; // 1=Mon, 7=Sun
-        final dayOfMonth = now.day;
-        final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+        final dayOfWeek = targetDay.weekday; // 1=Mon, 7=Sun
+        final dayOfMonth = targetDay.day;
+        final lastDayOfMonth = DateTime(targetDay.year, targetDay.month + 1, 0).day;
         final isPayday = dayOfMonth == 15 || dayOfMonth == 30 || dayOfMonth == lastDayOfMonth;
         final random = DateTime.now().millisecondsSinceEpoch;
 
@@ -541,7 +526,7 @@ class AutomationService {
           body: body,
           scheduledDate: target,
         );
-      }
+      } // end for loop
     } catch (e) {
       if (kDebugMode) debugPrint('AutomationService: daily log reminder failed: $e');
     }

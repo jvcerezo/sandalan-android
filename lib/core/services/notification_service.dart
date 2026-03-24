@@ -66,8 +66,6 @@ class NotificationService {
     if (androidPlugin == null) return true;
 
     final granted = await androidPlugin.requestNotificationsPermission();
-    // Also request exact alarm permission (Android 12+)
-    await androidPlugin.requestExactAlarmsPermission();
     return granted ?? false;
   }
 
@@ -130,7 +128,7 @@ class NotificationService {
           priority: Priority.high,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
