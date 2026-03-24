@@ -10,10 +10,7 @@ import '../../features/guide/screens/guide_screen.dart';
 import '../../features/guide/screens/stage_detail_screen.dart';
 import '../../features/guide/screens/article_screen.dart';
 import '../../features/guide/screens/checklist_detail_screen.dart';
-import '../../features/dashboard/screens/dashboard_screen.dart';
-import '../../features/transactions/screens/transactions_screen.dart';
-import '../../features/accounts/screens/accounts_screen.dart';
-import '../../features/budgets/screens/budgets_screen.dart';
+import '../../features/money/screens/money_screen.dart';
 import '../../features/goals/screens/goals_screen.dart';
 import '../../features/tools/screens/tools_hub_screen.dart';
 import '../../features/tools/screens/contributions_screen.dart';
@@ -38,6 +35,7 @@ import '../../features/auth/screens/onboarding_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/splits/screens/splits_screen.dart';
 import '../../features/tools/screens/currency_converter_screen.dart';
+import '../../features/more/screens/more_screen.dart';
 import '../../shared/widgets/safe_back_wrapper.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -147,28 +145,29 @@ final appRouter = GoRouter(
             child: GuideScreen(),
           ),
         ),
+        // Money tabs: /dashboard (Overview), /transactions, /accounts, /budgets
         GoRoute(
           path: '/dashboard',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: DashboardScreen(),
+            child: MoneyScreen(initialTab: 0),
           ),
         ),
         GoRoute(
           path: '/transactions',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: TransactionsScreen(),
+            child: MoneyScreen(initialTab: 1),
           ),
         ),
         GoRoute(
           path: '/accounts',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: AccountsScreen(),
+            child: MoneyScreen(initialTab: 2),
           ),
         ),
         GoRoute(
           path: '/budgets',
           pageBuilder: (context, state) => const NoTransitionPage(
-            child: BudgetsScreen(),
+            child: MoneyScreen(initialTab: 3),
           ),
         ),
         GoRoute(
@@ -222,6 +221,12 @@ final appRouter = GoRouter(
               year: int.parse(state.pathParameters['year']!),
               month: int.parse(state.pathParameters['month']!),
             ),
+          ),
+        ),
+        GoRoute(
+          path: '/more',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: MoreScreen(),
           ),
         ),
         GoRoute(

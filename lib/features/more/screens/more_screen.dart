@@ -1,0 +1,339 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/theme/color_tokens.dart';
+import '../../../core/providers/feature_visibility_provider.dart';
+import '../../transactions/screens/receipt_scanner_screen.dart';
+
+class MoreScreen extends ConsumerWidget {
+  const MoreScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final vis = ref.watch(featureVisibilityProvider);
+
+    bool show(String key) => vis[key] ?? FeatureKeys.defaultFor(key);
+
+    // Build manage items (filtered by visibility)
+    final manageItems = <Widget>[
+      if (show(FeatureKeys.goals))
+        _MoreItem(
+          icon: LucideIcons.target,
+          color: AppColors.toolBlue,
+          title: 'Goals',
+          subtitle: 'Savings targets & progress',
+          onTap: () => context.go('/goals'),
+        ),
+      if (show(FeatureKeys.bills))
+        _MoreItem(
+          icon: LucideIcons.receipt,
+          color: AppColors.toolOrange,
+          title: 'Bills & Payments',
+          subtitle: 'Recurring bills & due dates',
+          onTap: () => context.go('/tools/bills'),
+        ),
+      if (show(FeatureKeys.debts))
+        _MoreItem(
+          icon: LucideIcons.creditCard,
+          color: AppColors.toolRed,
+          title: 'Debts',
+          subtitle: 'Track and pay off debts',
+          onTap: () => context.go('/tools/debts'),
+        ),
+      if (show(FeatureKeys.insurance))
+        _MoreItem(
+          icon: LucideIcons.shield,
+          color: AppColors.toolTeal,
+          title: 'Insurance',
+          subtitle: 'Policies & premium tracking',
+          onTap: () => context.go('/tools/insurance'),
+        ),
+      if (show(FeatureKeys.investments))
+        _MoreItem(
+          icon: LucideIcons.trendingUp,
+          color: AppColors.toolGreen,
+          title: 'Investments',
+          subtitle: 'Portfolio tracker',
+          onTap: () => context.go('/investments'),
+        ),
+      if (show(FeatureKeys.splitBills))
+        _MoreItem(
+          icon: LucideIcons.users,
+          color: AppColors.toolPink,
+          title: 'Split Bills',
+          subtitle: 'Shared expenses with friends',
+          onTap: () => context.go('/split-bills'),
+        ),
+      if (show(FeatureKeys.salaryAllocation))
+        _MoreItem(
+          icon: LucideIcons.banknote,
+          color: AppColors.toolAmber,
+          title: 'Salary Allocation',
+          subtitle: 'Budget by paycheck percentage',
+          onTap: () => context.go('/salary-allocation'),
+        ),
+    ];
+
+    // Build tools items (filtered by visibility)
+    final toolItems = <Widget>[
+      if (show(FeatureKeys.contributions))
+        _MoreItem(
+          icon: LucideIcons.landmark,
+          color: AppColors.sss,
+          title: 'Gov\'t Contributions',
+          subtitle: 'SSS, PhilHealth & Pag-IBIG',
+          onTap: () => context.go('/tools/contributions'),
+        ),
+      if (show(FeatureKeys.taxTracker))
+        _MoreItem(
+          icon: LucideIcons.receipt,
+          color: AppColors.toolOrange,
+          title: 'Tax Tracker',
+          subtitle: 'BIR income tax & filing',
+          onTap: () => context.go('/tools/taxes'),
+        ),
+      if (show(FeatureKeys.thirteenthMonth))
+        _MoreItem(
+          icon: LucideIcons.gift,
+          color: AppColors.toolGreen,
+          title: '13th Month Calculator',
+          subtitle: 'Compute your bonus',
+          onTap: () => context.go('/tools/13th-month'),
+        ),
+      if (show(FeatureKeys.retirement))
+        _MoreItem(
+          icon: LucideIcons.sunset,
+          color: AppColors.toolAmber,
+          title: 'Retirement Planner',
+          subtitle: 'SSS pension & savings gap',
+          onTap: () => context.go('/tools/retirement'),
+        ),
+      if (show(FeatureKeys.rentVsBuy))
+        _MoreItem(
+          icon: LucideIcons.home,
+          color: AppColors.toolEmerald,
+          title: 'Rent vs Buy',
+          subtitle: 'Housing cost comparison',
+          onTap: () => context.go('/tools/rent-vs-buy'),
+        ),
+      if (show(FeatureKeys.panganay))
+        _MoreItem(
+          icon: LucideIcons.heart,
+          color: AppColors.toolPink,
+          title: 'Panganay Mode',
+          subtitle: 'Family support budgeting',
+          onTap: () => context.go('/tools/panganay'),
+        ),
+      if (show(FeatureKeys.calculators))
+        _MoreItem(
+          icon: LucideIcons.calculator,
+          color: AppColors.toolPurple,
+          title: 'Financial Calculators',
+          subtitle: 'Interest, loans & FIRE',
+          onTap: () => context.go('/tools/calculators'),
+        ),
+      if (show(FeatureKeys.currency))
+        _MoreItem(
+          icon: LucideIcons.globe,
+          color: AppColors.toolBlue,
+          title: 'Currency Converter',
+          subtitle: 'Convert between currencies',
+          onTap: () => context.go('/tools/currency'),
+        ),
+    ];
+
+    // Count hidden features for the hint
+    final totalHideable = FeatureKeys.allKeys.length;
+    final hiddenCount = FeatureKeys.allKeys.where((k) => !show(k)).length;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      children: [
+        const Text('More',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
+        const SizedBox(height: 2),
+        Text('All features & tools',
+            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 20),
+
+        // ─── Manage ────────────────────────────────────────────────
+        if (manageItems.isNotEmpty) ...[
+          const _SectionHeader(title: 'Manage'),
+          ...manageItems,
+          const SizedBox(height: 16),
+        ],
+
+        // ─── Tools ─────────────────────────────────────────────────
+        if (toolItems.isNotEmpty) ...[
+          const _SectionHeader(title: 'Tools'),
+          ...toolItems,
+          const SizedBox(height: 16),
+        ],
+
+        // ─── App (always visible) ──────────────────────────────────
+        const _SectionHeader(title: 'App'),
+        if (show(FeatureKeys.reports))
+          _MoreItem(
+            icon: LucideIcons.barChart3,
+            color: AppColors.toolIndigo,
+            title: 'Reports',
+            subtitle: 'Monthly financial summaries',
+            onTap: () => context.go('/reports'),
+          ),
+        if (show(FeatureKeys.achievements))
+          _MoreItem(
+            icon: LucideIcons.award,
+            color: AppColors.toolAmber,
+            title: 'Achievements',
+            subtitle: 'Badges & milestones',
+            onTap: () => context.go('/achievements'),
+          ),
+        _MoreItem(
+          icon: LucideIcons.messageCircle,
+          color: AppColors.toolTeal,
+          title: 'AI Chat',
+          subtitle: 'Financial assistant',
+          onTap: () => context.go('/chat'),
+        ),
+        _MoreItem(
+          icon: LucideIcons.scanLine,
+          color: cs.onSurfaceVariant,
+          title: 'Scan Receipt',
+          subtitle: 'OCR transaction import',
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const ReceiptScannerScreen(),
+            ));
+          },
+        ),
+        _MoreItem(
+          icon: LucideIcons.settings,
+          color: cs.onSurfaceVariant,
+          title: 'Settings',
+          subtitle: 'Account, appearance & privacy',
+          onTap: () => context.go('/settings'),
+        ),
+
+        // ─── Hidden features hint ──────────────────────────────────
+        if (hiddenCount > 0) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: GestureDetector(
+              onTap: () => context.go('/settings'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.eyeOff, size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$hiddenCount feature${hiddenCount == 1 ? '' : 's'} hidden',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronRight, size: 12, color: cs.onSurfaceVariant),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// ─── Widgets ───────────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.8,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreItem extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _MoreItem({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            Icon(LucideIcons.chevronRight,
+                size: 16,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.4)),
+          ],
+        ),
+      ),
+    );
+  }
+}

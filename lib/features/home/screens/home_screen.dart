@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/tip_service.dart';
@@ -24,7 +23,6 @@ import '../widgets/tip_of_day_card.dart';
 import '../widgets/weekly_recap_card.dart';
 import '../../../core/services/salary_allocation_service.dart';
 import '../../../data/repositories/transaction_repository.dart';
-import '../../tools/widgets/bill_calendar.dart';
 import '../../transactions/widgets/quick_add_strip.dart';
 import '../widgets/insight_card.dart';
 
@@ -357,13 +355,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-          // ─── Current Stage Card ──────────────────────────────────
-          StaggeredFadeIn(
-            index: 1,
-            child: _CurrentStageCard(onTap: () => context.go('/guide')),
-          ),
-          const SizedBox(height: 14),
-
           // ─── Financial Summary ───────────────────────────────────
           StaggeredFadeIn(
             index: 2,
@@ -431,172 +422,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _buildContextualCard(),
           ),
 
-          // ─── Due This Week Strip ────────────────────────────────
-          StaggeredFadeIn(
-            index: 4,
-            child: const DueThisWeekStrip(),
-          ),
-
           // ─── Upcoming Payments ───────────────────────────────────
           StaggeredFadeIn(
             index: 5,
             child: _UpcomingPaymentsSection(ref: ref, hideBalances: hideBalances),
           ),
 
-          // ─── Next Steps Carousel ─────────────────────────────────
-          StaggeredFadeIn(
-            index: 6,
-            child: _NextStepsSection(),
-          ),
-
-          // ─── Quick Navigation ────────────────────────────────────
-          const SizedBox(height: 6),
-          StaggeredFadeIn(
-            index: 7,
-            child: _NavRow(
-              icon: LucideIcons.bookOpen,
-              iconBg: colorScheme.primary.withValues(alpha: 0.1),
-              iconColor: colorScheme.primary,
-              title: 'Adulting Guide',
-              subtitle: '0% complete · 58 steps remaining',
-              onTap: () => context.go('/guide'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          StaggeredFadeIn(
-            index: 8,
-            child: _NavRow(
-              icon: LucideIcons.wrench,
-              iconBg: AppColors.warning.withValues(alpha: 0.1),
-              iconColor: AppColors.warning,
-              title: 'Tools',
-              subtitle: 'Contributions, bills, debts, insurance & more',
-              onTap: () => context.go('/tools'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          StaggeredFadeIn(
-            index: 9,
-            child: _NavRow(
-              icon: LucideIcons.wallet,
-              iconBg: AppColors.toolEmerald.withValues(alpha: 0.1),
-              iconColor: AppColors.toolEmerald,
-              title: 'Financial Dashboard',
-              subtitle: 'Budgets, trends, spending insights',
-              onTap: () => context.go('/dashboard'),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-// ─── Stage data lookup for home card ──────────────────────────────────────────
-
-class _StageInfo {
-  final String title;
-  final IconData icon;
-  final Color color;
-  const _StageInfo(this.title, this.icon, this.color);
-}
-
-const _stageMap = <String, _StageInfo>{
-  'unang-hakbang': _StageInfo('Unang Hakbang', LucideIcons.graduationCap, StageColors.blue),
-  'pundasyon': _StageInfo('Pundasyon', LucideIcons.toyBrick, StageColors.emerald),
-  'tahanan': _StageInfo('Tahanan', LucideIcons.home, StageColors.violet),
-  'tugatog': _StageInfo('Tugatog', LucideIcons.mountain, StageColors.amber),
-  'paghahanda': _StageInfo('Paghahanda', LucideIcons.clock, StageColors.rose),
-  'gintong-taon': _StageInfo('Gintong Taon', LucideIcons.gem, StageColors.yellow),
-};
-
-// ─── Current Stage Card ────────────────────────────────────────────────────────
-
-class _CurrentStageCard extends ConsumerWidget {
-  final VoidCallback onTap;
-  const _CurrentStageCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final profile = ref.watch(profileProvider).valueOrNull;
-    final stageId = profile?.lifeStage ?? 'unang-hakbang';
-    final stage = _stageMap[stageId] ??
-        const _StageInfo('Unang Hakbang', LucideIcons.graduationCap, StageColors.blue);
-
-    return Semantics(
-      label: 'Current stage: ${stage.title}',
-      button: true,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border.all(color: colorScheme.surfaceContainerHighest),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(
-                  color: stage.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(stage.icon, size: 20, color: stage.color),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('CURRENT STAGE',
-                        style: TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w600,
-                          letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
-                        )),
-                    const SizedBox(height: 3),
-                    Text(stage.title,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 140),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: 0,
-                                minHeight: 6,
-                                backgroundColor: colorScheme.surfaceContainerHighest,
-                                color: stage.color,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('0/58',
-                            style: TextStyle(
-                              fontSize: 10, fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurfaceVariant,
-                            )),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Icon(LucideIcons.chevronRight, size: 16,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── Financial Stat Card ───────────────────────────────────────────────────────
 
@@ -888,213 +725,6 @@ class _PaymentItem extends StatelessWidget {
   }
 }
 
-// ─── Next Steps Carousel ───────────────────────────────────────────────────────
-
-class _NextStepsSection extends StatefulWidget {
-  @override
-  State<_NextStepsSection> createState() => _NextStepsSectionState();
-}
-
-class _NextStepsSectionState extends State<_NextStepsSection> {
-  static const _prefsKey = 'dismissed_next_steps';
-  Set<String> _dismissed = {};
-  bool _loaded = false;
-
-  // Static next steps based on guide data
-  static const _allSteps = [
-    _NextStep(
-      id: 'tin',
-      type: 'checklist',
-      title: 'Get your TIN from BIR',
-      description: 'Your Tax Identification Number is required for employment, banking, business registration,...',
-      actionLabel: 'View Guide',
-    ),
-    _NextStep(
-      id: 'sss',
-      type: 'checklist',
-      title: 'Register with SSS',
-      description: 'The Social Security System provides retirement pension, disability benefits,...',
-      actionLabel: 'View Guide',
-    ),
-    _NextStep(
-      id: 'philhealth',
-      type: 'checklist',
-      title: 'Register with PhilHealth',
-      description: 'Philippine Health Insurance Corporation provides healthcare coverage...',
-      actionLabel: 'View Guide',
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDismissed();
-  }
-
-  Future<void> _loadDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList(_prefsKey) ?? [];
-    setState(() {
-      _dismissed = list.toSet();
-      _loaded = true;
-    });
-  }
-
-  Future<void> _dismiss(String stepId) async {
-    final prefs = await SharedPreferences.getInstance();
-    _dismissed.add(stepId);
-    await prefs.setStringList(_prefsKey, _dismissed.toList());
-    setState(() {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_loaded) return const SizedBox.shrink();
-
-    final colorScheme = Theme.of(context).colorScheme;
-    final steps = _allSteps.where((s) => !_dismissed.contains(s.id)).toList();
-
-    if (steps.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Text('NEXT STEPS',
-              style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w600,
-                letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
-              )),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 170,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.zero,
-            itemCount: steps.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, i) => _NextStepCard(
-              step: steps[i],
-              onDismiss: () => _dismiss(steps[i].id),
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-      ],
-    );
-  }
-}
-
-class _NextStep {
-  final String id;
-  final String type;
-  final String title;
-  final String description;
-  final String actionLabel;
-  const _NextStep({
-    required this.id,
-    required this.type,
-    required this.title,
-    required this.description,
-    required this.actionLabel,
-  });
-}
-
-class _NextStepCard extends StatelessWidget {
-  final _NextStep step;
-  final VoidCallback onDismiss;
-  const _NextStepCard({required this.step, required this.onDismiss});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isChecklist = step.type == 'checklist';
-    final accentColor = isChecklist ? AppColors.warning : colorScheme.primary;
-
-    return GestureDetector(
-      onTap: () => context.go('/guide/unang-hakbang'),
-      child: Container(
-      width: 260,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.surfaceContainerHighest),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                width: 28, height: 28,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isChecklist ? LucideIcons.alertCircle : LucideIcons.bookOpen,
-                  size: 14, color: accentColor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  isChecklist ? 'NEXT STEP' : 'READ',
-                  style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600,
-                    letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              Semantics(
-                label: 'Dismiss next step',
-                button: true,
-                child: InkWell(
-                  onTap: onDismiss,
-                  borderRadius: BorderRadius.circular(24),
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Center(
-                      child: Icon(LucideIcons.x, size: 14,
-                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          // Title
-          Text(step.title,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 4),
-          // Description
-          Expanded(
-            child: Text(step.description,
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant, height: 1.3),
-                maxLines: 2, overflow: TextOverflow.ellipsis),
-          ),
-          // Action
-          Row(
-            children: [
-              Text(step.actionLabel,
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
-              const SizedBox(width: 4),
-              Icon(LucideIcons.arrowRight, size: 12, color: colorScheme.primary),
-            ],
-          ),
-        ],
-      ),
-    ),
-    );
-  }
-}
 
 // ─── Error Retry Widget ─────────────────────────────────────────────────────────
 
@@ -1133,74 +763,3 @@ class _ErrorRetry extends StatelessWidget {
   }
 }
 
-// ─── Navigation Row ────────────────────────────────────────────────────────────
-
-class _NavRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _NavRow({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Semantics(
-      label: '$title: $subtitle',
-      button: true,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border.all(color: colorScheme.surfaceContainerHighest),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 18, color: iconColor),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                    Text(subtitle,
-                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-            Icon(LucideIcons.chevronRight, size: 16,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
-          ],
-        ),
-      ),
-      ),
-    );
-  }
-}
