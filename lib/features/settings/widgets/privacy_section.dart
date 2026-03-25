@@ -293,18 +293,23 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
                   decoration: const InputDecoration(isDense: true, hintText: 'DELETE'),
                   onChanged: (_) => setState(() {})),
               const SizedBox(height: 8),
-              FilledButton(
-                  onPressed: _deleteCtl.text == 'DELETE'
+              StatefulBuilder(builder: (context, setButtonState) {
+                bool deleting = false;
+                return FilledButton(
+                  onPressed: _deleteCtl.text == 'DELETE' && !deleting
                       ? () async {
+                          setButtonState(() => deleting = true);
                           try {
                             await ref.read(authRepositoryProvider).deleteAccount();
                             if (context.mounted) context.go('/login');
                           } catch (e) {
+                            setButtonState(() => deleting = false);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text('Failed to delete account: $e'),
+                                content: Text('$e'),
                                 behavior: SnackBarBehavior.floating,
                                 backgroundColor: AppColors.expense,
+                                duration: const Duration(seconds: 6),
                               ));
                             }
                           }
@@ -314,7 +319,11 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
                       backgroundColor: AppColors.expense,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       minimumSize: const Size(double.infinity, 0)),
-                  child: const Text('Delete My Account Permanently')),
+                  child: deleting
+                      ? const SizedBox(height: 18, width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Delete My Account Permanently'));
+              }),
             ]),
           ),
         ]),
