@@ -467,7 +467,6 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget> {
             ],
           ),
         ),
-      ),
     );
   }
 }
