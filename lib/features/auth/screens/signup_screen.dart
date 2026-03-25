@@ -8,6 +8,7 @@ import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
 import '../../../data/local/app_database.dart';
 import '../../../core/utils/email_validator.dart';
+import '../../../core/utils/input_validator.dart';
 import '../../../core/constants/legal.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../providers/auth_provider.dart';
@@ -102,7 +103,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   Future<void> _handleSignUp() async {
-    final fullName = _fullNameController.text.trim();
+    final fullName = InputValidator.name(_fullNameController.text);
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;

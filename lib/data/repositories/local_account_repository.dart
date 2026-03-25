@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/utils/id_generator.dart';
+import '../../core/utils/input_validator.dart';
 import '../local/app_database.dart';
 import '../models/account.dart';
 
@@ -38,21 +39,28 @@ class LocalAccountRepository {
 
   // ─── Writes ─────────────────────────────────────────────────────────────
 
+  static const _accountTypes = ['bank', 'e-wallet', 'cash', 'credit-card', 'savings', 'investment'];
+
   Future<Account> createAccount({
     required String name,
     required String type,
     String currency = 'PHP',
     double balance = 0,
   }) async {
+    final sName = InputValidator.requireName(name, 'Account name');
+    final sType = InputValidator.requireEnum(type, _accountTypes, 'Account type');
+    final sCurrency = InputValidator.currency(currency);
+    final sBalance = InputValidator.amount(balance);
+
     final id = IdGenerator.account();
     final now = AppDatabase.now();
     final row = <String, dynamic>{
       'id': id,
       'user_id': _userId,
-      'name': name,
-      'type': type,
-      'currency': currency,
-      'balance': balance,
+      'name': sName,
+      'type': sType,
+      'currency': sCurrency,
+      'balance': sBalance,
       'is_archived': 0,
       'sync_status': 'pending',
       'created_at': now,
@@ -71,9 +79,9 @@ class LocalAccountRepository {
     if (existing == null) return;
 
     final updated = Map<String, dynamic>.from(existing);
-    if (name != null) updated['name'] = name;
-    if (type != null) updated['type'] = type;
-    if (currency != null) updated['currency'] = currency;
+    if (name != null) updated['name'] = InputValidator.requireName(name, 'Account name');
+    if (type != null) updated['type'] = InputValidator.requireEnum(type, _accountTypes, 'Account type');
+    if (currency != null) updated['currency'] = InputValidator.currency(currency);
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertAccount(updated);

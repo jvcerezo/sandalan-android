@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/utils/id_generator.dart';
+import '../../core/utils/input_validator.dart';
 import '../local/app_database.dart';
 import '../models/transaction.dart';
 import 'transaction_repository.dart';
@@ -157,15 +158,16 @@ class LocalTransactionRepository {
     List<String>? tags,
     String status = 'confirmed',
   }) async {
-    // Validate before inserting — Supabase has CHECK (amount <> 0)
-    if (amount == 0) {
-      throw ArgumentError('Amount cannot be zero');
-    }
-    if (category.trim().isEmpty) {
+    // Sanitize and validate all inputs at the data layer
+    final sAmount = InputValidator.requireAmount(amount, 'Amount');
+    final sCategory = InputValidator.label(category);
+    final sDescription = InputValidator.description(description);
+    final sCurrency = InputValidator.currency(currency);
+    final sAccountId = accountId != null ? InputValidator.uuid(accountId) : null;
+    final sTags = tags?.map((t) => InputValidator.label(t)).where((t) => t.isNotEmpty).toList();
+
+    if (sCategory.isEmpty) {
       throw ArgumentError('Category cannot be empty');
-    }
-    if (description.length > 500) {
-      throw ArgumentError('Description too long (max 500 characters)');
     }
 
     final id = IdGenerator.transaction();
@@ -175,16 +177,16 @@ class LocalTransactionRepository {
     final row = <String, dynamic>{
       'id': id,
       'user_id': _userId,
-      'amount': amount,
-      'category': category,
-      'description': description,
+      'amount': sAmount,
+      'category': sCategory,
+      'description': sDescription,
       'date': dateStr,
-      'currency': currency,
+      'currency': sCurrency,
       'attachment_path': null,
-      'account_id': accountId,
+      'account_id': sAccountId,
       'transfer_id': null,
       'split_group_id': null,
-      'tags': AppDatabase.encodeTags(tags),
+      'tags': AppDatabase.encodeTags(sTags),
       'status': status,
       'sync_status': 'pending',
       'created_at': now,

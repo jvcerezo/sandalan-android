@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/id_generator.dart' show IdGenerator;
+import '../../../core/utils/input_validator.dart';
 import '../../../data/models/bill_split.dart';
 
 /// Shows a full-screen dialog to create a new bill split.
@@ -66,17 +67,18 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
   }
 
   void _create() {
-    final total = double.tryParse(_amountCtl.text) ?? 0;
-    final desc = _descCtl.text.trim();
+    final total = InputValidator.positiveAmount(_amountCtl.text);
+    final desc = InputValidator.description(_descCtl.text);
     if (total <= 0 || desc.isEmpty) return;
 
     final participants = <SplitParticipant>[];
     for (int i = 0; i < _participants.length; i++) {
-      final name = i == 0 ? 'You' : _participants[i].nameCtl?.text.trim() ?? _participants[i].name;
+      final rawName = i == 0 ? 'You' : _participants[i].nameCtl?.text.trim() ?? _participants[i].name;
+      final name = InputValidator.name(rawName);
       if (name.isEmpty) continue;
       final share = _method == 'equal'
           ? total / _participants.length
-          : double.tryParse(_participants[i].controller.text) ?? 0;
+          : InputValidator.positiveAmount(_participants[i].controller.text);
       participants.add(SplitParticipant(
         name: name,
         share: share,

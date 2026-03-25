@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/investment.dart';
+import '../../../core/utils/input_validator.dart';
 import '../../../data/repositories/local_investment_repository.dart';
 
 const _types = [
@@ -54,9 +55,10 @@ class _State extends ConsumerState<AddInvestmentDialog> {
   bool get _isBondType => _type == 'bonds' || _type == 'time_deposit';
 
   Future<void> _save() async {
-    final name = _nameCtl.text.trim();
-    final amount = double.tryParse(_amountCtl.text.replaceAll(',', '')) ?? 0;
-    final value = double.tryParse(_valueCtl.text.replaceAll(',', '')) ?? amount;
+    final name = InputValidator.name(_nameCtl.text);
+    final amount = InputValidator.positiveAmount(_amountCtl.text.replaceAll(',', ''));
+    final value = InputValidator.positiveAmount(
+        _valueCtl.text.replaceAll(',', '').isEmpty ? amount : _valueCtl.text.replaceAll(',', ''));
     if (name.isEmpty || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Name and amount are required')));
@@ -67,13 +69,17 @@ class _State extends ConsumerState<AddInvestmentDialog> {
       final repo = LocalInvestmentRepository(
           AppDatabase.instance, Supabase.instance.client);
       final now = DateTime.now();
+      final notes = InputValidator.description(_notesCtl.text);
+      final navpu = InputValidator.provider(_navpuCtl.text);
+      final units = double.tryParse(_unitsCtl.text);
+      final rate = InputValidator.interestRate(_rateCtl.text);
       await repo.createInvestment(Investment(
         id: const Uuid().v4(), userId: Supabase.instance.client.auth.currentUser?.id ?? 'guest',
         name: name, type: _type, amountInvested: amount, currentValue: value,
-        dateStarted: _dateStarted, notes: _notesCtl.text.trim().isEmpty ? null : _notesCtl.text.trim(),
-        navpu: _navpuCtl.text.trim().isEmpty ? null : _navpuCtl.text.trim(),
-        units: double.tryParse(_unitsCtl.text),
-        interestRate: double.tryParse(_rateCtl.text),
+        dateStarted: _dateStarted, notes: notes.isEmpty ? null : notes,
+        navpu: navpu.isEmpty ? null : navpu,
+        units: units != null && units.isFinite ? units : null,
+        interestRate: rate > 0 ? rate : null,
         maturityDate: _maturityDate,
         createdAt: now, updatedAt: now,
       ));
