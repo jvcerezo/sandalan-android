@@ -168,8 +168,12 @@ class AuthRepository {
   /// so we call the Next.js API route which uses the admin SDK.
   Future<void> deleteAccount() async {
     // 1. Grab the access token BEFORE stopping anything
-    final sessionResponse = await _client.auth.getSession();
-    final accessToken = sessionResponse.session?.accessToken;
+    var accessToken = _client.auth.currentSession?.accessToken;
+    if (accessToken == null) {
+      // Try refreshing the session
+      final refreshed = await _client.auth.refreshSession();
+      accessToken = refreshed.session?.accessToken;
+    }
     if (accessToken == null) {
       throw Exception('Not authenticated — please sign in again');
     }
