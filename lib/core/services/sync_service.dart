@@ -26,6 +26,9 @@ class SyncService with WidgetsBindingObserver {
   final AppDatabase _db;
   final SyncStatusNotifier? _syncStatus;
 
+  /// Global instance set in main.dart so auth operations can flush/stop sync.
+  static SyncService? instance;
+
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isSyncing = false;
   DateTime? _lastSyncAttempt;
@@ -136,6 +139,31 @@ class SyncService with WidgetsBindingObserver {
     return DateTime.now().toUtc().difference(lastFullDate) >= _fullSyncInterval;
   }
 
+  /// Push all pending local changes to Supabase before logout/deletion.
+  /// Ignores rate limiting and sync lock — this is a last-chance flush.
+  /// Returns silently on failure (best-effort).
+  Future<void> flushPending() async {
+    if (_userId == null) return;
+    if (!await _isOnline()) return;
+    try {
+      await pushToSupabase();
+    } catch (e) {
+      if (kDebugMode) debugPrint('SyncService: flushPending failed: $e');
+    }
+  }
+
+  /// Clear all per-table pull timestamps and sync date from SharedPreferences.
+  /// Must be called on logout to prevent cross-user stale data.
+  static Future<void> clearSyncTimestamps() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys().where((k) => k.startsWith('last_pull_')).toList();
+    for (final key in keys) {
+      await prefs.remove(key);
+    }
+    await prefs.remove(_lastSyncKey);
+    await prefs.remove(_lastFullSyncKey);
+  }
+
   // ─── Pull ────────────────────────────────────────────────────────────────
 
   /// Fetch tables from Supabase and upsert into local DB.
@@ -224,12 +252,14 @@ class SyncService with WidgetsBindingObserver {
         await _removeDeletedRows(localTable, userId, remoteIds);
       }
 
-      // Persist the pull timestamp so the next sync can be incremental.
+      // Persist the pull timestamp ONLY after successful completion.
+      // If app is killed mid-pull, we'll re-fetch from the old timestamp.
       await prefs.setString(
         _lastPullKey(remoteTable),
         DateTime.now().toUtc().toIso8601String(),
       );
     } catch (e) {
+      // Don't persist timestamp on failure — next sync will retry from last good point
       if (kDebugMode) debugPrint('SyncService: pull $remoteTable failed: $e');
     }
   }

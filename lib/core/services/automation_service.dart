@@ -453,9 +453,9 @@ class AutomationService {
     try {
       final now = DateTime.now();
 
-      // Schedule reminders for the NEXT 7 days at 7 PM each day.
+      // Schedule reminders for the NEXT 14 days at 7 PM each day.
       // This ensures notifications fire even if the user doesn't open the app.
-      for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+      for (int dayOffset = 0; dayOffset < 14; dayOffset++) {
         final targetDay = now.add(Duration(days: dayOffset));
         final target = DateTime(targetDay.year, targetDay.month, targetDay.day, 19, 0);
 

@@ -55,6 +55,7 @@ Future<void> main() async {
       AppDatabase.instance,
       syncStatus: syncStatusNotifier,
     );
+    SyncService.instance = syncService;
     syncService.fullSync(); // Initial sync on app start (fire-and-forget).
     syncService.startDailySync(); // Once-daily sync + on app background.
 

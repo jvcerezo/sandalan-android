@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/env.dart';
+import '../../core/services/sync_service.dart';
 import '../local/app_database.dart';
 
 class AuthRepository {
@@ -47,14 +48,27 @@ class AuthRepository {
     );
   }
 
-  /// Sign out — clears local data and user-specific preferences
+  /// Sign out — flushes pending data, clears local data and preferences
   /// to prevent cross-user data leakage.
   Future<void> signOut() async {
+    // 1. Flush any pending changes to server before clearing local data
+    final sync = SyncService.instance;
+    if (sync != null) {
+      sync.stopSync();
+      await sync.flushPending();
+      SyncService.instance = null;
+    }
+
+    // 2. Clear local database
     final userId = _client.auth.currentUser?.id;
     if (userId != null) {
       await AppDatabase.instance.clearAllData(userId);
     }
-    // Clear user-specific SharedPreferences
+
+    // 3. Clear sync timestamps (prevents cross-user stale data)
+    await SyncService.clearSyncTimestamps();
+
+    // 4. Clear user-specific SharedPreferences
     await _clearUserPreferences();
     await _client.auth.signOut();
   }
@@ -153,10 +167,17 @@ class AuthRepository {
   /// Supabase hosted instances don't allow DELETE FROM auth.users via SQL,
   /// so we call the Next.js API route which uses the admin SDK.
   Future<void> deleteAccount() async {
+    // 1. Stop sync immediately to prevent re-uploading deleted data
+    final sync = SyncService.instance;
+    if (sync != null) {
+      sync.stopSync();
+      SyncService.instance = null;
+    }
+
     final session = _client.auth.currentSession;
     if (session == null) throw Exception('Not authenticated');
 
-    // Call the web app API route that uses admin SDK to delete the user
+    // 2. Call the web app API route that uses admin SDK to delete the user
     const apiBase = 'https://exitplan-tau.vercel.app';
     final response = await http.post(
       Uri.parse('$apiBase/api/delete-account'),
@@ -171,11 +192,12 @@ class AuthRepository {
       throw Exception(body['error'] ?? 'Failed to delete account');
     }
 
-    // Clear local data after successful server deletion
+    // 3. Clear local data after successful server deletion
     final userId = _client.auth.currentUser?.id;
     if (userId != null) {
       await AppDatabase.instance.clearAllData(userId);
     }
+    await SyncService.clearSyncTimestamps();
     await _clearUserPreferences();
     await _client.auth.signOut();
   }
