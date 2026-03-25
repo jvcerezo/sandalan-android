@@ -135,7 +135,6 @@ class InvestmentsScreen extends ConsumerWidget {
             );
           },
         ),
-      ),
     );
   }
 

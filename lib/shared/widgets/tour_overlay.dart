@@ -646,14 +646,21 @@ class _MiniLogoPreview extends StatelessWidget {
 
 // ─── Mini Preview: Quick Actions (Expense / Income / Scan) ──────────────────
 
+class _IconLabelColor {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _IconLabelColor(this.icon, this.label, this.color);
+}
+
 class _MiniQuickActionsPreview extends StatelessWidget {
   final ColorScheme colorScheme;
   const _MiniQuickActionsPreview({required this.colorScheme});
 
   static const _actions = [
-    (icon: LucideIcons.arrowUpRight, label: 'Expense', color: Color(0xFF64748B)),
-    (icon: LucideIcons.arrowDownLeft, label: 'Income', color: Color(0xFF22C55E)),
-    (icon: LucideIcons.scanLine, label: 'Scan', color: Color(0xFF6366F1)),
+    _IconLabelColor(LucideIcons.arrowUpRight, 'Expense', Color(0xFF64748B)),
+    _IconLabelColor(LucideIcons.arrowDownLeft, 'Income', Color(0xFF22C55E)),
+    _IconLabelColor(LucideIcons.scanLine, 'Scan', Color(0xFF6366F1)),
   ];
 
   @override
@@ -698,12 +705,12 @@ class _MiniJourneyMapPreview extends StatelessWidget {
   const _MiniJourneyMapPreview({required this.colorScheme});
 
   static const _stages = [
-    (icon: LucideIcons.graduationCap, label: 'Unang Hakbang', color: Color(0xFF3B82F6)),
-    (icon: LucideIcons.toyBrick, label: 'Pundasyon', color: Color(0xFF10B981)),
-    (icon: LucideIcons.home, label: 'Tahanan', color: Color(0xFF8B5CF6)),
-    (icon: LucideIcons.mountain, label: 'Tugatog', color: Color(0xFFF59E0B)),
-    (icon: LucideIcons.clock, label: 'Paghahanda', color: Color(0xFFF43F5E)),
-    (icon: LucideIcons.gem, label: 'Gintong Taon', color: Color(0xFFEAB308)),
+    _IconLabelColor(LucideIcons.graduationCap, 'Unang Hakbang', Color(0xFF3B82F6)),
+    _IconLabelColor(LucideIcons.toyBrick, 'Pundasyon', Color(0xFF10B981)),
+    _IconLabelColor(LucideIcons.home, 'Tahanan', Color(0xFF8B5CF6)),
+    _IconLabelColor(LucideIcons.mountain, 'Tugatog', Color(0xFFF59E0B)),
+    _IconLabelColor(LucideIcons.clock, 'Paghahanda', Color(0xFFF43F5E)),
+    _IconLabelColor(LucideIcons.gem, 'Gintong Taon', Color(0xFFEAB308)),
   ];
 
   @override
