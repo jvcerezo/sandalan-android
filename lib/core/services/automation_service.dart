@@ -540,35 +540,36 @@ class AutomationService {
   static Future<void> _scheduleMorningSummary(AppDatabase db, SupabaseClient client) async {
     try {
       final now = DateTime.now();
-      var target = DateTime(now.year, now.month, now.day, 9, 0);
-      if (!target.isAfter(now)) {
-        target = target.add(const Duration(days: 1));
-      }
-
       final billRepo = LocalBillRepository(db, client);
       final bills = await billRepo.getBills();
-      final dueSoon = bills.where((b) => b.isActive && b.dueDay != null).where((b) {
-        // Use _nextDueDate to correctly handle month wrapping
-        final dueDate = _nextDueDate(b.dueDay!);
-        final daysUntilDue = dueDate.difference(target).inDays;
-        return daysUntilDue >= 0 && daysUntilDue <= 3;
-      }).toList();
 
-      String body = "Good morning! ";
-      if (dueSoon.isNotEmpty) {
-        final names = dueSoon.take(2).map((b) => b.name).join(', ');
-        body += "${dueSoon.length} bill${dueSoon.length > 1 ? 's' : ''} due soon ($names). ";
+      // Schedule morning summaries for the next 7 days at 9 AM
+      for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+        final targetDay = now.add(Duration(days: dayOffset));
+        var target = DateTime(targetDay.year, targetDay.month, targetDay.day, 9, 0);
+        if (!target.isAfter(now)) continue;
+
+        final dueSoon = bills.where((b) => b.isActive && b.dueDay != null).where((b) {
+          final dueDate = _nextDueDate(b.dueDay!);
+          final daysUntilDue = dueDate.difference(target).inDays;
+          return daysUntilDue >= 0 && daysUntilDue <= 3;
+        }).toList();
+
+        String body = "Good morning! ";
+        if (dueSoon.isNotEmpty) {
+          final names = dueSoon.take(2).map((b) => b.name).join(', ');
+          body += "${dueSoon.length} bill${dueSoon.length > 1 ? 's' : ''} due soon ($names). ";
+        }
+        body += "Have a productive day! ☀️";
+
+        final notifId = 'morning-${target.toIso8601String().substring(0, 10)}'.hashCode;
+        await NotificationService.instance.scheduleNotification(
+          id: notifId,
+          title: "Good Morning! ☀️",
+          body: body,
+          scheduledDate: target,
+        );
       }
-      body += "Have a productive day! ☀️";
-
-      final notifId = 'morning-${target.toIso8601String().substring(0, 10)}'.hashCode;
-      await NotificationService.instance.scheduleNotification(
-        id: notifId,
-        title: "Good Morning! ☀️",
-        body: body,
-        scheduledDate: target,
-      );
-      if (kDebugMode) debugPrint('AutomationService: morning summary scheduled for $target');
     } catch (e) {
       if (kDebugMode) debugPrint('AutomationService: morning summary failed: $e');
     }
