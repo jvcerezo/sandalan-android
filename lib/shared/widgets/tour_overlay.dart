@@ -505,12 +505,15 @@ class _SpotlightPainter extends CustomPainter {
       case TourTarget.bottomNavGuide:
         // 2nd tab (index 1)
         center = Offset(tabWidth * 1.5, navTop + 32);
+        break;
       case TourTarget.bottomNavCenter:
         // Center + button (index 2)
         center = Offset(tabWidth * 2.5, navTop + 32);
+        break;
       case TourTarget.bottomNavMoney:
         // 4th tab (index 3)
         center = Offset(tabWidth * 3.5, navTop + 32);
+        break;
       case TourTarget.none:
         return;
     }
