@@ -304,7 +304,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               );
             },
             loading: () => const ShimmerCard(height: 50),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, __) => Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.surfaceContainerHighest),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                Icon(LucideIcons.alertCircle, size: 14, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+                Text('Could not load summary',
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => ref.invalidate(transactionsSummaryProvider),
+                  child: Text('Retry',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                ),
+              ]),
+            ),
           ),
           const SizedBox(height: 20),
 

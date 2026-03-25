@@ -30,6 +30,7 @@ class AddTransactionDialog extends ConsumerStatefulWidget {
 
 class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   late bool _isIncome;
+  bool _showMoreOptions = false;
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _tagsController = TextEditingController();
@@ -727,7 +728,25 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 style: const TextStyle(fontSize: 13),
               ),
             ],
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
+
+            // "More options" toggle
+            GestureDetector(
+              onTap: () => setState(() => _showMoreOptions = !_showMoreOptions),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(children: [
+                  Icon(_showMoreOptions ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                      size: 14, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text(_showMoreOptions ? 'Less options' : 'Note, date, tags...',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                ]),
+              ),
+            ),
+
+            if (_showMoreOptions || widget.editTransaction != null) ...[
+            const SizedBox(height: 8),
 
             // Note + Date row
             Row(children: [
@@ -782,6 +801,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               style: const TextStyle(fontSize: 13),
             ),
             Divider(color: cs.outline.withValues(alpha: 0.10)),
+            ], // end _showMoreOptions
             const SizedBox(height: 8),
 
             // Repeat settings (expandable)

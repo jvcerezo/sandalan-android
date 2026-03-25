@@ -151,6 +151,52 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             _applyFilters();
           },
         ),
+        // Active filter chips
+        if (_dateRange != 'all' || _categoryFilter != 'All' || _searchController.text.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(spacing: 6, runSpacing: 4, children: [
+            if (_dateRange != 'all')
+              _FilterChip(
+                label: _dateRange == 'month' ? 'This month'
+                    : _dateRange == 'lastMonth' ? 'Last month'
+                    : 'Last 3 months',
+                onRemove: () {
+                  setState(() => _dateRange = 'all');
+                  _applyFilters();
+                },
+              ),
+            if (_categoryFilter != 'All')
+              _FilterChip(
+                label: _categoryFilter,
+                onRemove: () {
+                  setState(() => _categoryFilter = 'All');
+                  _applyFilters();
+                },
+              ),
+            if (_searchController.text.isNotEmpty)
+              _FilterChip(
+                label: '"${_searchController.text}"',
+                onRemove: () {
+                  _searchController.clear();
+                  _applyFilters();
+                },
+              ),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _dateRange = 'all';
+                  _categoryFilter = 'All';
+                  _searchController.clear();
+                  _showFilters = false;
+                });
+                _applyFilters();
+              },
+              child: Text('Clear all',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                      color: colorScheme.primary)),
+            ),
+          ]),
+        ],
         const SizedBox(height: 16),
 
         // Transaction list
@@ -247,7 +293,32 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   }
 }
 
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final VoidCallback onRemove;
+  const _FilterChip({required this.label, required this.onRemove});
 
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary)),
+        const SizedBox(width: 4),
+        GestureDetector(
+          onTap: onRemove,
+          child: Icon(LucideIcons.x, size: 12, color: cs.primary),
+        ),
+      ]),
+    );
+  }
+}
 
 // ─── Transaction Row ───────────────────────────────────────────────────────────
 
