@@ -8,6 +8,8 @@ import '../../../core/services/guest_mode_service.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 import '../../../core/constants/account_types.dart';
+import '../../../data/local/app_database.dart';
+import '../../../data/repositories/local_account_repository.dart';
 import '../providers/auth_provider.dart';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -191,16 +193,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         focusAreas: _selectedFocusAreas.isNotEmpty ? _selectedFocusAreas.toList() : null,
       );
 
-      // Create accounts
+      // Create accounts (uses local repo which also creates opening balance transactions)
+      final accountRepo = LocalAccountRepository(AppDatabase.instance, client);
       for (final acc in _addedAccounts) {
         final balance = double.tryParse(acc.balance) ?? 0.0;
-        await client.from('accounts').insert({
-          'user_id': userId,
-          'name': acc.name,
-          'type': acc.type,
-          'currency': 'PHP',
-          'balance': balance,
-        });
+        await accountRepo.createAccount(
+          name: acc.name,
+          type: acc.type,
+          currency: 'PHP',
+          balance: balance,
+        );
       }
 
       // Complete onboarding

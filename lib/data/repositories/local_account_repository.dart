@@ -67,6 +67,31 @@ class LocalAccountRepository {
       'updated_at': now,
     };
     await _db.upsertAccount(row);
+
+    // Create opening balance transaction if balance is non-zero
+    if (sBalance != 0) {
+      final txnId = IdGenerator.transaction();
+      final dateStr = DateTime.now().toIso8601String().substring(0, 10);
+      await _db.upsertTransaction(<String, dynamic>{
+        'id': txnId,
+        'user_id': _userId,
+        'amount': sBalance,
+        'category': sBalance > 0 ? 'Salary' : 'Other',
+        'description': 'Opening balance: $sName',
+        'date': dateStr,
+        'currency': sCurrency,
+        'attachment_path': null,
+        'account_id': id,
+        'transfer_id': null,
+        'split_group_id': null,
+        'tags': AppDatabase.encodeTags(['opening-balance']),
+        'status': 'confirmed',
+        'sync_status': 'pending',
+        'created_at': now,
+        'updated_at': now,
+      });
+    }
+
     return _rowToAccount(row);
   }
 

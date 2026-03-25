@@ -6,6 +6,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/input_sanitizer.dart';
+import '../../../core/utils/provider_utils.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/services/milestone_service.dart';
 import '../../../shared/widgets/milestone_celebration.dart';
@@ -303,6 +304,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               backgroundColor: Colors.green,
             ),
           );
+          invalidateTransactionProviders(ref);
           Navigator.of(ctx).pop(true);
           // Check milestones using the root navigator context (dialog is already closed)
           WidgetsBinding.instance.addPostFrameCallback((_) {

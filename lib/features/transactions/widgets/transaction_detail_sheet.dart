@@ -5,6 +5,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/models/account.dart';
+import '../../../core/utils/provider_utils.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/transaction_providers.dart';
@@ -99,9 +100,7 @@ void showTransactionDetailSheet(
                 ),
               ).then((result) {
                 if (result == true) {
-                  ref.invalidate(transactionsProvider);
-                  ref.invalidate(transactionsCountProvider);
-                  ref.invalidate(transactionsSummaryProvider);
+                  invalidateTransactionProviders(ref);
                 }
               });
             },
@@ -167,9 +166,7 @@ void _confirmDelete(BuildContext context, WidgetRef ref, Transaction t) {
           onPressed: () async {
             Navigator.of(ctx).pop();
             await ref.read(transactionRepositoryProvider).deleteTransaction(t.id);
-            ref.invalidate(transactionsProvider);
-            ref.invalidate(transactionsCountProvider);
-            ref.invalidate(transactionsSummaryProvider);
+            invalidateTransactionProviders(ref);
           },
           child: Text('Delete', style: TextStyle(color: AppColors.error)),
         ),

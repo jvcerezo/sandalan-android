@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/utils/id_generator.dart' show IdGenerator;
+import '../../../core/utils/provider_utils.dart';
 import '../../../data/models/expense_template.dart';
 import '../providers/transaction_providers.dart';
 import 'manage_templates_sheet.dart';
@@ -154,8 +155,7 @@ class QuickAddStrip extends ConsumerWidget {
         accountId: t.accountId,
       );
       ref.read(templatesProvider.notifier).recordUse(t.id);
-      ref.invalidate(transactionsSummaryProvider);
-      ref.invalidate(recentTransactionsProvider);
+      invalidateTransactionProviders(ref);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${t.name} — \u20b1${t.amount.toStringAsFixed(0)} logged'),
