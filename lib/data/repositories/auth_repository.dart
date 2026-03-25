@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/env.dart';
@@ -147,11 +149,27 @@ class AuthRepository {
     }).eq('id', userId);
   }
 
-  /// Delete account — calls server-side RPC to delete auth user (cascades to
-  /// all data), clears local data, then signs out.
+  /// Delete account via the web app's admin API endpoint.
+  /// Supabase hosted instances don't allow DELETE FROM auth.users via SQL,
+  /// so we call the Next.js API route which uses the admin SDK.
   Future<void> deleteAccount() async {
-    // Delete auth user first — this cascades to all tables and linked identities
-    await _client.rpc('delete_own_account');
+    final session = _client.auth.currentSession;
+    if (session == null) throw Exception('Not authenticated');
+
+    // Call the web app API route that uses admin SDK to delete the user
+    const apiBase = 'https://exitplan-tau.vercel.app';
+    final response = await http.post(
+      Uri.parse('$apiBase/api/delete-account'),
+      headers: {
+        'Authorization': 'Bearer ${session.accessToken}',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['error'] ?? 'Failed to delete account');
+    }
 
     // Clear local data after successful server deletion
     final userId = _client.auth.currentUser?.id;
