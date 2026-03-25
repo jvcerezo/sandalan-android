@@ -375,6 +375,7 @@ class _GoalCard extends ConsumerWidget {
                       amount: amount,
                     );
                     ref.invalidate(goalsProvider);
+                    ref.invalidate(goalsSummaryProvider);
                     ref.invalidate(accountsProvider);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -500,6 +501,7 @@ class _GoalCard extends ConsumerWidget {
                       amount: amount,
                     );
                     ref.invalidate(goalsProvider);
+                    ref.invalidate(goalsSummaryProvider);
                     ref.invalidate(accountsProvider);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
