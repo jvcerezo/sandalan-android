@@ -67,7 +67,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                 icon: LucideIcons.trendingUp),
           ]),
           loading: () => const ShimmerStatRow(count: 4),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, __) => _InlineError(onRetry: () => ref.invalidate(goalsSummaryProvider)),
         ),
         const SizedBox(height: 16),
 
@@ -186,7 +186,10 @@ class _GoalCard extends ConsumerWidget {
               side: BorderSide(color: AppColors.income, width: 2),
             )
           : null,
-      child: Padding(
+      child: InkWell(
+        onLongPress: () => _showDeleteDialog(context, ref),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -268,6 +271,7 @@ class _GoalCard extends ConsumerWidget {
             ]),
           ],
         ]),
+      ),
       ),
     );
   }
@@ -387,6 +391,35 @@ class _GoalCard extends ConsumerWidget {
     );
   }
 
+  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Goal'),
+        content: Text('Delete "${goal.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await ref.read(goalRepositoryProvider).deleteGoal(goal.id);
+                ref.invalidate(goalsProvider);
+                ref.invalidate(goalsSummaryProvider);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete: $e')));
+                }
+              }
+            },
+            child: Text('Delete', style: TextStyle(color: AppColors.expense)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showReleaseFundsDialog(BuildContext context, WidgetRef ref) {
     final amountCtl = TextEditingController();
     final colorScheme = Theme.of(context).colorScheme;
@@ -476,6 +509,33 @@ class _GoalCard extends ConsumerWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _InlineError({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.surfaceContainerHighest),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(children: [
+        Icon(LucideIcons.alertCircle, size: 14, color: cs.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Text('Could not load data', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+        const Spacer(),
+        GestureDetector(
+          onTap: onRetry,
+          child: Text('Retry', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+        ),
+      ]),
     );
   }
 }

@@ -133,7 +133,7 @@ class _BadgeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: isEarned ? () => _showDetails(context) : null,
+      onTap: () => _showDetails(context),
       child: Semantics(
         label:
             '${milestone.title}${isEarned ? ', earned' : ', not yet earned'}',
@@ -151,16 +151,34 @@ class _BadgeTile extends StatelessWidget {
                   ),
           ),
           child: Opacity(
-            opacity: isEarned ? 1.0 : 0.4,
+            opacity: isEarned ? 1.0 : 0.45,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  milestone.icon,
-                  size: 32,
-                  color: isEarned
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Icon(
+                      milestone.icon,
+                      size: 32,
+                      color: isEarned
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                    if (!isEarned)
+                      Positioned(
+                        right: -4, bottom: -4,
+                        child: Container(
+                          width: 16, height: 16,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.lock, size: 10,
+                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Padding(
@@ -236,7 +254,7 @@ class _BadgeTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ],
-              if (earnedDate != null) ...[
+              if (isEarned && earnedDate != null) ...[
                 const SizedBox(height: 12),
                 Text(
                   'Earned on ${_formatDateFull(earnedDate!)}',
@@ -245,6 +263,20 @@ class _BadgeTile extends StatelessWidget {
                     color:
                         colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
+                ),
+              ] else if (!isEarned) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.lock_outline, size: 14, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 6),
+                    Text('Not yet earned', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                  ]),
                 ),
               ],
               const SizedBox(height: 24),

@@ -23,7 +23,7 @@ class ContributionsScreen extends ConsumerStatefulWidget {
 }
 
 class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
-  final _salaryController = TextEditingController(text: '25000');
+  final _salaryController = TextEditingController();
   String _employmentType = 'employed';
   bool _autoGenerate = true;
 
@@ -40,6 +40,11 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
     if (mounted) {
       setState(() {
         _autoGenerate = prefs.getBool('auto_generate_contributions') ?? false;
+        _employmentType = prefs.getString('contribution_employment_type') ?? 'employed';
+        final savedSalary = prefs.getDouble('contribution_salary');
+        if (savedSalary != null && savedSalary > 0) {
+          _salaryController.text = savedSalary.toStringAsFixed(0);
+        }
       });
     }
   }
@@ -736,7 +741,7 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
   bool _fromSalary = true;
   DateTime? _fromDate;
   DateTime _toDate = DateTime.now();
-  final _salaryController = TextEditingController(text: '25000');
+  final _salaryController = TextEditingController();
   final _sssController = TextEditingController();
   final _philhealthController = TextEditingController();
   final _pagibigController = TextEditingController();

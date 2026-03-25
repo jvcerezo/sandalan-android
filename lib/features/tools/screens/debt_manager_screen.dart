@@ -100,8 +100,35 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
             _SummaryCard(label: 'Highest Rate', value: '${(s.highestRate * 100).toStringAsFixed(1)}%',
                 valueColor: AppColors.toolRed, highlight: true),
           ]),
-          loading: () => const SizedBox(height: 60),
-          error: (_, __) => const SizedBox.shrink(),
+          loading: () => Row(children: [
+            for (int i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(child: Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              )),
+            ],
+          ]),
+          error: (_, __) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: colorScheme.surfaceContainerHighest),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(children: [
+              Icon(LucideIcons.alertCircle, size: 14, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('Could not load summary', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => ref.invalidate(debtSummaryProvider),
+                child: Text('Retry', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+              ),
+            ]),
+          ),
         ),
         const SizedBox(height: 16),
 

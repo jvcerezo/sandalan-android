@@ -91,8 +91,35 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
             const SizedBox(width: 8),
             _SumCard(label: 'Renewing Soon', value: '${s.renewalSoonCount}'),
           ]),
-          loading: () => const SizedBox(height: 60),
-          error: (_, __) => const SizedBox.shrink(),
+          loading: () => Row(children: [
+            for (int i = 0; i < 3; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(child: Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              )),
+            ],
+          ]),
+          error: (_, __) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: cs.surfaceContainerHighest),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(children: [
+              Icon(LucideIcons.alertCircle, size: 14, color: cs.onSurfaceVariant),
+              const SizedBox(width: 8),
+              Text('Could not load summary', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => ref.invalidate(insuranceSummaryProvider),
+                child: Text('Retry', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),
+              ),
+            ]),
+          ),
         ),
         const SizedBox(height: 16),
 
