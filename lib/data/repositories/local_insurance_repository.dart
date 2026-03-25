@@ -36,6 +36,7 @@ class LocalInsuranceRepository {
         case 'quarterly': annualPremium += p.premiumAmount * 4; break;
         case 'semi_annual': annualPremium += p.premiumAmount * 2; break;
         case 'annual': annualPremium += p.premiumAmount; break;
+        default: annualPremium += p.premiumAmount * 12; break; // Treat unknown as monthly
       }
     }
 

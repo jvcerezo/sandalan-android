@@ -444,13 +444,13 @@ class SyncService with WidgetsBindingObserver {
     if (localTable == 'local_transactions' && remote['tags'] is String) {
       remote['tags'] = AppDatabase.decodeTags(remote['tags'] as String);
     }
-    // Convert SQLite integers back to booleans for known boolean columns
-    _convertIntToBool(remote, 'is_archived');
-    _convertIntToBool(remote, 'is_completed');
-    _convertIntToBool(remote, 'is_paid');
-    _convertIntToBool(remote, 'is_paid_off');
-    _convertIntToBool(remote, 'is_active');
-    _convertIntToBool(remote, 'rollover');
+    // Convert SQLite integers back to booleans for all is_* and known boolean columns.
+    // Generic approach: any column starting with is_ or named rollover is boolean.
+    for (final key in remote.keys.toList()) {
+      if (remote[key] is int && (key.startsWith('is_') || key == 'rollover')) {
+        remote[key] = (remote[key] as int) == 1;
+      }
+    }
 
     return remote;
   }

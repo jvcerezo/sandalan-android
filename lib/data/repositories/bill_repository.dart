@@ -50,9 +50,17 @@ class BillRepository {
     }
 
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final dueSoon = active.where((b) {
       if (b.dueDay == null) return false;
-      final diff = b.dueDay! - now.day;
+      final lastDay = DateTime(now.year, now.month + 1, 0).day;
+      final clampedDay = b.dueDay!.clamp(1, lastDay);
+      var dueDate = DateTime(now.year, now.month, clampedDay);
+      if (dueDate.isBefore(today)) {
+        final nextLastDay = DateTime(now.year, now.month + 2, 0).day;
+        dueDate = DateTime(now.year, now.month + 1, b.dueDay!.clamp(1, nextLastDay));
+      }
+      final diff = dueDate.difference(today).inDays;
       return diff >= 0 && diff <= 7;
     }).length;
 

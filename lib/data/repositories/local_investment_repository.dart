@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/guest_mode_service.dart';
 import '../local/app_database.dart';
 import '../models/investment.dart';
 
@@ -8,7 +9,8 @@ class LocalInvestmentRepository {
 
   LocalInvestmentRepository(this._db, this._client);
 
-  String get _userId => _client.auth.currentUser?.id ?? 'guest';
+  String get _userId =>
+      _client.auth.currentUser?.id ?? GuestModeService.getGuestIdSync() ?? 'guest';
 
   Future<List<Investment>> getInvestments() async {
     final rows = await _db.getInvestments(_userId);

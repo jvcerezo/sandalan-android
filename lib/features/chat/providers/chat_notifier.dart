@@ -688,7 +688,7 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     final pending = state.pendingResult;
 
     if (pending?.ambiguousAmounts != null) {
-      final parsed = double.tryParse(lower.replaceAll(',', ''));
+      final parsed = double.tryParse(lower.replaceAll(RegExp(r'[^\d.]'), ''));
       if (parsed != null) {
         final updated = pending!.copyWith(amount: parsed, ambiguousAmounts: null);
         state = state.copyWith(
@@ -729,8 +729,9 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       return;
     }
 
-    // They might have typed the correct amount
-    final corrected = double.tryParse(lower.replaceAll(',', ''));
+    // They might have typed the correct amount (strip currency symbols/text)
+    final cleaned = lower.replaceAll(RegExp(r'[^\d.]'), '');
+    final corrected = cleaned.isNotEmpty ? double.tryParse(cleaned) : null;
     if (corrected != null) {
       state = state.copyWith(conversationState: ChatConversationState.idle);
       final result = pending.copyWith(amount: corrected, needsAmountConfirmation: false);

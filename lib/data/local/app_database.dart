@@ -1161,6 +1161,7 @@ class AppDatabase {
       'local_debts',
       'local_insurance',
       'local_investments',
+      'local_bill_splits',
       'net_worth_snapshots',
       'learned_keywords',
       'chat_report_queue',

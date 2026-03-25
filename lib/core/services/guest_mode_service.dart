@@ -78,6 +78,8 @@ class GuestModeService {
     'local_bills',
     'local_debts',
     'local_insurance',
+    'local_investments',
+    'local_bill_splits',
     'learned_keywords',
     'chat_report_queue',
   ];

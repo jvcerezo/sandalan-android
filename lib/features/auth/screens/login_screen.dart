@@ -41,17 +41,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  /// Migrate guest data after successful authentication.
-  Future<void> _migrateGuestDataIfNeeded() async {
-    if (!_wasGuest) return;
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
-    await GuestModeService.migrateToAccount(userId);
-    final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
-    syncService.fullSync();
-    syncService.startDailySync();
-  }
-
   Future<void> _handleEmailSignIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
