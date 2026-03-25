@@ -260,42 +260,7 @@ class _TourOverlayWidget extends StatefulWidget {
   State<_TourOverlayWidget> createState() => _TourOverlayWidgetState();
 }
 
-class _TourOverlayWidgetState extends State<_TourOverlayWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeIn;
-  late Animation<Offset> _slideIn;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-    );
-    _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _slideIn = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(covariant _TourOverlayWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentStep != widget.currentStep) {
-      _controller.reset();
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _TourOverlayWidgetState extends State<_TourOverlayWidget> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -309,20 +274,24 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
       color: Colors.transparent,
       child: Stack(
         children: [
-          // Dark backdrop with spotlight
+          // Dark backdrop with animated spotlight
           GestureDetector(
             onTap: () {},
-            child: CustomPaint(
-              size: size,
-              painter: _SpotlightPainter(
-                target: step.target,
-                screenSize: size,
-                bottomPadding: bottomPadding,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: CustomPaint(
+                key: ValueKey(step.target),
+                size: size,
+                painter: _SpotlightPainter(
+                  target: step.target,
+                  screenSize: size,
+                  bottomPadding: bottomPadding,
+                ),
               ),
             ),
           ),
 
-          // Card
+          // Card with crossfade
           _buildPositionedCard(context, colorScheme, step, isFirst, isLast, size, bottomPadding),
         ],
       ),
@@ -337,23 +306,33 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget>
         left: 24,
         right: 24,
         bottom: 100 + bottomPadding,
-        child: _buildAnimatedCard(colorScheme, step, isFirst, isLast),
+        child: _buildCard(colorScheme, step, isFirst, isLast),
       );
     }
 
     // Default: centered
     return Center(
-      child: _buildAnimatedCard(colorScheme, step, isFirst, isLast),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: _buildCard(colorScheme, step, isFirst, isLast),
+      ),
     );
   }
 
-  Widget _buildAnimatedCard(ColorScheme colorScheme, TourStep step,
+  Widget _buildCard(ColorScheme colorScheme, TourStep step,
       bool isFirst, bool isLast) {
-    return FadeTransition(
-      opacity: _fadeIn,
-      child: SlideTransition(
-        position: _slideIn,
-        child: Container(
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+      child: Container(
+        key: ValueKey(widget.currentStep),
           constraints: const BoxConstraints(maxWidth: 400),
           decoration: BoxDecoration(
             color: colorScheme.surface,

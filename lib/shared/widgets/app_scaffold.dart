@@ -176,6 +176,11 @@ class _AppScaffoldState extends State<AppScaffold> {
               );
             }
           }
+        } else if (location == '/more') {
+          context.go('/home');
+        } else if (_morePaths.any((p) => p != '/more' && location.startsWith(p))) {
+          // Child screens of More tab go back to More
+          context.go('/more');
         } else {
           context.go('/home');
         }
