@@ -26,8 +26,7 @@ class InvestmentsScreen extends ConsumerWidget {
     final hide = ref.watch(hideBalancesProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: investments.when(
+      body: investments.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Error: $e')),
           data: (list) {
@@ -135,10 +134,6 @@ class InvestmentsScreen extends ConsumerWidget {
             );
           },
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context, ref),
-        child: const Icon(LucideIcons.plus),
       ),
     );
   }
@@ -279,7 +274,9 @@ class _InvestmentCard extends StatelessWidget {
     final gain = inv.gainLoss;
     final isUp = gain >= 0;
 
-    return Container(
+    return GestureDetector(
+      onLongPress: () => _showActions(context),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -322,41 +319,29 @@ class _InvestmentCard extends StatelessWidget {
                     color: isUp ? Colors.green : Colors.red)),
           ]),
         ]),
-        const SizedBox(height: 8),
-        Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          GestureDetector(
-            onTap: () => _showEditDialog(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(LucideIcons.pencil, size: 12, color: cs.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('Edit', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-              ]),
-            ),
+      ]),
+    ),
+    );
+  }
+
+  void _showActions(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: Icon(LucideIcons.pencil, color: cs.onSurface),
+            title: const Text('Edit'),
+            onTap: () { Navigator.pop(ctx); _showEditDialog(context); },
           ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => _confirmDelete(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: cs.error.withValues(alpha: 0.2)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(LucideIcons.trash2, size: 12, color: cs.error),
-                const SizedBox(width: 4),
-                Text('Delete', style: TextStyle(fontSize: 11, color: cs.error)),
-              ]),
-            ),
+          ListTile(
+            leading: Icon(LucideIcons.trash2, color: cs.error),
+            title: Text('Delete', style: TextStyle(color: cs.error)),
+            onTap: () { Navigator.pop(ctx); _confirmDelete(context); },
           ),
         ]),
-      ]),
+      ),
     );
   }
 }

@@ -70,10 +70,10 @@ class _SplitsScreenState extends State<SplitsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    if (_loading) return const Center(child: CircularProgressIndicator());
+
     return Scaffold(
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+      body: RefreshIndicator(
               onRefresh: _loadSplits,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),

@@ -65,22 +65,31 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
       children: [
-        // Header
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.toolIndigo.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(LucideIcons.receipt, size: 20, color: AppColors.toolIndigo),
-          ),
-          const SizedBox(width: 12),
+        // Header with Add button
+        Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Bills & Subscriptions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             Text('Track recurring expenses and due dates',
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
           ])),
+          FilledButton.icon(
+            icon: const Icon(Icons.add, size: 14),
+            label: const Text('Add'),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                useSafeArea: true,
+                builder: (_) => const AddBillDialog(),
+              ).then((result) {
+                if (result == true) {
+                  ref.invalidate(billsProvider);
+                  ref.invalidate(billsSummaryProvider);
+                }
+              });
+            },
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+          ),
         ]),
         const SizedBox(height: 12),
 
@@ -259,85 +268,49 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
           error: (_, __) => const SizedBox.shrink(),
         ),
 
-        // Bill Reminders card
-        _Card(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 36, height: 36,
+        // Bill Reminders — compact when on, expanded when off
+        GestureDetector(
+          onTap: _toggleReminders,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.income.withValues(alpha: 0.1),
+              color: _remindersEnabled
+                  ? AppColors.income.withValues(alpha: 0.06)
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              border: Border.all(color: _remindersEnabled
+                  ? AppColors.income.withValues(alpha: 0.15)
+                  : colorScheme.outline.withValues(alpha: 0.1)),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(LucideIcons.zap, size: 18, color: AppColors.income),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Bill Reminders', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            if (!_remindersEnabled) ...[
-              const SizedBox(height: 4),
-              Text('Get notified before your bills are due so you never miss a payment.',
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              ...[
-                'Bills with a due day appear in Upcoming Payments on your Home page',
-                'Push notifications sent 3 days before due date',
-                'Mark as paid to record a transaction from your linked account',
-                'Set a due day on each bill to enable reminders',
-              ].map((t) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('•  ', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
-                  Expanded(child: Text(t, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant))),
-                ]),
+            child: Row(children: [
+              Icon(_remindersEnabled ? LucideIcons.bellRing : LucideIcons.bellOff,
+                  size: 16, color: _remindersEnabled ? AppColors.income : colorScheme.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Expanded(child: Text(
+                _remindersEnabled
+                    ? 'Reminders on — notifications 3 days before due'
+                    : 'Reminders off — tap to enable bill notifications',
+                style: TextStyle(fontSize: 12,
+                    color: _remindersEnabled ? AppColors.income : colorScheme.onSurfaceVariant),
               )),
-            ],
-          ])),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _toggleReminders,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _remindersEnabled
-                    ? AppColors.warning.withValues(alpha: 0.15)
-                    : colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _remindersEnabled
+                      ? AppColors.income.withValues(alpha: 0.15)
+                      : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(_remindersEnabled ? 'On' : 'Off',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                        color: _remindersEnabled ? AppColors.income : colorScheme.onSurfaceVariant)),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (_remindersEnabled) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
-                if (_remindersEnabled) const SizedBox(width: 4),
-                Text(_remindersEnabled ? 'On' : 'Off',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                        color: _remindersEnabled ? AppColors.warning : colorScheme.onSurfaceVariant)),
-              ]),
-            ),
-          ),
-        ])),
-        const SizedBox(height: 16),
-
-        // Add Bill button
-        OutlinedButton.icon(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              useSafeArea: true,
-              builder: (_) => const AddBillDialog(),
-            ).then((result) {
-              if (result == true) {
-                ref.invalidate(billsProvider);
-                ref.invalidate(billsSummaryProvider);
-              }
-            });
-          },
-          icon: const Icon(LucideIcons.plus, size: 16),
-          label: const Text('Add Bill'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: colorScheme.primary,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ]),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
+
+        // (Add Bill button moved to header)
 
         // Pending bill payments
         _PendingBillsList(ref: ref),

@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/providers/feature_visibility_provider.dart';
+import '../../goals/providers/goal_providers.dart';
+import '../../tools/providers/tool_providers.dart';
 import '../../transactions/screens/receipt_scanner_screen.dart';
 
 class MoreScreen extends ConsumerWidget {
@@ -17,6 +20,12 @@ class MoreScreen extends ConsumerWidget {
 
     bool show(String key) => vis[key] ?? FeatureKeys.defaultFor(key);
 
+    // Live data for context badges
+    final goalsSummary = ref.watch(goalsSummaryProvider);
+    final billsSummary = ref.watch(billsSummaryProvider);
+    final debtSummary = ref.watch(debtSummaryProvider);
+    final insuranceSummary = ref.watch(insuranceSummaryProvider);
+
     // Build manage items (filtered by visibility)
     final manageItems = <Widget>[
       if (show(FeatureKeys.goals))
@@ -25,6 +34,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolBlue,
           title: 'Goals',
           subtitle: 'Savings targets & progress',
+          badge: goalsSummary.whenOrNull(data: (gs) => gs.active > 0 ? '${gs.active} active' : null),
           onTap: () => context.go('/goals'),
         ),
       if (show(FeatureKeys.bills))
@@ -33,6 +43,8 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolOrange,
           title: 'Bills & Payments',
           subtitle: 'Recurring bills & due dates',
+          badge: billsSummary.whenOrNull(data: (bs) => bs.dueSoonCount > 0 ? '${bs.dueSoonCount} due soon' : null),
+          badgeColor: AppColors.warning,
           onTap: () => context.go('/tools/bills'),
         ),
       if (show(FeatureKeys.debts))
@@ -41,6 +53,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolRed,
           title: 'Debts',
           subtitle: 'Track and pay off debts',
+          badge: debtSummary.whenOrNull(data: (ds) => ds.totalDebt > 0 ? formatCurrency(ds.totalDebt) : null),
           onTap: () => context.go('/tools/debts'),
         ),
       if (show(FeatureKeys.insurance))
@@ -49,6 +62,8 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolTeal,
           title: 'Insurance',
           subtitle: 'Policies & premium tracking',
+          badge: insuranceSummary.whenOrNull(data: (is_) => is_.renewalSoonCount > 0 ? '${is_.renewalSoonCount} renewing' : null),
+          badgeColor: AppColors.warning,
           onTap: () => context.go('/tools/insurance'),
         ),
       if (show(FeatureKeys.investments))
@@ -280,6 +295,8 @@ class _MoreItem extends StatelessWidget {
   final Color color;
   final String title;
   final String subtitle;
+  final String? badge;
+  final Color? badgeColor;
   final VoidCallback onTap;
 
   const _MoreItem({
@@ -287,11 +304,14 @@ class _MoreItem extends StatelessWidget {
     required this.color,
     required this.title,
     required this.subtitle,
+    this.badge,
+    this.badgeColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return InkWell(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -316,21 +336,31 @@ class _MoreItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                  Row(children: [
+                    Text(title,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    if (badge != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (badgeColor ?? cs.primary).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(badge!,
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                                color: badgeColor ?? cs.primary)),
+                      ),
+                    ],
+                  ]),
                   Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
             Icon(LucideIcons.chevronRight,
                 size: 16,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withValues(alpha: 0.4)),
+                color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
           ],
         ),
       ),

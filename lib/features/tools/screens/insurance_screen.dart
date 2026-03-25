@@ -53,6 +53,20 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
     }
   }
 
+  void _showAddInsurance(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => const AddInsuranceDialog(),
+    ).then((result) {
+      if (result == true) {
+        ref.invalidate(insurancePoliciesProvider);
+        ref.invalidate(insuranceSummaryProvider);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -62,22 +76,19 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
       children: [
-        // Header
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.toolTeal.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(LucideIcons.shield, size: 20, color: AppColors.toolTeal),
-          ),
-          const SizedBox(width: 12),
+        // Header with Add button
+        Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Insurance Tracker', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text('Monitor all your policies and renewal dates',
+            Text('Policies & renewal tracking',
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
           ])),
+          FilledButton.icon(
+            icon: const Icon(Icons.add, size: 14),
+            label: const Text('Add'),
+            onPressed: () => _showAddInsurance(context, ref),
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+          ),
         ]),
         const SizedBox(height: 16),
 
@@ -123,85 +134,47 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Premium Reminders
-        _Card(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 36, height: 36,
+        // Premium Reminders — compact toggle
+        GestureDetector(
+          onTap: _toggleReminders,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.income.withValues(alpha: 0.1),
+              color: _remindersEnabled
+                  ? AppColors.income.withValues(alpha: 0.06)
+                  : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              border: Border.all(color: _remindersEnabled
+                  ? AppColors.income.withValues(alpha: 0.15)
+                  : cs.outline.withValues(alpha: 0.1)),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(LucideIcons.zap, size: 18, color: AppColors.income),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Premium Reminders', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-            if (!_remindersEnabled) ...[
-              const SizedBox(height: 4),
-              Text('Get notified before your insurance premiums are due.',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-              const SizedBox(height: 8),
-              ...[
-                'Policies with a renewal date appear in Upcoming Payments on your Home page',
-                'Push notifications sent before your next premium is due',
-                'Pay premium to record a transaction from your linked account',
-                'Set a renewal date on each policy to enable reminders',
-              ].map((t) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('•  ', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                  Expanded(child: Text(t, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant))),
-                ]),
+            child: Row(children: [
+              Icon(_remindersEnabled ? LucideIcons.bellRing : LucideIcons.bellOff,
+                  size: 16, color: _remindersEnabled ? AppColors.income : cs.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Expanded(child: Text(
+                _remindersEnabled
+                    ? 'Reminders on — notifications before renewal'
+                    : 'Reminders off — tap to enable premium notifications',
+                style: TextStyle(fontSize: 12,
+                    color: _remindersEnabled ? AppColors.income : cs.onSurfaceVariant),
               )),
-            ],
-          ])),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _toggleReminders,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _remindersEnabled
-                    ? AppColors.warning.withValues(alpha: 0.15)
-                    : cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _remindersEnabled
+                      ? AppColors.income.withValues(alpha: 0.15)
+                      : cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(_remindersEnabled ? 'On' : 'Off',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                        color: _remindersEnabled ? AppColors.income : cs.onSurfaceVariant)),
               ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (_remindersEnabled) const Icon(LucideIcons.bell, size: 12, color: AppColors.warning),
-                if (_remindersEnabled) const SizedBox(width: 4),
-                Text(_remindersEnabled ? 'On' : 'Off',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                        color: _remindersEnabled ? AppColors.warning : cs.onSurfaceVariant)),
-              ]),
-            ),
-          ),
-        ])),
-        const SizedBox(height: 16),
-
-        // Add Policy
-        OutlinedButton.icon(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              useSafeArea: true,
-              builder: (_) => const AddInsuranceDialog(),
-            ).then((result) {
-              if (result == true) {
-                ref.invalidate(insurancePoliciesProvider);
-                ref.invalidate(insuranceSummaryProvider);
-              }
-            });
-          },
-          icon: const Icon(LucideIcons.plus, size: 16),
-          label: const Text('Add Policy'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: cs.primary,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ]),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
 
         // Pending insurance payments
         _PendingInsuranceList(ref: ref),
