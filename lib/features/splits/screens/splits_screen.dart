@@ -79,10 +79,12 @@ class _SplitsScreenState extends State<SplitsScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                 children: [
-                  const Text('Split Bills', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
+                  const Text('Split Bills', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 2),
-                  Text('Split expenses with friends and track who paid',
-                      style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                  Text(_activeSplits.isEmpty && _settledSplits.isEmpty
+                      ? 'Split expenses with friends'
+                      : '${_activeSplits.length} active · ${_settledSplits.length} settled',
+                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 20),
 
                   // Active splits

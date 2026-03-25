@@ -43,13 +43,23 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
           // Header
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Goals', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Goals', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              summary.when(
+                data: (gs) => Text(
+                  gs.total == 0 ? 'Set savings targets and track progress'
+                      : '${gs.active} active · ${(gs.overallProgress * 100).toStringAsFixed(0)}% overall',
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ])),
             FilledButton.icon(
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Add'),
               onPressed: () => _showAddGoal(context),
-              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
             ),
           ]),
         const SizedBox(height: 16),

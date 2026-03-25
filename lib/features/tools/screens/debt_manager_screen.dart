@@ -74,9 +74,15 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
         // Header with Add button
         Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Debt Manager', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text('Track balances & payoff strategies',
+            const Text('Debts', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            summary.when(
+              data: (s) => Text(
+                s.totalDebt == 0 ? 'Track balances & payoff strategies'
+                    : '${formatCurrency(s.totalDebt)} total · ${formatCurrency(s.totalMinMonthly)}/mo min',
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
           ])),
           FilledButton.icon(
             icon: const Icon(Icons.add, size: 14),

@@ -68,9 +68,15 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
         // Header with Add button
         Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Bills & Subscriptions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text('Track recurring expenses and due dates',
+            const Text('Bills', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            summary.when(
+              data: (s) => Text(
+                s.monthlyTotal == 0 ? 'Track recurring expenses and due dates'
+                    : '${formatCurrency(s.monthlyTotal)}/mo · ${s.dueSoonCount} due soon',
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
           ])),
           FilledButton.icon(
             icon: const Icon(Icons.add, size: 14),

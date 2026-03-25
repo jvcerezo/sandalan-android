@@ -79,9 +79,15 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
         // Header with Add button
         Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Insurance Tracker', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text('Policies & renewal tracking',
+            const Text('Insurance', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            summary.when(
+              data: (s) => Text(
+                s.annualPremium == 0 ? 'Track policies & renewal dates'
+                    : '${formatCurrency(s.annualPremium)}/yr · ${s.renewalSoonCount} renewing soon',
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
           ])),
           FilledButton.icon(
             icon: const Icon(Icons.add, size: 14),

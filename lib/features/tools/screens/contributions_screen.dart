@@ -190,20 +190,13 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
       children: [
         // Header
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.info.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(LucideIcons.landmark, size: 20, color: AppColors.info),
-          ),
-          const SizedBox(width: 12),
+        Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text("Gov't Contributions",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text('SSS · PhilHealth · Pag-IBIG — salary breakdown & deductions using 2024 rates',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(_salary > 0
+                ? 'SSS · PhilHealth · Pag-IBIG · ${formatCurrency(_salary)}/mo salary'
+                : 'SSS · PhilHealth · Pag-IBIG deductions',
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
           ])),
         ]),

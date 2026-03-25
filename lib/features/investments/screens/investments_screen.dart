@@ -40,19 +40,20 @@ class InvestmentsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               children: [
                 Row(children: [
-                  Icon(LucideIcons.trendingUp, size: 24, color: cs.primary),
-                  const SizedBox(width: 8),
-                  const Expanded(child: Text('Investments', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Investments', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text(
+                      list.isEmpty ? 'Track your portfolio growth'
+                          : '${formatCurrency(totalValue)} · ${totalGain >= 0 ? '+' : ''}${gainPercent.toStringAsFixed(1)}%',
+                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                  ])),
                   FilledButton.icon(
                     icon: const Icon(Icons.add, size: 14),
                     label: const Text('Add'),
                     onPressed: () => _showAddDialog(context, ref),
-                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
                   ),
                 ]),
-                const SizedBox(height: 4),
-                Text('Track your portfolio growth',
-                    style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 16),
 
                 // Portfolio summary
