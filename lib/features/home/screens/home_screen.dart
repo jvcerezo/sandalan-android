@@ -359,7 +359,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           StaggeredFadeIn(
             index: 2,
             child: summary.when(
-              data: (s) => Row(
+              data: (s) => s.income == 0 && s.expenses == 0 && s.balance == 0
+                  // First-time user CTA
+                  ? Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.06),
+                        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.15)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(children: [
+                        Icon(LucideIcons.sparkles, size: 24, color: colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          const Text('Ready to start tracking?',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 2),
+                          Text('Tap the + button below to add your first expense or income.',
+                              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                        ])),
+                      ]),
+                    )
+                  : Row(
                 children: [
                   _FinStat(
                     icon: LucideIcons.wallet,

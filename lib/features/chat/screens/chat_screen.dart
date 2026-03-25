@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/chat_models.dart';
 import '../providers/chat_providers.dart';
 import '../widgets/chat_bubble.dart';
@@ -84,16 +85,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     if (_showSetup) {
-      return AiSetupScreen(
-        onComplete: () async {
-          final name = await AiSetupScreen.getAssistantName();
-          if (mounted) {
-            setState(() {
-              _assistantName = name;
-              _showSetup = false;
-              _checkingSetup = false;
-            });
-          }
+      return _ChatSetupBanner(
+        onSetup: () {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => AiSetupScreen(
+              onComplete: () async {
+                final name = await AiSetupScreen.getAssistantName();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _assistantName = name;
+                    _showSetup = false;
+                  });
+                }
+              },
+            ),
+          ));
+        },
+        onSkip: () async {
+          // Apply defaults and mark setup complete
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('ai_assistant_name', 'Sandalan AI');
+          await prefs.setString('ai_personality', 'chill_best_friend');
+          await prefs.setBool('ai_setup_complete', true);
+          if (mounted) setState(() => _showSetup = false);
         },
       );
     }
@@ -527,5 +542,58 @@ class _ReportSheetState extends State<_ReportSheet> {
       default:
         return const SizedBox.shrink();
     }
+  }
+}
+
+/// Lightweight setup prompt that replaces the blocking 3-step wizard.
+/// Users can set up their AI or skip with sensible defaults.
+class _ChatSetupBanner extends StatelessWidget {
+  final VoidCallback onSetup;
+  final VoidCallback onSkip;
+  const _ChatSetupBanner({required this.onSetup, required this.onSkip});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(LucideIcons.messageCircle, size: 36, color: cs.primary),
+            ),
+            const SizedBox(height: 20),
+            Text('Meet your AI assistant',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
+            const SizedBox(height: 8),
+            Text('Ask about your finances in Taglish.\nTrack expenses, get insights, and more.',
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.5),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: onSetup,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Customize your AI'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: onSkip,
+              child: Text('Skip \u2014 use defaults',
+                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

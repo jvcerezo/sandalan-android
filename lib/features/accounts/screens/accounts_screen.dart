@@ -58,7 +58,7 @@ class AccountsScreen extends ConsumerWidget {
               },
               icon: const Icon(LucideIcons.arrowLeftRight, size: 14),
               label: const Text('Transfer'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8)),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
             ),
             const SizedBox(width: 8),
             FilledButton.icon(
@@ -70,7 +70,7 @@ class AccountsScreen extends ConsumerWidget {
                 backgroundColor: Colors.transparent,
                 builder: (_) => const AddAccountDialog(),
               ).then((_) => ref.invalidate(accountsProvider)),
-              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
             ),
           ]),
         ]),
@@ -94,8 +94,37 @@ class AccountsScreen extends ConsumerWidget {
                     label: const Text('Add Account'),
                   ),
                 )
-              : Column(children: accs.asMap().entries.map((e) =>
-                  StaggeredFadeIn(index: e.key, child: _AccountCard(account: e.value))).toList()),
+              : Column(children: accs.asMap().entries.map((e) {
+                  final account = e.value;
+                  return StaggeredFadeIn(
+                    index: e.key,
+                    child: Dismissible(
+                      key: ValueKey(account.id),
+                      direction: DismissDirection.endToStart,
+                      confirmDismiss: (_) async {
+                        // Let the card's delete confirmation handle it
+                        return false; // Don't auto-dismiss, show dialog instead
+                      },
+                      onUpdate: (details) {
+                        // Trigger delete dialog when swiped far enough
+                        if (details.progress > 0.4 && !details.previousReached) {
+                          // Will be handled by background tap
+                        }
+                      },
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.expense.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(LucideIcons.trash2, color: AppColors.expense, size: 20),
+                      ),
+                      child: _AccountCard(account: account),
+                    ),
+                  );
+                }).toList()),
           loading: () => Column(children: List.generate(3, (_) => const ShimmerCard(height: 72))),
           error: (e, _) => Center(child: Text('Error: $e')),
         ),
@@ -195,14 +224,6 @@ class _AccountCard extends ConsumerWidget {
                   color: account.balance >= 0 ? colorScheme.onSurface : AppColors.expense,
                 ),
                 maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(width: 4),
-            // Delete button
-            IconButton(
-              onPressed: () => _showDeleteConfirmation(context, ref),
-              icon: Icon(LucideIcons.trash2, size: 16, color: AppColors.expense.withValues(alpha: 0.5)),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
           ]),
         ),
       ),
