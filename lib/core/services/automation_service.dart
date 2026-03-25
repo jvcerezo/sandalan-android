@@ -166,9 +166,9 @@ class AutomationService {
 
         // Create a pending transaction for the bill
         final pendingDesc = '${bill.name} - $monthTag';
-        // Check if pending transaction already exists (avoid duplicates)
+        // Check if pending transaction already exists via tags (more reliable than description match)
         final alreadyExists = allTransactions.any((t) =>
-            t.description == pendingDesc && t.isPending && t.category == bill.category);
+            t.isPending && t.tags != null && t.tags!.contains(bill.id));
         if (alreadyExists) continue;
 
         await txnRepo.createTransaction(
@@ -176,6 +176,7 @@ class AutomationService {
           category: bill.category,
           description: pendingDesc,
           date: DateTime.now(),
+          accountId: bill.accountId,
           status: 'pending',
           tags: ['bill', bill.id],
         );
@@ -210,14 +211,15 @@ class AutomationService {
         // Create a pending transaction for the insurance premium
         final pendingDesc = '${policy.name} premium - $monthTag';
         final alreadyExists = allTransactions.any((t) =>
-            t.description == pendingDesc && t.isPending && t.category == 'Insurance');
+            t.isPending && t.tags != null && t.tags!.contains(policy.id));
         if (alreadyExists) continue;
 
         await txnRepo.createTransaction(
           amount: -policy.premiumAmount,
-          category: 'Insurance',
+          category: 'insurance',
           description: pendingDesc,
           date: DateTime.now(),
+          accountId: policy.accountId,
           status: 'pending',
           tags: ['insurance', policy.id],
         );
@@ -245,14 +247,15 @@ class AutomationService {
 
         final pendingDesc = '${debt.name} payment - $monthTag';
         final alreadyExists = allTransactions.any((t) =>
-            t.description == pendingDesc && t.isPending && t.category == 'Debt Payment');
+            t.isPending && t.tags != null && t.tags!.contains(debt.id));
         if (alreadyExists) continue;
 
         await txnRepo.createTransaction(
           amount: -debt.minimumPayment,
-          category: 'Debt Payment',
+          category: 'debt_payment',
           description: pendingDesc,
           date: DateTime.now(),
+          accountId: debt.accountId,
           status: 'pending',
           tags: ['debt', debt.id],
         );
@@ -542,12 +545,13 @@ class AutomationService {
         target = target.add(const Duration(days: 1));
       }
 
-      final txnRepo = LocalTransactionRepository(db, client);
       final billRepo = LocalBillRepository(db, client);
       final bills = await billRepo.getBills();
       final dueSoon = bills.where((b) => b.isActive && b.dueDay != null).where((b) {
-        final daysUntilDue = (b.dueDay! - target.day).abs();
-        return daysUntilDue <= 3;
+        // Use _nextDueDate to correctly handle month wrapping
+        final dueDate = _nextDueDate(b.dueDay!);
+        final daysUntilDue = dueDate.difference(target).inDays;
+        return daysUntilDue >= 0 && daysUntilDue <= 3;
       }).toList();
 
       String body = "Good morning! ";
@@ -588,12 +592,14 @@ class AutomationService {
   static Future<void> _scheduleWeeklyRecap(AppDatabase db, SupabaseClient client) async {
     try {
       final now = DateTime.now();
-      // Find next Sunday
-      final daysUntilSunday = (DateTime.sunday - now.weekday) % 7;
-      final nextSunday = DateTime(now.year, now.month, now.day + daysUntilSunday, 10, 0);
+      // Find next Sunday at 10 AM
+      var daysUntilSunday = (DateTime.sunday - now.weekday) % 7;
+      var nextSunday = DateTime(now.year, now.month, now.day + daysUntilSunday, 10, 0);
 
-      // Only schedule if it's in the future
-      if (nextSunday.isBefore(now)) return;
+      // If today is Sunday but after 10 AM, schedule for next Sunday
+      if (!nextSunday.isAfter(now)) {
+        nextSunday = nextSunday.add(const Duration(days: 7));
+      }
 
       final recap = await WeeklyRecapService.instance.getWeeklyRecap();
       if (recap == null) return;
