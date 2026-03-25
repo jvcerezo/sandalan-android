@@ -55,6 +55,7 @@ class GuideScreen extends StatefulWidget {
 class _GuideScreenState extends State<GuideScreen> {
   Set<String> _completedItems = {};
   Set<String> _readGuides = {};
+  String? _userLifeStage;
 
   @override
   void initState() {
@@ -66,6 +67,7 @@ class _GuideScreenState extends State<GuideScreen> {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
+        _userLifeStage = prefs.getString('life_stage');
         _completedItems = (prefs.getStringList('checklist_done') ?? []).toSet();
         _readGuides = (prefs.getStringList('guides_read') ?? []).toSet();
       });
@@ -149,6 +151,7 @@ class _GuideScreenState extends State<GuideScreen> {
         Expanded(
           child: _JourneyMap(
             stageProgress: kLifeStages.map((s) => _stageProgress(s)).toList(),
+            userLifeStage: _userLifeStage,
           ),
         ),
       ],
@@ -160,7 +163,8 @@ class _GuideScreenState extends State<GuideScreen> {
 
 class _JourneyMap extends StatelessWidget {
   final List<String> stageProgress;
-  const _JourneyMap({required this.stageProgress});
+  final String? userLifeStage;
+  const _JourneyMap({required this.stageProgress, this.userLifeStage});
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +180,8 @@ class _JourneyMap extends StatelessWidget {
                 children: [
                   for (int i = 0; i < _stages.length; i++) ...[
                     _JourneyNode(stage: _stages[i], index: i,
-                      dynamicProgress: i < stageProgress.length ? stageProgress[i] : null),
+                      dynamicProgress: i < stageProgress.length ? stageProgress[i] : null,
+                      isUserStage: _stages[i].id == userLifeStage),
                     if (i < _stages.length - 1)
                       _DashedConnector(
                         fromColor: _stages[i].color,
@@ -199,8 +204,9 @@ class _JourneyNode extends StatelessWidget {
   final _StageData stage;
   final int index;
   final String? dynamicProgress;
+  final bool isUserStage;
 
-  const _JourneyNode({required this.stage, required this.index, this.dynamicProgress});
+  const _JourneyNode({required this.stage, required this.index, this.dynamicProgress, this.isUserStage = false});
 
   @override
   Widget build(BuildContext context) {
@@ -219,22 +225,42 @@ class _JourneyNode extends StatelessWidget {
             width: 160,
             child: Column(
               children: [
-                // Circle icon
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: stage.color,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: stage.color.withOpacity(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
+                // Circle icon with "Your stage" badge
+                Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: isUserStage ? 78 : 72,
+                      height: isUserStage ? 78 : 72,
+                      decoration: BoxDecoration(
+                        color: stage.color,
+                        shape: BoxShape.circle,
+                        border: isUserStage ? Border.all(color: Colors.white, width: 3) : null,
+                        boxShadow: [
+                          BoxShadow(
+                            color: stage.color.withOpacity(isUserStage ? 0.5 : 0.35),
+                            blurRadius: isUserStage ? 20 : 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Icon(stage.icon, size: 30, color: Colors.white),
+                      child: Icon(stage.icon, size: 30, color: Colors.white),
+                    ),
+                    if (isUserStage)
+                      Positioned(
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: stage.color,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('You',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 // Title

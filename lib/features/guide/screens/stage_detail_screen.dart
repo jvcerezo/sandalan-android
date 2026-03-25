@@ -355,31 +355,57 @@ class _GuidesTab extends StatelessWidget {
     final readCount =
         stage.guides.where((g) => readGuides.contains(g.slug)).length;
 
-    // Sort: recommended first, then the rest
-    final sorted = List<Guide>.from(stage.guides);
-    if (userType != null && userType!.isNotEmpty) {
-      sorted.sort((a, b) {
-        final aRec = isGuideRecommended(userType, a.slug, a.category) ? 0 : 1;
-        final bRec = isGuideRecommended(userType, b.slug, b.category) ? 0 : 1;
-        return aRec.compareTo(bRec);
-      });
+    // Split into recommended and rest
+    final recommended = <Guide>[];
+    final rest = <Guide>[];
+    for (final guide in stage.guides) {
+      if (userType != null && userType!.isNotEmpty &&
+          isGuideRecommended(userType, guide.slug, guide.category)) {
+        recommended.add(guide);
+      } else {
+        rest.add(guide);
+      }
     }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
       children: [
-        ...sorted.map((guide) {
-          final isRead = readGuides.contains(guide.slug);
-          final isRec = isGuideRecommended(userType, guide.slug, guide.category);
-          return _GuideItem(
+        // Recommended section
+        if (recommended.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(children: [
+              Icon(LucideIcons.sparkles, size: 14, color: stage.color),
+              const SizedBox(width: 6),
+              Text('Recommended for you',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: stage.color)),
+            ]),
+          ),
+          ...recommended.map((guide) => _GuideItem(
             guide: guide,
             stageSlug: stage.slug,
             color: stage.color,
-            isRead: isRead,
-            isRecommended: isRec,
+            isRead: readGuides.contains(guide.slug),
+            isRecommended: true,
             onReturn: onReturn,
-          );
-        }),
+          )),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text('All guides',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ),
+        ],
+        // Rest of guides
+        ...rest.map((guide) => _GuideItem(
+          guide: guide,
+          stageSlug: stage.slug,
+          color: stage.color,
+          isRead: readGuides.contains(guide.slug),
+          isRecommended: false,
+          onReturn: onReturn,
+        )),
         const SizedBox(height: 12),
         Center(
           child: Text(
@@ -675,6 +701,48 @@ class _ChecklistTab extends StatelessWidget {
           }).toList(),
         ),
         const SizedBox(height: 16),
+
+        // Recommended section (pulled from all priority groups)
+        if (userType != null && userType!.isNotEmpty && filter == 'All') ...[
+          () {
+            final recItems = checklist
+                .where((c) => isChecklistRecommended(userType, c.id))
+                .where(passesFilter)
+                .toList();
+            if (recItems.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(children: [
+                    Icon(LucideIcons.sparkles, size: 14, color: color),
+                    const SizedBox(width: 6),
+                    Text('Recommended for you',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+                  ]),
+                ),
+                ...recItems.map((item) {
+                  final isDone = completedItems.contains(item.id);
+                  final isSkipped = skippedItems.contains(item.id);
+                  return _ChecklistRow(
+                    item: item,
+                    isDone: isDone,
+                    isSkipped: isSkipped,
+                    isRecommended: true,
+                    color: color,
+                    onTap: () async {
+                      await GoRouter.of(context)
+                          .push('/guide/$stageSlug/checklist/${item.id}');
+                      onLoadProgress();
+                    },
+                  );
+                }),
+                const Divider(height: 24),
+              ],
+            );
+          }(),
+        ],
 
         // Priority groups
         ...priorityOrder.where((p) => groups[p]!.isNotEmpty).map((priority) {

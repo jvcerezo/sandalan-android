@@ -8,6 +8,7 @@ import '../../../core/services/guest_mode_service.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 import '../../../core/constants/account_types.dart';
+import '../../../core/providers/feature_visibility_provider.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/repositories/local_account_repository.dart';
 import '../providers/auth_provider.dart';
@@ -141,6 +142,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
+  /// Map focus areas to feature visibility defaults.
+  /// Enables features that match the user's stated goals.
+  static Future<void> _applyFocusAreaDefaults(Set<String> focusAreas) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Map focus areas → feature keys to enable
+    const mapping = <String, List<String>>{
+      'track-expenses': [FeatureKeys.bills, FeatureKeys.spendingChart],
+      'budget-salary': [FeatureKeys.budgets, FeatureKeys.salaryAllocation],
+      'pay-off-debt': [FeatureKeys.debts],
+      'build-emergency': [FeatureKeys.goals],
+      'save-for-goal': [FeatureKeys.goals],
+      'grow-wealth': [FeatureKeys.investments, FeatureKeys.reports],
+      'get-ids': [FeatureKeys.contributions],
+      'understand-benefits': [FeatureKeys.contributions, FeatureKeys.taxTracker, FeatureKeys.thirteenthMonth],
+    };
+
+    for (final area in focusAreas) {
+      final keys = mapping[area];
+      if (keys != null) {
+        for (final key in keys) {
+          await prefs.setBool(key, true);
+        }
+      }
+    }
+  }
+
   void _togglePreset(CommonAccount preset) {
     setState(() {
       final idx = _addedAccounts.indexWhere((a) => a.name == preset.name);
@@ -175,6 +203,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         if (_selectedUserType.isNotEmpty) await prefs.setString('user_type', _selectedUserType);
         if (_selectedFocusAreas.isNotEmpty) {
           await prefs.setStringList('focus_areas', _selectedFocusAreas.toList());
+          await _applyFocusAreaDefaults(_selectedFocusAreas);
         }
         await scheduleTour();
         if (mounted) context.go('/home');
@@ -203,6 +232,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           currency: 'PHP',
           balance: balance,
         );
+      }
+
+      // Set feature visibility based on focus areas
+      if (_selectedFocusAreas.isNotEmpty) {
+        await _applyFocusAreaDefaults(_selectedFocusAreas);
       }
 
       // Complete onboarding
