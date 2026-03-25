@@ -147,23 +147,18 @@ class AuthRepository {
     }).eq('id', userId);
   }
 
-  /// Delete account — clears local data, calls server-side RPC, then signs out.
+  /// Delete account — calls server-side RPC to delete auth user (cascades to
+  /// all data), clears local data, then signs out.
   Future<void> deleteAccount() async {
+    // Delete auth user first — this cascades to all tables and linked identities
+    await _client.rpc('delete_own_account');
+
+    // Clear local data after successful server deletion
     final userId = _client.auth.currentUser?.id;
     if (userId != null) {
-      // Clear all local data first
       await AppDatabase.instance.clearAllData(userId);
     }
     await _clearUserPreferences();
-
-    // Call the server-side delete function
-    try {
-      await _client.rpc('delete_own_account');
-    } catch (e) {
-      // If RPC doesn't exist yet, at least sign out
-      debugPrint('Account deletion RPC failed: $e');
-    }
-
     await _client.auth.signOut();
   }
 }
