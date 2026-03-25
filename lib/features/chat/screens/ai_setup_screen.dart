@@ -359,9 +359,9 @@ class _PersonalityCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selected ? cs.primary.withValues(alpha: 0.06) : cs.surfaceContainerLowest,
+          color: selected ? cs.primary.withOpacity(0.06) : cs.surfaceContainerLowest,
           border: Border.all(
-            color: selected ? cs.primary : cs.outlineVariant.withValues(alpha: 0.5),
+            color: selected ? cs.primary : cs.outlineVariant.withOpacity(0.5),
             width: selected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(14),
@@ -414,7 +414,7 @@ class _ExampleCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

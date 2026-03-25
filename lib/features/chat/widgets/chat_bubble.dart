@@ -62,12 +62,12 @@ class ChatBubble extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.flag, size: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                      Icon(LucideIcons.flag, size: 12, color: cs.onSurfaceVariant.withOpacity(0.5)),
                       const SizedBox(width: 4),
                       Text(
                         'Report',
                         style: tt.labelSmall?.copyWith(
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                          color: cs.onSurfaceVariant.withOpacity(0.5),
                           fontSize: 11,
                         ),
                       ),

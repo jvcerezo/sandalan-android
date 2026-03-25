@@ -38,7 +38,7 @@ class PanganayModeScreen extends ConsumerWidget {
           children: [
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Container(width: 40, height: 40,
-                decoration: BoxDecoration(color: AppColors.toolPink.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppColors.toolPink.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                 child: const Icon(LucideIcons.heart, size: 20, color: AppColors.toolPink)),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

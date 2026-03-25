@@ -55,13 +55,13 @@ class NetWorthChart extends ConsumerWidget {
             const SizedBox(height: 16),
             Center(
               child: Column(children: [
-                Icon(LucideIcons.lineChart, size: 32, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                Icon(LucideIcons.lineChart, size: 32, color: colorScheme.onSurfaceVariant.withOpacity(0.4)),
                 const SizedBox(height: 8),
                 Text('Net worth tracking starts today',
                     style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 4),
                 Text('Come back tomorrow to see your trend',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant.withOpacity(0.6))),
               ]),
             ),
             const SizedBox(height: 8),
@@ -227,7 +227,7 @@ class NetWorthChart extends ConsumerWidget {
                     ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: lineColor.withValues(alpha: 0.08),
+                      color: lineColor.withOpacity(0.08),
                     ),
                   ),
                 ],

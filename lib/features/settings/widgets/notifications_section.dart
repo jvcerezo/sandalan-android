@@ -175,7 +175,7 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                  border: Border.all(color: cs.outline.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -192,7 +192,7 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                  border: Border.all(color: cs.outline.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

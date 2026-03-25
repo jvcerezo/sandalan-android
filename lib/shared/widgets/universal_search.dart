@@ -446,7 +446,7 @@ class _UniversalSearchSheetState extends ConsumerState<_UniversalSearchSheet> {
             width: 36, height: 4,
             margin: const EdgeInsets.only(top: 8, bottom: 12),
             decoration: BoxDecoration(
-              color: colorScheme.outline.withValues(alpha: 0.2),
+              color: colorScheme.outline.withOpacity(0.2),
               borderRadius: BorderRadius.circular(2)),
           )),
 
@@ -459,7 +459,7 @@ class _UniversalSearchSheetState extends ConsumerState<_UniversalSearchSheet> {
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
                 hintText: 'Search everything...',
-                hintStyle: TextStyle(fontSize: 15, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+                hintStyle: TextStyle(fontSize: 15, color: colorScheme.onSurfaceVariant.withOpacity(0.4)),
                 prefixIcon: Icon(LucideIcons.search, size: 18, color: colorScheme.onSurfaceVariant),
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
@@ -474,18 +474,18 @@ class _UniversalSearchSheetState extends ConsumerState<_UniversalSearchSheet> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.15)),
+                  borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.15)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.15)),
+                  borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.15)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: colorScheme.primary),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               style: const TextStyle(fontSize: 15),
             ),
@@ -497,19 +497,19 @@ class _UniversalSearchSheetState extends ConsumerState<_UniversalSearchSheet> {
             child: _query.trim().isEmpty
                 ? Center(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(LucideIcons.search, size: 40, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2)),
+                      Icon(LucideIcons.search, size: 40, color: colorScheme.onSurfaceVariant.withOpacity(0.2)),
                       const SizedBox(height: 12),
                       Text('Search across your app',
                           style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
                       const SizedBox(height: 4),
                       Text('Transactions, accounts, guides, tools, and more',
-                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
+                          style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant.withOpacity(0.6))),
                     ]),
                   )
                 : results.isEmpty
                     ? Center(
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(LucideIcons.search, size: 40, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2)),
+                          Icon(LucideIcons.search, size: 40, color: colorScheme.onSurfaceVariant.withOpacity(0.2)),
                           const SizedBox(height: 12),
                           Text('No results for "$_query"',
                               style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
@@ -531,7 +531,7 @@ class _UniversalSearchSheetState extends ConsumerState<_UniversalSearchSheet> {
                                   style: TextStyle(
                                     fontSize: 10, fontWeight: FontWeight.w600,
                                     letterSpacing: 0.8,
-                                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                                   ),
                                 ),
                               ),
@@ -574,7 +574,7 @@ class _SearchResultTile extends StatelessWidget {
           Container(
             width: 32, height: 32,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.08),
+              color: colorScheme.primary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(result.icon, size: 16, color: colorScheme.primary),
@@ -591,7 +591,7 @@ class _SearchResultTile extends StatelessWidget {
                   maxLines: 1, overflow: TextOverflow.ellipsis),
             ],
           )),
-          Icon(LucideIcons.chevronRight, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+          Icon(LucideIcons.chevronRight, size: 14, color: colorScheme.onSurfaceVariant.withOpacity(0.3)),
         ]),
       ),
     );

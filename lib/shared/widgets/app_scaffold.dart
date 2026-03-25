@@ -54,7 +54,7 @@ class _AppScaffoldState extends State<AppScaffold> {
         decoration: BoxDecoration(
           color: cs.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+          border: Border.all(color: cs.outline.withOpacity(0.12)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -192,10 +192,10 @@ class _AppScaffoldState extends State<AppScaffold> {
               // ─── Top Header Bar ──────────────────────────────────────
               Container(
                 decoration: BoxDecoration(
-                  color: colorScheme.surface.withValues(alpha: 0.95),
+                  color: colorScheme.surface.withOpacity(0.95),
                   border: Border(
                     bottom: BorderSide(
-                      color: colorScheme.outline.withValues(alpha: 0.15),
+                      color: colorScheme.outline.withOpacity(0.15),
                     ),
                   ),
                 ),
@@ -239,7 +239,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                     color: colorScheme.surface,
                     border: Border(
                       top: BorderSide(
-                        color: colorScheme.outline.withValues(alpha: 0.15),
+                        color: colorScheme.outline.withOpacity(0.15),
                       ),
                     ),
                   ),
@@ -331,7 +331,7 @@ class _TabItem extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final color = isActive
         ? colorScheme.primary
-        : colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
+        : colorScheme.onSurfaceVariant.withOpacity(0.5);
 
     return Expanded(
       child: GestureDetector(
@@ -350,7 +350,7 @@ class _TabItem extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
                 color: isActive
-                    ? colorScheme.primary.withValues(alpha: 0.12)
+                    ? colorScheme.primary.withOpacity(0.12)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -395,7 +395,7 @@ class _QuickActionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(

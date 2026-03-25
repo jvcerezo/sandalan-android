@@ -98,7 +98,7 @@ class _ManageTemplatesSheetState extends State<_ManageTemplatesSheet> {
         Center(child: Container(
           width: 36, height: 4, margin: const EdgeInsets.only(top: 8, bottom: 16),
           decoration: BoxDecoration(
-            color: colorScheme.outline.withValues(alpha: 0.2),
+            color: colorScheme.outline.withOpacity(0.2),
             borderRadius: BorderRadius.circular(2),
           ),
         )),
@@ -180,7 +180,7 @@ class _ManageTemplatesSheetState extends State<_ManageTemplatesSheet> {
               ? Padding(
                   padding: const EdgeInsets.all(32),
                   child: Column(children: [
-                    Icon(LucideIcons.zap, size: 48, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                    Icon(LucideIcons.zap, size: 48, color: colorScheme.onSurfaceVariant.withOpacity(0.3)),
                     const SizedBox(height: 12),
                     Text('No templates yet', style: TextStyle(color: colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 4),

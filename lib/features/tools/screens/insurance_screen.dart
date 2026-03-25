@@ -114,7 +114,7 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
               Expanded(child: Container(
                 height: 60,
                 decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: cs.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
               )),
@@ -147,11 +147,11 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: _remindersEnabled
-                  ? AppColors.income.withValues(alpha: 0.06)
-                  : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  ? AppColors.income.withOpacity(0.06)
+                  : cs.surfaceContainerHighest.withOpacity(0.5),
               border: Border.all(color: _remindersEnabled
-                  ? AppColors.income.withValues(alpha: 0.15)
-                  : cs.outline.withValues(alpha: 0.1)),
+                  ? AppColors.income.withOpacity(0.15)
+                  : cs.outline.withOpacity(0.1)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
@@ -169,7 +169,7 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: _remindersEnabled
-                      ? AppColors.income.withValues(alpha: 0.15)
+                      ? AppColors.income.withOpacity(0.15)
                       : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -256,7 +256,7 @@ class _SumCard extends StatelessWidget {
     return Expanded(child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: highlight ? (highlightColor ?? cs.primary).withValues(alpha: 0.06) : cs.surface,
+        color: highlight ? (highlightColor ?? cs.primary).withOpacity(0.06) : cs.surface,
         border: Border.all(color: cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -290,7 +290,7 @@ class _PolicyRow extends StatelessWidget {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: AppColors.toolTeal.withValues(alpha: 0.1),
+              color: AppColors.toolTeal.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(LucideIcons.shield, size: 16, color: AppColors.toolTeal),
@@ -304,7 +304,7 @@ class _PolicyRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(policy.type, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
@@ -402,8 +402,8 @@ class _PendingInsuranceList extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.04),
-            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+            color: AppColors.warning.withOpacity(0.04),
+            border: Border.all(color: AppColors.warning.withOpacity(0.2)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -441,7 +441,7 @@ class _PendingInsuranceRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.15),
+            color: AppColors.warning.withOpacity(0.15),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text('Pending', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.warning)),
@@ -499,7 +499,7 @@ class _ActionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          border: Border.all(color: color.withValues(alpha: 0.2)),
+          border: Border.all(color: color.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [

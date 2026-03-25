@@ -242,7 +242,7 @@ class MoreScreen extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: cs.surfaceContainerHighest.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -326,7 +326,7 @@ class _MoreItem extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, size: 18, color: color),
@@ -344,7 +344,7 @@ class _MoreItem extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: (badgeColor ?? cs.primary).withValues(alpha: 0.1),
+                          color: (badgeColor ?? cs.primary).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(badge!,
@@ -360,7 +360,7 @@ class _MoreItem extends StatelessWidget {
             ),
             Icon(LucideIcons.chevronRight,
                 size: 16,
-                color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                color: cs.onSurfaceVariant.withOpacity(0.4)),
           ],
         ),
       ),

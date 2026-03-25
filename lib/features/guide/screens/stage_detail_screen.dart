@@ -121,15 +121,15 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            stage.color.withValues(alpha: 0.3),
-                            stage.color.withValues(alpha: 0.05),
+                            stage.color.withOpacity(0.3),
+                            stage.color.withOpacity(0.05),
                           ],
                         ),
                       ),
                       child: Center(
                           child: Icon(stage.icon,
                               size: 64,
-                              color: stage.color.withValues(alpha: 0.3))),
+                              color: stage.color.withOpacity(0.3))),
                     ),
                   ),
                   Container(
@@ -138,8 +138,8 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.1),
-                          Colors.black.withValues(alpha: 0.7),
+                          Colors.black.withOpacity(0.1),
+                          Colors.black.withOpacity(0.7),
                         ],
                       ),
                     ),
@@ -162,7 +162,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
                               style: TextStyle(
                                   fontSize: 14,
                                   color:
-                                      Colors.white.withValues(alpha: 0.85))),
+                                      Colors.white.withOpacity(0.85))),
                         ]),
                   ),
                 ]),
@@ -175,7 +175,7 @@ class _StageDetailScreenState extends ConsumerState<StageDetailScreen>
                 child: Text(stage.description,
                     style: TextStyle(
                         fontSize: 14,
-                        color: cs.onSurface.withValues(alpha: 0.8),
+                        color: cs.onSurface.withOpacity(0.8),
                         height: 1.5)),
               ),
               const SizedBox(height: 16),
@@ -286,7 +286,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
           return Container(
             height: 40,
             decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: cs.surfaceContainerHighest.withOpacity(0.5),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -426,10 +426,10 @@ class _GuideItem extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isRead ? color.withValues(alpha: 0.03) : cs.surface,
+          color: isRead ? color.withOpacity(0.03) : cs.surface,
           border: Border.all(
               color: isRead
-                  ? color.withValues(alpha: 0.15)
+                  ? color.withOpacity(0.15)
                   : cs.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -446,7 +446,7 @@ class _GuideItem extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
+                        color: color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(LucideIcons.bookOpen,
@@ -497,7 +497,7 @@ class _GuideItem extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           margin: const EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.1),
+                            color: color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -511,19 +511,19 @@ class _GuideItem extends StatelessWidget {
                       Icon(LucideIcons.clock,
                           size: 10,
                           color:
-                              cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                              cs.onSurfaceVariant.withOpacity(0.5)),
                       const SizedBox(width: 3),
                       Text('${guide.readMinutes} min read',
                           style: TextStyle(
                               fontSize: 11,
                               color: cs.onSurfaceVariant
-                                  .withValues(alpha: 0.5))),
+                                  .withOpacity(0.5))),
                     ]),
                   ])),
               const SizedBox(width: 8),
               Icon(LucideIcons.chevronRight,
                   size: 16,
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                  color: cs.onSurfaceVariant.withOpacity(0.3)),
             ]),
             if (isRead) ...[
               const SizedBox(height: 8),
@@ -533,7 +533,7 @@ class _GuideItem extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                    color: const Color(0xFF22C55E).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text('Completed',
@@ -653,11 +653,11 @@ class _ChecklistTab extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? color.withValues(alpha: 0.12)
+                      ? color.withOpacity(0.12)
                       : Colors.transparent,
                   border: Border.all(
                     color: isActive
-                        ? color.withValues(alpha: 0.3)
+                        ? color.withOpacity(0.3)
                         : cs.surfaceContainerHighest,
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -776,10 +776,10 @@ class _ChecklistRow extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDone ? color.withValues(alpha: 0.04) : cs.surface,
+          color: isDone ? color.withOpacity(0.04) : cs.surface,
           border: Border.all(
               color: isDone
-                  ? color.withValues(alpha: 0.2)
+                  ? color.withOpacity(0.2)
                   : cs.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -794,8 +794,8 @@ class _ChecklistRow extends StatelessWidget {
                 color: isDone
                     ? color
                     : isSkipped
-                        ? cs.outline.withValues(alpha: 0.25)
-                        : cs.outline.withValues(alpha: 0.25),
+                        ? cs.outline.withOpacity(0.25)
+                        : cs.outline.withOpacity(0.25),
                 width: 1.5,
                 strokeAlign: BorderSide.strokeAlignInside,
               ),
@@ -805,7 +805,7 @@ class _ChecklistRow extends StatelessWidget {
                 ? const Icon(Icons.check, size: 14, color: Colors.white)
                 : isSkipped
                     ? Icon(Icons.remove, size: 14,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.4))
+                        color: cs.onSurfaceVariant.withOpacity(0.4))
                     : null,
           ),
           const SizedBox(width: 10),
@@ -835,7 +835,7 @@ class _ChecklistRow extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
+                        color: color.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -854,7 +854,7 @@ class _ChecklistRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               margin: const EdgeInsets.only(right: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                color: const Color(0xFF22C55E).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text('Done',
@@ -868,7 +868,7 @@ class _ChecklistRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               margin: const EdgeInsets.only(right: 4),
               decoration: BoxDecoration(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.1),
+                color: cs.onSurfaceVariant.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text('Skipped',
@@ -879,7 +879,7 @@ class _ChecklistRow extends StatelessWidget {
             ),
           Icon(LucideIcons.chevronRight,
               size: 14,
-              color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+              color: cs.onSurfaceVariant.withOpacity(0.3)),
         ]),
       ),
     );

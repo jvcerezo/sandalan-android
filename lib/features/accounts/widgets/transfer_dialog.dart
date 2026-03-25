@@ -133,7 +133,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: cs.outline.withValues(alpha: 0.2),
+                color: cs.outline.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
@@ -162,7 +162,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [
@@ -197,7 +197,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [
@@ -218,7 +218,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(children: [
@@ -250,13 +250,13 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
               controller: _noteCtl,
               decoration: InputDecoration(
                 hintText: 'Add a note...',
-                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+                    borderSide: BorderSide(color: cs.outline.withOpacity(0.15))),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+                    borderSide: BorderSide(color: cs.outline.withOpacity(0.15))),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: cs.primary)),
               ),
@@ -280,7 +280,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [

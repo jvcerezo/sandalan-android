@@ -40,7 +40,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = colorScheme.surfaceContainerHighest;
-    final highlightColor = colorScheme.surfaceContainerHighest.withValues(alpha: 0.3);
+    final highlightColor = colorScheme.surfaceContainerHighest.withOpacity(0.3);
 
     return AnimatedBuilder(
       animation: _controller,

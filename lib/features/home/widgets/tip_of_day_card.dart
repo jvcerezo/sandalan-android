@@ -103,7 +103,7 @@ class TipOfDayCard extends StatelessWidget {
                   child: Icon(
                     LucideIcons.x,
                     size: 14,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                   ),
                 ),
               ),

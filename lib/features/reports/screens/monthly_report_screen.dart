@@ -126,7 +126,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
                   monthName,
                   style: TextStyle(
                     fontSize: 14,
-                    color: colorScheme.onPrimary.withValues(alpha: 0.8),
+                    color: colorScheme.onPrimary.withOpacity(0.8),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -143,7 +143,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
                   _gradeLabel(report.grade),
                   style: TextStyle(
                     fontSize: 14,
-                    color: colorScheme.onPrimary.withValues(alpha: 0.8),
+                    color: colorScheme.onPrimary.withOpacity(0.8),
                   ),
                 ),
               ],
@@ -474,7 +474,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
                     monthName,
                     style: TextStyle(
                       fontSize: 14,
-                      color: colorScheme.onPrimary.withValues(alpha: 0.8),
+                      color: colorScheme.onPrimary.withOpacity(0.8),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -537,7 +537,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
                     'Track your finances with Sandalan',
                     style: TextStyle(
                       fontSize: 12,
-                      color: colorScheme.onPrimary.withValues(alpha: 0.7),
+                      color: colorScheme.onPrimary.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -603,7 +603,7 @@ class _ShareStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -621,7 +621,7 @@ class _ShareStat extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: color.withValues(alpha: 0.8),
+              color: color.withOpacity(0.8),
             ),
           ),
         ],
@@ -646,7 +646,7 @@ class _SectionCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.12),
+          color: colorScheme.outline.withOpacity(0.12),
         ),
       ),
       child: Column(
@@ -784,7 +784,7 @@ class _SandwichCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

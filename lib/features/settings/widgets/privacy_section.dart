@@ -256,8 +256,8 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.expense.withValues(alpha: 0.03),
-          border: Border.all(color: AppColors.expense.withValues(alpha: 0.2)),
+          color: AppColors.expense.withOpacity(0.03),
+          border: Border.all(color: AppColors.expense.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -274,7 +274,7 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-                color: AppColors.expense.withValues(alpha: 0.04),
+                color: AppColors.expense.withOpacity(0.04),
                 borderRadius: BorderRadius.circular(10)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const Text('Delete Account',

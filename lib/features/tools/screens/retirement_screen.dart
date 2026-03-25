@@ -49,7 +49,7 @@ class _RetirementScreenState extends State<RetirementScreen> {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: AppColors.toolAmber.withValues(alpha: 0.1),
+              color: AppColors.toolAmber.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(LucideIcons.piggyBank, size: 20, color: AppColors.toolAmber),
@@ -127,8 +127,8 @@ class _RetirementScreenState extends State<RetirementScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.06),
-                border: Border.all(color: AppColors.info.withValues(alpha: 0.15)),
+                color: AppColors.info.withOpacity(0.06),
+                border: Border.all(color: AppColors.info.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

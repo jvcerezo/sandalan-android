@@ -82,7 +82,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.7),
                 ),
               ),
             ),
@@ -140,13 +140,13 @@ class _BadgeTile extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: isEarned
-                ? colorScheme.primary.withValues(alpha: 0.08)
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                ? colorScheme.primary.withOpacity(0.08)
+                : colorScheme.surfaceContainerHighest.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
             border: isEarned
                 ? null
                 : Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.2),
+                    color: colorScheme.outline.withOpacity(0.2),
                     style: BorderStyle.solid,
                   ),
           ),
@@ -175,7 +175,7 @@ class _BadgeTile extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(Icons.lock, size: 10,
-                              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                              color: colorScheme.onSurfaceVariant.withOpacity(0.6)),
                         ),
                       ),
                   ],
@@ -204,7 +204,7 @@ class _BadgeTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 9,
                       color:
-                          colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                          colorScheme.onSurfaceVariant.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -231,7 +231,7 @@ class _BadgeTile extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.15),
+                  color: colorScheme.primary.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child:
@@ -261,7 +261,7 @@ class _BadgeTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color:
-                        colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        colorScheme.onSurfaceVariant.withOpacity(0.7),
                   ),
                 ),
               ] else if (!isEarned) ...[
@@ -269,7 +269,7 @@ class _BadgeTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [

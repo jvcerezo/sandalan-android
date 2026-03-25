@@ -89,8 +89,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.05),
-                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                    color: Colors.green.withOpacity(0.05),
+                    border: Border.all(color: Colors.green.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(children: [
@@ -118,8 +118,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: cs.error.withValues(alpha: 0.05),
-                      border: Border.all(color: cs.error.withValues(alpha: 0.2)),
+                      color: cs.error.withOpacity(0.05),
+                      border: Border.all(color: cs.error.withOpacity(0.2)),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(_error!, style: TextStyle(fontSize: 13, color: cs.error)),

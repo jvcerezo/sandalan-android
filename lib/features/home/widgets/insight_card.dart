@@ -111,7 +111,7 @@ class _HomeInsightCardState extends State<HomeInsightCard> {
             const SizedBox(width: 4),
             GestureDetector(
               onTap: () => setState(() => _dismissed = true),
-              child: Icon(LucideIcons.x, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4)),
+              child: Icon(LucideIcons.x, size: 14, color: colorScheme.onSurfaceVariant.withOpacity(0.4)),
             ),
             const SizedBox(width: 4),
             GestureDetector(

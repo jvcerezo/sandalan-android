@@ -71,7 +71,7 @@ class SplitTransactionSection extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+              border: Border.all(color: cs.outline.withOpacity(0.12)),
               borderRadius: BorderRadius.circular(12),
               color: cs.surfaceContainerLowest,
             ),
@@ -96,7 +96,7 @@ class SplitTransactionSection extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
-                        border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                        border: Border.all(color: cs.outline.withOpacity(0.15)),
                         borderRadius: BorderRadius.circular(8)),
                       child: Row(children: [
                         Expanded(child: Text(acct?.name ?? 'Choose an account',
@@ -105,7 +105,7 @@ class SplitTransactionSection extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
-                              color: cs.primary.withValues(alpha: 0.08),
+                              color: cs.primary.withOpacity(0.08),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(acct.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
@@ -138,7 +138,7 @@ class SplitTransactionSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.10)),
+                  border: Border.all(color: cs.outline.withOpacity(0.10)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [
@@ -169,7 +169,7 @@ class SplitTransactionSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+              border: Border.all(color: cs.outline.withOpacity(0.2)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [

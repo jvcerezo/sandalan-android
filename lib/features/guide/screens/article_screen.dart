@@ -176,7 +176,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: stage.color.withValues(alpha: 0.1),
+              color: stage.color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(4)),
             child: Text(guide.category, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: stage.color)),
           ),
@@ -225,7 +225,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(8)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(LucideIcons.wrench, size: 12, color: cs.primary),
@@ -289,7 +289,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -312,7 +312,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -351,25 +351,25 @@ class _CalloutBox extends StatelessWidget {
     switch (type) {
       case CalloutType.tip:
         borderColor = Colors.green;
-        bgColor = isDark ? Colors.green.withValues(alpha: 0.08) : Colors.green.shade50;
+        bgColor = isDark ? Colors.green.withOpacity(0.08) : Colors.green.shade50;
         iconColor = isDark ? Colors.green.shade300 : Colors.green.shade600;
         icon = LucideIcons.lightbulb;
         label = 'TIP';
       case CalloutType.warning:
         borderColor = Colors.amber;
-        bgColor = isDark ? Colors.amber.withValues(alpha: 0.08) : Colors.amber.shade50;
+        bgColor = isDark ? Colors.amber.withOpacity(0.08) : Colors.amber.shade50;
         iconColor = isDark ? Colors.amber.shade300 : Colors.amber.shade700;
         icon = LucideIcons.alertTriangle;
         label = 'WARNING';
       case CalloutType.info:
         borderColor = Colors.blueGrey;
-        bgColor = isDark ? Colors.blueGrey.withValues(alpha: 0.08) : Colors.blueGrey.shade50;
+        bgColor = isDark ? Colors.blueGrey.withOpacity(0.08) : Colors.blueGrey.shade50;
         iconColor = isDark ? Colors.blueGrey.shade300 : Colors.blueGrey.shade600;
         icon = LucideIcons.info;
         label = 'NOTE';
       case CalloutType.phLaw:
         borderColor = Colors.blue;
-        bgColor = isDark ? Colors.blue.withValues(alpha: 0.08) : Colors.blue.shade50;
+        bgColor = isDark ? Colors.blue.withOpacity(0.08) : Colors.blue.shade50;
         iconColor = isDark ? Colors.blue.shade300 : Colors.blue.shade600;
         icon = LucideIcons.scale;
         label = 'PHILIPPINE LAW';
@@ -392,7 +392,7 @@ class _CalloutBox extends StatelessWidget {
           Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.8, color: iconColor)),
         ]),
         const SizedBox(height: 6),
-        Text(text, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85), height: 1.5)),
+        Text(text, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.85), height: 1.5)),
       ]),
     );
   }
@@ -418,7 +418,7 @@ class _QuickSummaryCardState extends State<_QuickSummaryCard> {
     return Container(
       decoration: BoxDecoration(
         border: Border(left: BorderSide(color: widget.stageColor, width: 3)),
-        color: widget.stageColor.withValues(alpha: 0.05),
+        color: widget.stageColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(children: [

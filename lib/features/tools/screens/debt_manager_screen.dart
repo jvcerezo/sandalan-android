@@ -121,7 +121,7 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
               Expanded(child: Container(
                 height: 60,
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
               )),
@@ -154,11 +154,11 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: _remindersEnabled
-                  ? AppColors.income.withValues(alpha: 0.06)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  ? AppColors.income.withOpacity(0.06)
+                  : colorScheme.surfaceContainerHighest.withOpacity(0.5),
               border: Border.all(color: _remindersEnabled
-                  ? AppColors.income.withValues(alpha: 0.15)
-                  : colorScheme.outline.withValues(alpha: 0.1)),
+                  ? AppColors.income.withOpacity(0.15)
+                  : colorScheme.outline.withOpacity(0.1)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
@@ -176,7 +176,7 @@ class _DebtManagerScreenState extends ConsumerState<DebtManagerScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: _remindersEnabled
-                      ? AppColors.income.withValues(alpha: 0.15)
+                      ? AppColors.income.withOpacity(0.15)
                       : colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -325,7 +325,7 @@ class _SummaryCard extends StatelessWidget {
     return Expanded(child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: highlight ? AppColors.toolRed.withValues(alpha: 0.06) : cs.surface,
+        color: highlight ? AppColors.toolRed.withOpacity(0.06) : cs.surface,
         border: Border.all(color: cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -359,7 +359,7 @@ class _DebtRow extends StatelessWidget {
         Row(children: [
           Container(
             width: 32, height: 32,
-            decoration: BoxDecoration(color: AppColors.toolRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: AppColors.toolRed.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
             child: const Icon(LucideIcons.creditCard, size: 14, color: AppColors.toolRed),
           ),
           const SizedBox(width: 10),
@@ -409,7 +409,7 @@ class _DebtRow extends StatelessWidget {
             },
             child: Padding(
               padding: const EdgeInsets.all(4),
-              child: Icon(LucideIcons.trash2, size: 14, color: AppColors.toolRed.withValues(alpha: 0.5)),
+              child: Icon(LucideIcons.trash2, size: 14, color: AppColors.toolRed.withOpacity(0.5)),
             ),
           ),
         ]),
@@ -466,7 +466,7 @@ class _TypeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(label, style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.onSurfaceVariant)),
@@ -491,8 +491,8 @@ class _StrategyCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: recommended ? cs.primary.withValues(alpha: 0.04) : null,
-        border: Border.all(color: recommended ? cs.primary.withValues(alpha: 0.2) : cs.surfaceContainerHighest),
+        color: recommended ? cs.primary.withOpacity(0.04) : null,
+        border: Border.all(color: recommended ? cs.primary.withOpacity(0.2) : cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -557,8 +557,8 @@ class _PendingDebtsList extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.04),
-            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+            color: AppColors.warning.withOpacity(0.04),
+            border: Border.all(color: AppColors.warning.withOpacity(0.2)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -596,7 +596,7 @@ class _PendingDebtRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.15),
+            color: AppColors.warning.withOpacity(0.15),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text('Pending', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.warning)),

@@ -311,8 +311,8 @@ class _PeriodTab extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
-          border: Border.all(color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
+          color: isSelected ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          border: Border.all(color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
@@ -399,7 +399,7 @@ class _BudgetCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: _periodColor(colorScheme).withValues(alpha: 0.1),
+                  color: _periodColor(colorScheme).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(_periodLabel(),

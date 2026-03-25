@@ -166,8 +166,8 @@ class _TabButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
-          border: Border.all(color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
+          color: isSelected ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          border: Border.all(color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
@@ -215,7 +215,7 @@ class _GoalCard extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(goal.isCompleted ? 'Completed!' : goal.category,
@@ -322,7 +322,7 @@ class _GoalCard extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(
-              color: colorScheme.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+              color: colorScheme.outline.withOpacity(0.2), borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 16),
             Text('Add Funds to ${goal.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
@@ -448,7 +448,7 @@ class _GoalCard extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(
-              color: colorScheme.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+              color: colorScheme.outline.withOpacity(0.2), borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 16),
             Text('Release Funds from ${goal.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),

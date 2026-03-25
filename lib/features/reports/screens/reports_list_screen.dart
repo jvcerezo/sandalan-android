@@ -24,7 +24,7 @@ class ReportsListScreen extends ConsumerWidget {
                   Icon(
                     LucideIcons.barChart3,
                     size: 48,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -40,7 +40,7 @@ class ReportsListScreen extends ConsumerWidget {
                     'Generate your first monthly report',
                     style: TextStyle(
                       fontSize: 13,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -108,7 +108,7 @@ class ReportsListScreen extends ConsumerWidget {
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.12),
+                      color: colorScheme.outline.withOpacity(0.12),
                     ),
                   ),
                   child: Row(
@@ -118,7 +118,7 @@ class ReportsListScreen extends ConsumerWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: _gradeColor(report.grade).withValues(alpha: 0.15),
+                          color: _gradeColor(report.grade).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Center(
@@ -158,7 +158,7 @@ class ReportsListScreen extends ConsumerWidget {
                       Icon(
                         LucideIcons.chevronRight,
                         size: 18,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                       ),
                     ],
                   ),

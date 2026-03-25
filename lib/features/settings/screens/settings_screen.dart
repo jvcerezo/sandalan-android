@@ -67,8 +67,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.08),
-              border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+              color: cs.primary.withOpacity(0.08),
+              border: Border.all(color: cs.primary.withOpacity(0.3)),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

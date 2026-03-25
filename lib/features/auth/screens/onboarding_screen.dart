@@ -268,14 +268,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
+                    border: Border.all(color: colorScheme.outline.withOpacity(0.15)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(children: [
                     Container(
                       width: 32, height: 32,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        color: colorScheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(item.$1, size: 16, color: colorScheme.primary),
@@ -320,7 +320,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               icon: const Icon(LucideIcons.arrowLeft, size: 16),
               padding: EdgeInsets.zero,
               style: IconButton.styleFrom(
-                side: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+                side: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
@@ -361,7 +361,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 4),
           Text('You can change this anytime in Settings.',
               style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.6))),
         ]),
       ),
       const SizedBox(height: 16),
@@ -379,10 +379,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.15),
+                    color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.15),
                     width: isSelected ? 1.5 : 1,
                   ),
-                  color: isSelected ? colorScheme.primary.withValues(alpha: 0.05) : null,
+                  color: isSelected ? colorScheme.primary.withOpacity(0.05) : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(children: [
@@ -440,7 +440,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 4),
           Text('You can change this anytime in Settings.',
               style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6))),
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.6))),
         ]),
       ),
       const SizedBox(height: 16),
@@ -458,10 +458,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.15),
+                    color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.15),
                     width: isSelected ? 1.5 : 1,
                   ),
-                  color: isSelected ? colorScheme.primary.withValues(alpha: 0.05) : null,
+                  color: isSelected ? colorScheme.primary.withOpacity(0.05) : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(children: [
@@ -534,10 +534,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.15),
+                    color: isSelected ? colorScheme.primary : colorScheme.outline.withOpacity(0.15),
                     width: isSelected ? 1.5 : 1,
                   ),
-                  color: isSelected ? colorScheme.primary.withValues(alpha: 0.05) : null,
+                  color: isSelected ? colorScheme.primary.withOpacity(0.05) : null,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(children: [
@@ -595,7 +595,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isAdded ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: isAdded ? colorScheme.primary : colorScheme.surfaceContainerHighest.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(20),
                   border: isAdded ? Border.all(color: colorScheme.primary) : null,
                 ),
@@ -613,7 +613,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -635,7 +635,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.15)),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -691,7 +691,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: colorScheme.outline.withValues(alpha: 0.15)),
+                      border: Border.all(color: colorScheme.outline.withOpacity(0.15)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(children: [
@@ -825,7 +825,7 @@ class _StepProgress extends StatelessWidget {
               color: i < current
                   ? colorScheme.primary
                   : i == current
-                      ? colorScheme.primary.withValues(alpha: 0.5)
+                      ? colorScheme.primary.withOpacity(0.5)
                       : colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(2),
             ),

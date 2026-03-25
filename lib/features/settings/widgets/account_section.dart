@@ -94,8 +94,8 @@ class _AccountSectionState extends ConsumerState<AccountSection> {
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: cs.primary.withValues(alpha: 0.08),
-            border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+            color: cs.primary.withOpacity(0.08),
+            border: Border.all(color: cs.primary.withOpacity(0.3)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -249,7 +249,7 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
           border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15)),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.15)),
           borderRadius: BorderRadius.circular(6)),
       child: Text(label,
           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)));

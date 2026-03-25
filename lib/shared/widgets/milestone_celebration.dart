@@ -119,7 +119,7 @@ class _MilestoneCelebrationOverlayState
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withOpacity(0.3),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
@@ -133,7 +133,7 @@ class _MilestoneCelebrationOverlayState
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.15),
+                      color: colorScheme.primary.withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -222,7 +222,7 @@ class _ConfettiPainter extends CustomPainter {
       final opacity = (1.0 - progress).clamp(0.0, 1.0);
 
       final paint = Paint()
-        ..color = p.color.withValues(alpha: opacity)
+        ..color = p.color.withOpacity(opacity)
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(Offset(x, y), p.size, paint);

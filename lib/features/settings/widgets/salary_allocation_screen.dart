@@ -125,8 +125,8 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: type == t.$1 ? Theme.of(ctx).colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
-                      border: Border.all(color: type == t.$1 ? Theme.of(ctx).colorScheme.primary : Theme.of(ctx).colorScheme.outline.withValues(alpha: 0.15)),
+                      color: type == t.$1 ? Theme.of(ctx).colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+                      border: Border.all(color: type == t.$1 ? Theme.of(ctx).colorScheme.primary : Theme.of(ctx).colorScheme.outline.withOpacity(0.15)),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(t.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
@@ -158,7 +158,7 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(ctx).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: Theme.of(ctx).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(children: [
@@ -317,8 +317,8 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _frequency == f.$1 ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                    border: Border.all(color: _frequency == f.$1 ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                    color: _frequency == f.$1 ? cs.primary.withOpacity(0.1) : Colors.transparent,
+                    border: Border.all(color: _frequency == f.$1 ? cs.primary : cs.outline.withOpacity(0.15)),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(f.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
@@ -352,9 +352,9 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: overAllocated ? cs.error.withValues(alpha: 0.08) : cs.primary.withValues(alpha: 0.05),
+                color: overAllocated ? cs.error.withOpacity(0.08) : cs.primary.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: overAllocated ? cs.error.withValues(alpha: 0.3) : cs.primary.withValues(alpha: 0.2)),
+                border: Border.all(color: overAllocated ? cs.error.withOpacity(0.3) : cs.primary.withOpacity(0.2)),
               ),
               child: Row(children: [
                 Icon(overAllocated ? LucideIcons.alertCircle : LucideIcons.info,
@@ -385,15 +385,15 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
               ),
               child: Column(children: [
-                Icon(LucideIcons.layers, size: 28, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                Icon(LucideIcons.layers, size: 28, color: cs.onSurfaceVariant.withOpacity(0.4)),
                 const SizedBox(height: 8),
                 Text('No rules yet', style: TextStyle(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 4),
                 Text('Add rules to auto-split your salary into budgets, goals, and savings',
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withOpacity(0.7)),
                     textAlign: TextAlign.center),
               ]),
             ),
@@ -407,13 +407,13 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
               ),
               child: Row(children: [
                 Container(
                   width: 32, height: 32,
                   decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
+                    color: cs.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -445,7 +445,7 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
                   onTap: () => _deleteRule(i),
                   child: Padding(
                     padding: const EdgeInsets.all(4),
-                    child: Icon(LucideIcons.trash2, size: 14, color: cs.error.withValues(alpha: 0.6)),
+                    child: Icon(LucideIcons.trash2, size: 14, color: cs.error.withOpacity(0.6)),
                   ),
                 ),
               ]),
@@ -458,9 +458,9 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: overAllocated ? cs.error.withValues(alpha: 0.05) : cs.primary.withValues(alpha: 0.05),
+              color: overAllocated ? cs.error.withOpacity(0.05) : cs.primary.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: overAllocated ? cs.error.withValues(alpha: 0.2) : cs.primary.withValues(alpha: 0.2)),
+              border: Border.all(color: overAllocated ? cs.error.withOpacity(0.2) : cs.primary.withOpacity(0.2)),
             ),
             child: Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

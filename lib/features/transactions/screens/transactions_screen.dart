@@ -100,7 +100,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -121,7 +121,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     color: _selectedTypeTab == i ? colorScheme.surface : Colors.transparent,
                     borderRadius: BorderRadius.circular(7),
                     boxShadow: _selectedTypeTab == i ? [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4),
+                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4),
                     ] : null,
                   ),
                   child: Center(child: Text(_typeLabels[i],
@@ -210,7 +210,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 48),
                 child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(LucideIcons.receipt, size: 40, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                  Icon(LucideIcons.receipt, size: 40, color: colorScheme.onSurfaceVariant.withOpacity(0.3)),
                   const SizedBox(height: 12),
                   Text('No transactions yet',
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant)),
@@ -304,9 +304,9 @@ class _FilterChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: cs.primary.withValues(alpha: 0.08),
+        color: cs.primary.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+        border: Border.all(color: cs.primary.withOpacity(0.2)),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: cs.primary)),
@@ -369,7 +369,7 @@ class _TransactionRow extends StatelessWidget {
               width: 36, height: 36,
               margin: const EdgeInsets.only(top: 2),
               decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
+                color: iconColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, size: 16, color: iconColor),

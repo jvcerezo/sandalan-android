@@ -116,7 +116,7 @@ class AccountsScreen extends ConsumerWidget {
                         padding: const EdgeInsets.only(right: 20),
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.expense.withValues(alpha: 0.1),
+                          color: AppColors.expense.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(LucideIcons.trash2, color: AppColors.expense, size: 20),
@@ -195,7 +195,7 @@ class _AccountCard extends ConsumerWidget {
             Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.1),
+                color: colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(_typeIcon, size: 20, color: colorScheme.primary),

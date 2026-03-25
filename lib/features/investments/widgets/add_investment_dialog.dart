@@ -107,7 +107,7 @@ class _State extends ConsumerState<AddInvestmentDialog> {
         ),
         child: ListView(controller: ctrl, padding: const EdgeInsets.all(20), children: [
           Center(child: Container(width: 32, height: 4, margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+              decoration: BoxDecoration(color: cs.onSurfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2)))),
           const Text('Add Investment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
@@ -124,7 +124,7 @@ class _State extends ConsumerState<AddInvestmentDialog> {
                 decoration: BoxDecoration(
                   color: sel ? cs.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: sel ? cs.primary : cs.outline.withValues(alpha: 0.3)),
+                  border: Border.all(color: sel ? cs.primary : cs.outline.withOpacity(0.3)),
                 ),
                 child: Text(t.$2, style: TextStyle(fontSize: 12,
                     color: sel ? cs.onPrimary : cs.onSurfaceVariant, fontWeight: FontWeight.w500)),

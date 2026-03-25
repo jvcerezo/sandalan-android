@@ -335,7 +335,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -356,7 +356,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         color: _selectedTab == i ? colorScheme.surface : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: _selectedTab == i ? [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
                         ] : null,
                       ),
                       child: Center(

@@ -405,7 +405,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: cs.outline.withValues(alpha: 0.2),
+                color: cs.outline.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
@@ -438,7 +438,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _receiptTypeBadgeColor(_receipt!.receiptType, cs).withValues(alpha: 0.08),
+                  color: _receiptTypeBadgeColor(_receipt!.receiptType, cs).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -473,9 +473,9 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           padding: const EdgeInsets.all(12),
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.08),
+            color: AppColors.error.withOpacity(0.08),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+            border: Border.all(color: AppColors.error.withOpacity(0.2)),
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(LucideIcons.alertCircle, size: 16, color: AppColors.error),
@@ -487,7 +487,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       ],
 
       // Illustration
-      Icon(LucideIcons.scanLine, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+      Icon(LucideIcons.scanLine, size: 56, color: cs.onSurfaceVariant.withOpacity(0.3)),
       const SizedBox(height: 16),
       Text('Scan a receipt to add a transaction',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: cs.onSurface)),
@@ -533,7 +533,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+            border: Border.all(color: cs.outline.withOpacity(0.15)),
           ),
           clipBehavior: Clip.antiAlias,
           child: Image.file(
@@ -579,7 +579,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+              border: Border.all(color: cs.outline.withOpacity(0.15)),
             ),
             clipBehavior: Clip.antiAlias,
             child: Stack(children: [
@@ -594,7 +594,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
+                    color: Colors.black.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Row(mainAxisSize: MainAxisSize.min, children: [
@@ -620,7 +620,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       if (accounts.isEmpty) ...[
         const SizedBox(height: 16),
         Center(child: Column(children: [
-          Icon(LucideIcons.wallet, size: 40, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+          Icon(LucideIcons.wallet, size: 40, color: cs.onSurfaceVariant.withOpacity(0.3)),
           const SizedBox(height: 12),
           Text('Create an account first',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: cs.onSurface)),
@@ -656,20 +656,20 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           controller: _storeNameController,
           decoration: InputDecoration(
             hintText: 'Could not detect store name',
-            hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+            hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: _receipt?.storeName != null
-                  ? cs.primary.withValues(alpha: 0.3)
-                  : cs.outline.withValues(alpha: 0.15)),
+                  ? cs.primary.withOpacity(0.3)
+                  : cs.outline.withOpacity(0.15)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: _receipt?.storeName != null
-                  ? cs.primary.withValues(alpha: 0.3)
-                  : cs.outline.withValues(alpha: 0.15)),
+                  ? cs.primary.withOpacity(0.3)
+                  : cs.outline.withOpacity(0.15)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -702,7 +702,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
             decoration: InputDecoration(
               hintText: '0.00',
-              hintStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+              hintStyle: TextStyle(fontSize: 28, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withOpacity(0.3)),
               border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
               contentPadding: EdgeInsets.zero,
             ),
@@ -770,8 +770,8 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             border: Border.all(color: _receipt?.date != null
-                ? cs.primary.withValues(alpha: 0.3)
-                : cs.outline.withValues(alpha: 0.15)),
+                ? cs.primary.withOpacity(0.3)
+                : cs.outline.withOpacity(0.15)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(children: [
@@ -795,8 +795,8 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
+                border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -821,13 +821,13 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         maxLines: 2,
         decoration: InputDecoration(
           hintText: 'Add a note... (optional)',
-          hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+          hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
           border: InputBorder.none, contentPadding: EdgeInsets.zero,
           counterText: '',
         ),
         style: const TextStyle(fontSize: 13),
       ),
-      Divider(color: cs.outline.withValues(alpha: 0.10)),
+      Divider(color: cs.outline.withOpacity(0.10)),
       const SizedBox(height: 12),
 
       // Submit button
@@ -871,7 +871,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
-                  color: cs.primary.withValues(alpha: 0.08),
+                  color: cs.primary.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(a.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
@@ -891,7 +891,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+          border: Border.all(color: cs.outline.withOpacity(0.15)),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -902,7 +902,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
               decoration: BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.08),
+                color: cs.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(selectedAccount.currency,
@@ -925,9 +925,9 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.05),
+        color: Colors.blue.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
+        border: Border.all(color: Colors.blue.withOpacity(0.15)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -968,9 +968,9 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.purple.withValues(alpha: 0.05),
+        color: Colors.purple.withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.purple.withValues(alpha: 0.15)),
+        border: Border.all(color: Colors.purple.withOpacity(0.15)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -1027,7 +1027,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(LucideIcons.x, size: 18, color: Colors.white),
@@ -1065,9 +1065,9 @@ class _FieldLabel extends StatelessWidget {
       ],
       if (notDetected) ...[
         const SizedBox(width: 6),
-        Icon(LucideIcons.alertCircle, size: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+        Icon(LucideIcons.alertCircle, size: 12, color: cs.onSurfaceVariant.withOpacity(0.5)),
         const SizedBox(width: 2),
-        Text('not detected', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withValues(alpha: 0.5))),
+        Text('not detected', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withOpacity(0.5))),
       ],
     ]);
   }

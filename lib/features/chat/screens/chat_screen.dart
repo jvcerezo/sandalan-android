@@ -203,7 +203,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(LucideIcons.messageCircle, size: 48, color: cs.primary.withValues(alpha: 0.5)),
+            Icon(LucideIcons.messageCircle, size: 48, color: cs.primary.withOpacity(0.5)),
             const SizedBox(height: 16),
             Text(_assistantName, style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -294,7 +294,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3))),
+        border: Border(top: BorderSide(color: cs.outlineVariant.withOpacity(0.3))),
       ),
       child: Row(
         children: [
@@ -306,14 +306,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               onSubmitted: (_) => _send(),
               decoration: InputDecoration(
                 hintText: "lunch 250, net worth ko...",
-                hintStyle: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+                hintStyle: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant.withOpacity(0.5)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(color: cs.outlineVariant),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                  borderSide: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
@@ -330,7 +330,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: _send,
             icon: Icon(LucideIcons.send, color: cs.primary),
             style: IconButton.styleFrom(
-              backgroundColor: cs.primary.withValues(alpha: 0.1),
+              backgroundColor: cs.primary.withOpacity(0.1),
             ),
           ),
         ],
@@ -564,7 +564,7 @@ class _ChatSetupBanner extends StatelessWidget {
             Container(
               width: 72, height: 72,
               decoration: BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.1),
+                color: cs.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(LucideIcons.messageCircle, size: 36, color: cs.primary),

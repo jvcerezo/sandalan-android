@@ -273,8 +273,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.05),
-                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                    color: Colors.green.withOpacity(0.05),
+                    border: Border.all(color: Colors.green.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -289,8 +289,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: colorScheme.error.withValues(alpha: 0.05),
-                    border: Border.all(color: colorScheme.error.withValues(alpha: 0.2)),
+                    color: colorScheme.error.withOpacity(0.05),
+                    border: Border.all(color: colorScheme.error.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(_error!, style: TextStyle(fontSize: 13, color: colorScheme.error)),
@@ -507,7 +507,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   width: 18, height: 18,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5), width: 1),
+                    border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.5), width: 1),
                   ),
                   alignment: Alignment.center,
                   child: const Text('G', style: TextStyle(

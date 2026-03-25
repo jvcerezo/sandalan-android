@@ -129,7 +129,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
         child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
           // Drag handle
           Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(color: cs.outline.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)))),
+              decoration: BoxDecoration(color: cs.outline.withOpacity(0.2), borderRadius: BorderRadius.circular(2)))),
           const Center(child: Text('Add Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           const SizedBox(height: 12),
 
@@ -143,8 +143,8 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                  border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                  color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
+                  border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(14)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(_typeIcon(p.type), size: 12, color: selected ? cs.primary : cs.onSurfaceVariant),
@@ -164,13 +164,13 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             decoration: BoxDecoration(
               color: cs.surfaceContainerLowest,
-              border: Border.all(color: _nameError != null ? cs.error : cs.outline.withValues(alpha: 0.12)),
+              border: Border.all(color: _nameError != null ? cs.error : cs.outline.withOpacity(0.12)),
               borderRadius: BorderRadius.circular(10)),
             child: TextField(controller: _nameCtl,
               onChanged: _validateName,
               maxLength: 100,
               decoration: InputDecoration(isDense: true, hintText: 'e.g. BDO Savings',
-                  hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.4)),
                   counterText: '',
                   border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
               style: const TextStyle(fontSize: 14)),
@@ -198,8 +198,8 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                    border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                    color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
+                    border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.15)),
                     borderRadius: BorderRadius.circular(14)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(_typeIcon(t), size: 12, color: selected ? cs.primary : cs.onSurfaceVariant),
@@ -220,18 +220,18 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
               onChanged: _validateCustomType,
               decoration: InputDecoration(
                 hintText: 'Type a custom account type...',
-                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
                 errorText: _customTypeError,
                 errorStyle: const TextStyle(fontSize: 11),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  borderSide: BorderSide(color: cs.outline.withOpacity(0.15)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                  borderSide: BorderSide(color: cs.outline.withOpacity(0.15)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -253,7 +253,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerLowest,
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                  border: Border.all(color: cs.outline.withOpacity(0.12)),
                   borderRadius: BorderRadius.circular(10)),
                 child: DropdownButton<String>(
                   value: _currency, isDense: true, underline: const SizedBox.shrink(),
@@ -272,7 +272,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerLowest,
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                  border: Border.all(color: cs.outline.withOpacity(0.12)),
                   borderRadius: BorderRadius.circular(10)),
                 child: Row(children: [
                   Text(currencySymbol(_currency), style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
@@ -286,7 +286,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
                       _ThousandsSeparatorFormatter(),
                     ],
                     decoration: InputDecoration(isDense: true, hintText: '0.00 (optional)',
-                        hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                        hintStyle: TextStyle(color: cs.onSurfaceVariant.withOpacity(0.4)),
                         counterText: '',
                         border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                     style: const TextStyle(fontSize: 14))),

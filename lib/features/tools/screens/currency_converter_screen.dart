@@ -209,9 +209,9 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
+                color: Colors.orange.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -268,8 +268,8 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.05),
-              border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+              color: colorScheme.primary.withOpacity(0.05),
+              border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Column(children: [
@@ -305,7 +305,7 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.8,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
               )),
           const SizedBox(height: 8),
           Container(
@@ -333,7 +333,7 @@ class _CurrencyConverterScreenState extends ConsumerState<CurrencyConverterScree
                 'Last updated: ${_timeAgo(lastUpdated)}',
                 style: TextStyle(
                   fontSize: 11,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                 ),
               ),
             ),

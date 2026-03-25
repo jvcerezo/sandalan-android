@@ -113,8 +113,8 @@ class QuickAddStrip extends ConsumerWidget {
             return ActionChip(
               avatar: Icon(LucideIcons.plus, size: 14, color: colorScheme.primary),
               label: Text('New', style: TextStyle(fontSize: 12, color: colorScheme.primary)),
-              side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.3)),
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.05),
+              side: BorderSide(color: colorScheme.primary.withOpacity(0.3)),
+              backgroundColor: colorScheme.primary.withOpacity(0.05),
               onPressed: () => showManageTemplatesSheet(context, ref),
             );
           }

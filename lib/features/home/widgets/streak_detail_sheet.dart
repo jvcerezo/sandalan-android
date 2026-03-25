@@ -66,7 +66,7 @@ class StreakDetailSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              color: colorScheme.onSurfaceVariant.withOpacity(0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -108,7 +108,7 @@ class StreakDetailSheet extends StatelessWidget {
                         border: Border.all(
                           color: active
                               ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                              : colorScheme.onSurfaceVariant.withOpacity(0.3),
                           width: 2,
                         ),
                       ),
@@ -124,7 +124,7 @@ class StreakDetailSheet extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         color: active
                             ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                            : colorScheme.onSurfaceVariant.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -148,7 +148,7 @@ class StreakDetailSheet extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontStyle: FontStyle.italic,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
             ),
           ),
         ],

@@ -228,7 +228,7 @@ class _JourneyNode extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: stage.color.withValues(alpha: 0.35),
+                        color: stage.color.withOpacity(0.35),
                         blurRadius: 16,
                         offset: const Offset(0, 4),
                       ),
@@ -329,8 +329,8 @@ class _DashedCurvePainter extends CustomPainter {
       final t = distance / totalLength;
 
       paint.color = Color.lerp(
-        fromColor.withValues(alpha: 0.5),
-        toColor.withValues(alpha: 0.5),
+        fromColor.withOpacity(0.5),
+        toColor.withOpacity(0.5),
         t,
       )!;
 

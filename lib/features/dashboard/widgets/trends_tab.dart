@@ -35,7 +35,7 @@ class _TrendsTabState extends ConsumerState<TrendsTab> {
       Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(children: List.generate(_views.length, (i) => Expanded(
@@ -57,7 +57,7 @@ class _TrendsTabState extends ConsumerState<TrendsTab> {
                     color: _trendView == i ? colorScheme.surface : Colors.transparent,
                     borderRadius: BorderRadius.circular(7),
                     boxShadow: _trendView == i ? [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
                     ] : null,
                   ),
                   child: Center(child: Text(_views[i],
@@ -160,8 +160,8 @@ class _TrendsTabState extends ConsumerState<TrendsTab> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              AppColors.income.withValues(alpha: 0.25),
-                              AppColors.income.withValues(alpha: 0.02),
+                              AppColors.income.withOpacity(0.25),
+                              AppColors.income.withOpacity(0.02),
                             ],
                           ),
                         ),
@@ -208,7 +208,7 @@ class _TrendsTabState extends ConsumerState<TrendsTab> {
                       drawVerticalLine: false,
                       horizontalInterval: range > 0 ? range / 4 : 1,
                       getDrawingHorizontalLine: (value) => FlLine(
-                        color: colorScheme.outline.withValues(alpha: 0.08),
+                        color: colorScheme.outline.withOpacity(0.08),
                         strokeWidth: 1,
                       ),
                     ),

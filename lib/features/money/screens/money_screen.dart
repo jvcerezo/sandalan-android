@@ -47,7 +47,7 @@ class _MoneyScreenState extends ConsumerState<MoneyScreen>
           margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
             borderRadius: BorderRadius.circular(12),
           ),
           child: TabBar(
@@ -58,7 +58,7 @@ class _MoneyScreenState extends ConsumerState<MoneyScreen>
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 4,
                 ),
               ],

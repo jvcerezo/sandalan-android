@@ -61,7 +61,7 @@ class InvestmentsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                    border: Border.all(color: cs.outline.withOpacity(0.15)),
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('PORTFOLIO VALUE', style: TextStyle(
@@ -75,7 +75,7 @@ class InvestmentsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (totalGain >= 0 ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                          color: (totalGain >= 0 ? Colors.green : Colors.red).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -114,15 +114,15 @@ class InvestmentsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                      border: Border.all(color: cs.outline.withOpacity(0.15)),
                     ),
                     child: Column(children: [
-                      Icon(LucideIcons.trendingUp, size: 32, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                      Icon(LucideIcons.trendingUp, size: 32, color: cs.onSurfaceVariant.withOpacity(0.4)),
                       const SizedBox(height: 8),
                       Text('No investments yet', style: TextStyle(color: cs.onSurfaceVariant)),
                       const SizedBox(height: 4),
                       Text('Start tracking your MP2, UITF, stocks, and more',
-                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withValues(alpha: 0.7)),
+                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withOpacity(0.7)),
                           textAlign: TextAlign.center),
                     ]),
                   )
@@ -281,14 +281,14 @@ class _InvestmentCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+        border: Border.all(color: cs.outline.withOpacity(0.15)),
       ),
       child: Column(children: [
         Row(children: [
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.1),
+              color: cs.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(LucideIcons.trendingUp, size: 18, color: cs.primary),

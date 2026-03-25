@@ -40,7 +40,7 @@ class _ThirteenthMonthScreenState extends State<ThirteenthMonthScreen> {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: AppColors.toolGreen.withValues(alpha: 0.1),
+              color: AppColors.toolGreen.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(LucideIcons.gift, size: 20, color: AppColors.toolGreen),
@@ -95,7 +95,7 @@ class _ThirteenthMonthScreenState extends State<ThirteenthMonthScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.income.withValues(alpha: 0.06),
+              color: AppColors.income.withOpacity(0.06),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [

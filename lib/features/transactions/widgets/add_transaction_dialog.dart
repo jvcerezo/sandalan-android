@@ -454,14 +454,14 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: cs.outline.withValues(alpha: 0.2),
+                color: cs.outline.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
             // No accounts — guide user to create one first
             if (accounts.isEmpty) ...[
               const SizedBox(height: 32),
-              Center(child: Icon(LucideIcons.wallet, size: 48, color: cs.onSurfaceVariant.withValues(alpha: 0.3))),
+              Center(child: Icon(LucideIcons.wallet, size: 48, color: cs.onSurfaceVariant.withOpacity(0.3))),
               const SizedBox(height: 16),
               Text(
                 _isIncome ? 'Create an account to add income' : 'Create an account to add expenses',
@@ -528,7 +528,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: _showSplit ? cs.primary : Colors.transparent,
-                      border: Border.all(color: _showSplit ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                      border: Border.all(color: _showSplit ? cs.primary : cs.outline.withOpacity(0.2)),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -551,7 +551,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _showRepeat ? cs.primary : Colors.transparent,
-                    border: Border.all(color: _showRepeat ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                    border: Border.all(color: _showRepeat ? cs.primary : cs.outline.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -583,7 +583,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
-                            color: cs.primary.withValues(alpha: 0.08),
+                            color: cs.primary.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(a.currency, style: TextStyle(fontSize: 10, color: cs.primary, fontWeight: FontWeight.w500)),
@@ -603,7 +603,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                    border: Border.all(color: cs.outline.withOpacity(0.15)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -614,7 +614,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: cs.primary.withValues(alpha: 0.08),
+                          color: cs.primary.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(selectedAccount.currency,
@@ -663,7 +663,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant),
                   decoration: InputDecoration(
                     hintText: '0.00',
-                    hintStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withValues(alpha: 0.3)),
+                    hintStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.w300, color: cs.onSurfaceVariant.withOpacity(0.3)),
                     border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     counterText: '',
@@ -684,8 +684,8 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                    border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                    color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
+                    border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.15)),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -707,18 +707,18 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 onChanged: _validateCustomCategory,
                 decoration: InputDecoration(
                   hintText: 'Type a custom category name...',
-                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
                   errorText: _customCategoryError,
                   errorStyle: const TextStyle(fontSize: 11),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                    borderSide: BorderSide(color: cs.outline.withOpacity(0.15)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+                    borderSide: BorderSide(color: cs.outline.withOpacity(0.15)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -755,7 +755,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 maxLength: 500,
                 decoration: InputDecoration(
                   hintText: 'Add a note... (optional)',
-                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                  hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
                   border: InputBorder.none, contentPadding: EdgeInsets.zero,
                   counterText: '',
                 ),
@@ -773,7 +773,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                    border: Border.all(color: cs.outline.withOpacity(0.15)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(children: [
@@ -785,7 +785,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                 ),
               ),
             ]),
-            Divider(color: cs.outline.withValues(alpha: 0.10)),
+            Divider(color: cs.outline.withOpacity(0.10)),
             const SizedBox(height: 8),
 
             // Tags
@@ -794,13 +794,13 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
               maxLength: 500,
               decoration: InputDecoration(
                 hintText: 'Add tags... (optional)',
-                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
                 border: InputBorder.none, contentPadding: EdgeInsets.zero,
                 counterText: '',
               ),
               style: const TextStyle(fontSize: 13),
             ),
-            Divider(color: cs.outline.withValues(alpha: 0.10)),
+            Divider(color: cs.outline.withOpacity(0.10)),
             ], // end _showMoreOptions
             const SizedBox(height: 8),
 

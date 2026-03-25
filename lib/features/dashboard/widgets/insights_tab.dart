@@ -118,7 +118,7 @@ class InsightsTab extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: (dailyBudgetRemaining > 0 ? AppColors.income : const Color(0xFFEF4444)).withValues(alpha: 0.1),
+                    color: (dailyBudgetRemaining > 0 ? AppColors.income : const Color(0xFFEF4444)).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -202,7 +202,7 @@ class InsightsTab extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Row(children: [
                         Container(width: 32, height: 32,
-                            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                             child: Icon(icon, size: 14, color: iconColor)),
                         const SizedBox(width: 10),
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

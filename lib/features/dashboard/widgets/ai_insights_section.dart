@@ -56,7 +56,7 @@ class _AiInsightsSectionState extends State<AiInsightsSection> {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('INSIGHTS', style: TextStyle(
         fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8,
-        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
       )),
       const SizedBox(height: 8),
       for (final insight in _insights) ...[

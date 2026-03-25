@@ -218,7 +218,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(
-                color: AppColors.income.withValues(alpha: 0.1),
+                color: AppColors.income.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(LucideIcons.zap, size: 18, color: AppColors.income),
@@ -252,7 +252,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _autoGenerate ? AppColors.warning.withValues(alpha: 0.15) : colorScheme.surfaceContainerHighest,
+                  color: _autoGenerate ? AppColors.warning.withOpacity(0.15) : colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -338,7 +338,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                  border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text('2024 rates', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
@@ -533,7 +533,7 @@ class _RateCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -596,7 +596,7 @@ class _SummaryCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: highlight ? AppColors.income.withValues(alpha: 0.08) : colorScheme.surface,
+          color: highlight ? AppColors.income.withOpacity(0.08) : colorScheme.surface,
           border: Border.all(color: colorScheme.surfaceContainerHighest),
           borderRadius: BorderRadius.circular(10),
         ),
@@ -683,13 +683,13 @@ class _HistoryMonthState extends State<_HistoryMonth> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(44, 8, 12, 8),
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: colorScheme.outline.withValues(alpha: 0.08))),
+                  border: Border(top: BorderSide(color: colorScheme.outline.withOpacity(0.08))),
                 ),
                 child: Row(children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
+                      color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
@@ -709,7 +709,7 @@ class _HistoryMonthState extends State<_HistoryMonth> {
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => widget.onDeleteItem(c),
-                    child: Icon(LucideIcons.trash2, size: 14, color: AppColors.expense.withValues(alpha: 0.5)),
+                    child: Icon(LucideIcons.trash2, size: 14, color: AppColors.expense.withOpacity(0.5)),
                   ),
                 ]),
               ),
@@ -892,7 +892,7 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                  border: Border.all(color: cs.outline.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -913,7 +913,7 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                  border: Border.all(color: cs.outline.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -936,7 +936,7 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
               decoration: BoxDecoration(
                 color: _fromSalary ? AppColors.income : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _fromSalary ? AppColors.income : cs.outline.withValues(alpha: 0.2)),
+                border: Border.all(color: _fromSalary ? AppColors.income : cs.outline.withOpacity(0.2)),
               ),
               child: Center(child: Text('From Salary',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
@@ -951,7 +951,7 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
               decoration: BoxDecoration(
                 color: !_fromSalary ? AppColors.income : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: !_fromSalary ? AppColors.income : cs.outline.withValues(alpha: 0.2)),
+                border: Border.all(color: !_fromSalary ? AppColors.income : cs.outline.withOpacity(0.2)),
               ),
               child: Center(child: Text('Enter Manually',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,

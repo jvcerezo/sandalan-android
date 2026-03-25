@@ -282,7 +282,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: _flameColor(_streak).withValues(alpha: 0.12),
+                        color: _flameColor(_streak).withOpacity(0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -326,10 +326,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     gradient: LinearGradient(colors: [
-                      colorScheme.primary.withValues(alpha: 0.1),
-                      colorScheme.primary.withValues(alpha: 0.05),
+                      colorScheme.primary.withOpacity(0.1),
+                      colorScheme.primary.withOpacity(0.05),
                     ]),
-                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+                    border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
                   ),
                   child: Row(children: [
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -364,8 +364,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ? Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.06),
-                        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.15)),
+                        color: colorScheme.primary.withOpacity(0.06),
+                        border: Border.all(color: colorScheme.primary.withOpacity(0.15)),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(children: [
@@ -614,7 +614,7 @@ class _UpcomingPaymentsSection extends StatelessWidget {
                   return _PaymentItem(
                     icon: config.icon,
                     iconColor: config.color,
-                    iconBg: config.color.withValues(alpha: 0.1),
+                    iconBg: config.color.withOpacity(0.1),
                     title: item.title,
                     subtitle: item.subtitle,
                     amount: item.amount,
@@ -733,12 +733,12 @@ class _PaymentItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Icon(LucideIcons.chevronRight, size: 14,
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.25)),
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.25)),
               ],
             ),
           ),
           if (showDivider)
-            Divider(height: 1, indent: 56, color: colorScheme.outline.withValues(alpha: 0.08)),
+            Divider(height: 1, indent: 56, color: colorScheme.outline.withOpacity(0.08)),
         ],
       ),
       ),
@@ -765,7 +765,7 @@ class _ErrorRetry extends StatelessWidget {
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(LucideIcons.alertCircle, size: 24,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+            color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
         const SizedBox(height: 6),
         Text('Something went wrong',
             style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),

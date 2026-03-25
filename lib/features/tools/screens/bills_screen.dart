@@ -107,7 +107,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: !_calendarView ? colorScheme.primary : Colors.transparent,
-                border: Border.all(color: !_calendarView ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
+                border: Border.all(color: !_calendarView ? colorScheme.primary : colorScheme.outline.withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text('List View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
@@ -121,7 +121,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: _calendarView ? colorScheme.primary : Colors.transparent,
-                border: Border.all(color: _calendarView ? colorScheme.primary : colorScheme.outline.withValues(alpha: 0.2)),
+                border: Border.all(color: _calendarView ? colorScheme.primary : colorScheme.outline.withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text('Calendar View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
@@ -163,7 +163,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
               Expanded(child: Container(
                 height: 60,
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
               )),
@@ -205,8 +205,8 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
                   padding: const EdgeInsets.all(14),
                   margin: const EdgeInsets.only(bottom: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.06),
-                    border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+                    color: AppColors.warning.withOpacity(0.06),
+                    border: Border.all(color: AppColors.warning.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -281,11 +281,11 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: _remindersEnabled
-                  ? AppColors.income.withValues(alpha: 0.06)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  ? AppColors.income.withOpacity(0.06)
+                  : colorScheme.surfaceContainerHighest.withOpacity(0.5),
               border: Border.all(color: _remindersEnabled
-                  ? AppColors.income.withValues(alpha: 0.15)
-                  : colorScheme.outline.withValues(alpha: 0.1)),
+                  ? AppColors.income.withOpacity(0.15)
+                  : colorScheme.outline.withOpacity(0.1)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
@@ -303,7 +303,7 @@ class _BillsScreenState extends ConsumerState<BillsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: _remindersEnabled
-                      ? AppColors.income.withValues(alpha: 0.15)
+                      ? AppColors.income.withOpacity(0.15)
                       : colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -374,7 +374,7 @@ class _SummaryCard extends StatelessWidget {
     return Expanded(child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: highlight ? (highlightColor ?? cs.primary).withValues(alpha: 0.06) : cs.surface,
+        color: highlight ? (highlightColor ?? cs.primary).withOpacity(0.06) : cs.surface,
         border: Border.all(color: cs.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -406,7 +406,7 @@ class _BillRow extends StatelessWidget {
         Container(
           width: 36, height: 36,
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.1),
+            color: AppColors.warning.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(LucideIcons.zap, size: 16, color: AppColors.warning),
@@ -420,7 +420,7 @@ class _BillRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: isDueSoon ? AppColors.expense.withValues(alpha: 0.1) : cs.surfaceContainerHighest,
+                  color: isDueSoon ? AppColors.expense.withOpacity(0.1) : cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -479,7 +479,7 @@ class _BillRow extends StatelessWidget {
               ),
             );
           },
-          icon: Icon(LucideIcons.trash2, size: 16, color: AppColors.expense.withValues(alpha: 0.5)),
+          icon: Icon(LucideIcons.trash2, size: 16, color: AppColors.expense.withOpacity(0.5)),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
         ),
@@ -514,8 +514,8 @@ class _PendingBillsList extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.04),
-            border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
+            color: AppColors.warning.withOpacity(0.04),
+            border: Border.all(color: AppColors.warning.withOpacity(0.2)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -553,7 +553,7 @@ class _PendingRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.warning.withValues(alpha: 0.15),
+            color: AppColors.warning.withOpacity(0.15),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text('Pending', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.warning)),

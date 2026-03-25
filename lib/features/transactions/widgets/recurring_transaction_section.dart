@@ -60,8 +60,8 @@ class RecurringTransactionSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cs.primary.withValues(alpha: 0.04),
-        border: Border.all(color: cs.primary.withValues(alpha: 0.15)),
+        color: cs.primary.withOpacity(0.04),
+        border: Border.all(color: cs.primary.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -87,7 +87,7 @@ class RecurringTransactionSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: selected ? cs.primary : Colors.transparent,
-                border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(f.$2, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
@@ -111,7 +111,7 @@ class RecurringTransactionSection extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: selected ? cs.primary : Colors.transparent,
-                  border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                  border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(_dayNames[i], style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
@@ -138,7 +138,7 @@ class RecurringTransactionSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                border: Border.all(color: cs.outline.withOpacity(0.15)),
                 borderRadius: BorderRadius.circular(8)),
               child: Row(children: [
                 Text(
@@ -202,7 +202,7 @@ class RecurringTransactionSection extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8)),
                 child: Row(children: [
                   Text(
@@ -233,7 +233,7 @@ class RecurringTransactionSection extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8)),
                 child: Row(children: [
                   Text(
@@ -286,11 +286,11 @@ class _TwiceMonthlyField extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+            borderSide: BorderSide(color: cs.outline.withOpacity(0.15)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15)),
+            borderSide: BorderSide(color: cs.outline.withOpacity(0.15)),
           ),
         ),
         style: const TextStyle(fontSize: 12),

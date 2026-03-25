@@ -167,7 +167,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                 margin: const EdgeInsets.only(top: 4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _isDone ? stage.color.withValues(alpha: 0.1) : cs.surfaceContainerHighest,
+                  color: _isDone ? stage.color.withOpacity(0.1) : cs.surfaceContainerHighest,
                 ),
                 child: Icon(
                   _isDone ? LucideIcons.checkCircle2 : LucideIcons.circle,
@@ -187,7 +187,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: priorityColor.withValues(alpha: 0.12),
+                  color: priorityColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(priorityLabel, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: priorityColor, letterSpacing: 0.5)),
@@ -196,7 +196,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
             const SizedBox(height: 14),
 
             // Description
-            Text(item.description, style: TextStyle(fontSize: 14, color: cs.onSurface.withValues(alpha: 0.85), height: 1.6)),
+            Text(item.description, style: TextStyle(fontSize: 14, color: cs.onSurface.withOpacity(0.85), height: 1.6)),
             const SizedBox(height: 20),
 
             // ─── Why this matters ──────────────────────────────────
@@ -251,7 +251,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                       width: 22, height: 22,
                       margin: const EdgeInsets.only(top: 1),
                       decoration: BoxDecoration(
-                        color: stage.color.withValues(alpha: 0.1),
+                        color: stage.color.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Center(child: Text('${e.key + 1}',
@@ -302,7 +302,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+                    border: Border.all(color: cs.outline.withOpacity(0.12)),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(children: [
@@ -343,7 +343,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         decoration: BoxDecoration(
           color: cs.surface,
-          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.08))),
+          border: Border(top: BorderSide(color: cs.outline.withOpacity(0.08))),
         ),
         child: SafeArea(
           top: false,
@@ -351,8 +351,8 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
             // Skip
             TextButton.icon(
               onPressed: _isSkipped ? null : _markSkipped,
-              icon: Icon(LucideIcons.skipForward, size: 14, color: _isSkipped ? cs.onSurfaceVariant.withValues(alpha: 0.4) : cs.onSurfaceVariant),
-              label: Text('Skip', style: TextStyle(color: _isSkipped ? cs.onSurfaceVariant.withValues(alpha: 0.4) : cs.onSurfaceVariant)),
+              icon: Icon(LucideIcons.skipForward, size: 14, color: _isSkipped ? cs.onSurfaceVariant.withOpacity(0.4) : cs.onSurfaceVariant),
+              label: Text('Skip', style: TextStyle(color: _isSkipped ? cs.onSurfaceVariant.withOpacity(0.4) : cs.onSurfaceVariant)),
             ),
             const SizedBox(width: 12),
             // Mark as Done
@@ -390,8 +390,8 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accentColor != null ? accentColor.withValues(alpha: 0.05) : null,
-        border: Border.all(color: accentColor?.withValues(alpha: 0.2) ?? cs.outline.withValues(alpha: 0.12)),
+        color: accentColor != null ? accentColor.withOpacity(0.05) : null,
+        border: Border.all(color: accentColor?.withOpacity(0.2) ?? cs.outline.withOpacity(0.12)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
@@ -403,7 +403,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
       margin: const EdgeInsets.only(bottom: 0),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: cs.outline.withOpacity(0.12)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

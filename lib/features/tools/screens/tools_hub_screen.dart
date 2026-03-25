@@ -144,7 +144,7 @@ class _ToolItem extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 20, color: color),
@@ -169,7 +169,7 @@ class _ToolItem extends StatelessWidget {
                 color: Theme.of(context)
                     .colorScheme
                     .onSurfaceVariant
-                    .withValues(alpha: 0.4)),
+                    .withOpacity(0.4)),
           ],
         ),
       ),

@@ -52,7 +52,7 @@ class _RentVsBuyScreenState extends State<RentVsBuyScreen> {
       children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(width: 40, height: 40,
-            decoration: BoxDecoration(color: AppColors.toolEmerald.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: AppColors.toolEmerald.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
             child: const Icon(LucideIcons.home, size: 20, color: AppColors.toolEmerald)),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

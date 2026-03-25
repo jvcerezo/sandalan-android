@@ -216,7 +216,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: cs.outline.withValues(alpha: 0.2),
+                color: cs.outline.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
 
@@ -232,7 +232,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               margin: const EdgeInsets.only(top: 4),
               decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
+                color: AppColors.warning.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -266,7 +266,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+                  border: Border.all(color: cs.outline.withOpacity(0.15)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [
@@ -312,7 +312,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+        border: Border.all(color: cs.outline.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(children: [
@@ -352,7 +352,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+          border: Border.all(color: cs.outline.withOpacity(0.15)),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(children: [

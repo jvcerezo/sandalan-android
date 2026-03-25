@@ -53,7 +53,7 @@ class _ConfirmationCardState extends State<ConfirmationCard> {
           color: cs.surfaceContainerHighest,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+            side: BorderSide(color: cs.outlineVariant.withOpacity(0.3)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),

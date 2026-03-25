@@ -152,7 +152,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
             child: Center(child: Container(
               width: 36, height: 4,
               decoration: BoxDecoration(
-                color: cs.outline.withValues(alpha: 0.2),
+                color: cs.outline.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2)),
             )),
           ),
@@ -204,8 +204,8 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: selected ? cs.primary.withValues(alpha: 0.1) : Colors.transparent,
-                      border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.15)),
+                      color: selected ? cs.primary.withOpacity(0.1) : Colors.transparent,
+                      border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.15)),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(e.value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
@@ -275,14 +275,14 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
 
   InputDecoration _inputDecoration(ColorScheme cs, String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+    hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withOpacity(0.4)),
     isDense: true,
     counterText: '',
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+        borderSide: BorderSide(color: cs.outline.withOpacity(0.15))),
     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+        borderSide: BorderSide(color: cs.outline.withOpacity(0.15))),
     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: cs.primary)),
   );
@@ -291,7 +291,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+        border: Border.all(color: cs.outline.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(children: [
@@ -333,7 +333,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
+          border: Border.all(color: cs.outline.withOpacity(0.15)),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(children: [

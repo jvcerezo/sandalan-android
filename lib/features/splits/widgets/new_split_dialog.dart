@@ -121,7 +121,7 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: colorScheme.outline.withValues(alpha: 0.2),
+                color: colorScheme.outline.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             )),
@@ -204,7 +204,7 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
                         ? Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                              color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text('You', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
@@ -245,7 +245,7 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

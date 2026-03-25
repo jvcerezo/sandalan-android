@@ -189,13 +189,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-                        color: colorScheme.primary.withValues(alpha: 0.05),
+                        border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+                        color: colorScheme.primary.withOpacity(0.05),
                       ),
                       child: Row(children: [
                         CircleAvatar(
                           radius: 22,
-                          backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+                          backgroundColor: colorScheme.primary.withOpacity(0.1),
                           backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(avatarUrl) : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
@@ -238,8 +238,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: colorScheme.error.withValues(alpha: 0.05),
-                    border: Border.all(color: colorScheme.error.withValues(alpha: 0.2)),
+                    color: colorScheme.error.withOpacity(0.05),
+                    border: Border.all(color: colorScheme.error.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(_error!, style: TextStyle(fontSize: 13, color: colorScheme.error)),
@@ -334,7 +334,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   width: 18, height: 18,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.5), width: 1),
+                    border: Border.all(color: colorScheme.outline.withOpacity(0.5), width: 1),
                   ),
                   alignment: Alignment.center,
                   child: const Text('G', style: TextStyle(
@@ -385,7 +385,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             color: colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 2),
                     Text('Your data stays on this device',
-                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7))),
+                        style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant.withOpacity(0.7))),
                   ],
                 ),
               ),

@@ -50,7 +50,7 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
       children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(width: 40, height: 40,
-            decoration: BoxDecoration(color: AppColors.toolPurple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: AppColors.toolPurple.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
             child: const Icon(LucideIcons.calculator, size: 20, color: AppColors.toolPurple)),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -68,7 +68,7 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: _tab == i ? cs.primary : Colors.transparent,
-              border: Border.all(color: _tab == i ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+              border: Border.all(color: _tab == i ? cs.primary : cs.outline.withOpacity(0.2)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(_tabs[i], style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
@@ -188,7 +188,7 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
       const SizedBox(height: 4),
       ClipRRect(borderRadius: BorderRadius.circular(4), child: SizedBox(height: 8, child: Row(children: [
         Expanded(flex: investedPct.clamp(1, 99), child: Container(color: AppColors.income)),
-        Expanded(flex: (100 - investedPct).clamp(1, 99), child: Container(color: AppColors.income.withValues(alpha: 0.3))),
+        Expanded(flex: (100 - investedPct).clamp(1, 99), child: Container(color: AppColors.income.withOpacity(0.3))),
       ]))),
     ]));
   }
@@ -247,7 +247,7 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
         Expanded(child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+            border: Border.all(color: cs.outline.withOpacity(0.12)),
             borderRadius: BorderRadius.circular(10)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Years to FIRE', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
@@ -270,8 +270,8 @@ class _CalculatorsScreenState extends State<CalculatorsScreen> {
       Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.income.withValues(alpha: 0.05),
-          border: Border.all(color: AppColors.income.withValues(alpha: 0.12)),
+          color: AppColors.income.withOpacity(0.05),
+          border: Border.all(color: AppColors.income.withOpacity(0.12)),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
@@ -291,7 +291,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext c) => Container(width: double.infinity, padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(color: Theme.of(c).colorScheme.surface,
-      border: Border.all(color: Theme.of(c).colorScheme.outline.withValues(alpha: 0.12)),
+      border: Border.all(color: Theme.of(c).colorScheme.outline.withOpacity(0.12)),
       borderRadius: BorderRadius.circular(14)), child: child);
 }
 
@@ -318,8 +318,8 @@ class _ResultVal extends StatelessWidget {
     return Expanded(child: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color != null ? color!.withValues(alpha: 0.06) : cs.surface,
-        border: Border.all(color: cs.outline.withValues(alpha: 0.12)),
+        color: color != null ? color!.withOpacity(0.06) : cs.surface,
+        border: Border.all(color: cs.outline.withOpacity(0.12)),
         borderRadius: BorderRadius.circular(10)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),

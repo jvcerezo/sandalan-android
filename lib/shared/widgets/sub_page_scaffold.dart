@@ -25,7 +25,7 @@ class SubPageScaffold extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: cs.outline.withValues(alpha: 0.08)),
+                  bottom: BorderSide(color: cs.outline.withOpacity(0.08)),
                 ),
               ),
               child: Row(

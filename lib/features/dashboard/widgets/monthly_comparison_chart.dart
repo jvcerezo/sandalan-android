@@ -118,7 +118,7 @@ class MonthlyComparisonChart extends StatelessWidget {
                       drawVerticalLine: false,
                       horizontalInterval: maxVal > 0 ? maxVal / 4 : 1,
                       getDrawingHorizontalLine: (value) => FlLine(
-                        color: colorScheme.outline.withValues(alpha: 0.08),
+                        color: colorScheme.outline.withOpacity(0.08),
                         strokeWidth: 1,
                       ),
                     ),
@@ -174,7 +174,7 @@ class MonthlyComparisonChart extends StatelessWidget {
                           ),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: AppColors.info.withValues(alpha: 0.08),
+                            color: AppColors.info.withOpacity(0.08),
                           ),
                         ),
                       ],

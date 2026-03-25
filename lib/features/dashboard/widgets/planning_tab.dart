@@ -156,7 +156,7 @@ class PlanningTab extends ConsumerWidget {
                 return Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     const SizedBox(height: 8),
-                    Icon(LucideIcons.target, size: 32, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                    Icon(LucideIcons.target, size: 32, color: colorScheme.onSurfaceVariant.withOpacity(0.3)),
                     const SizedBox(height: 8),
                     Text('No active goals yet', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
                     const SizedBox(height: 12),

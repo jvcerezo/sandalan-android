@@ -51,7 +51,7 @@ class _TaxTrackerScreenState extends ConsumerState<TaxTrackerScreen> {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: AppColors.toolOrange.withValues(alpha: 0.1),
+              color: AppColors.toolOrange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(LucideIcons.receipt, size: 20, color: AppColors.toolOrange),
@@ -128,7 +128,7 @@ class _TaxTrackerScreenState extends ConsumerState<TaxTrackerScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text('TRAIN Law 2023+', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
@@ -169,7 +169,7 @@ class _TaxTrackerScreenState extends ConsumerState<TaxTrackerScreen> {
               margin: const EdgeInsets.only(bottom: 6),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isYourBracket ? colorScheme.primary.withValues(alpha: 0.06) : null,
+                color: isYourBracket ? colorScheme.primary.withOpacity(0.06) : null,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(children: [
@@ -228,7 +228,7 @@ class _TaxTrackerScreenState extends ConsumerState<TaxTrackerScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+                    border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -349,7 +349,7 @@ class _BracketPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(text, style: const TextStyle(fontSize: 11)),
@@ -398,7 +398,7 @@ class _ResultCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: highlight ? AppColors.toolOrange.withValues(alpha: 0.06) : colorScheme.surface,
+        color: highlight ? AppColors.toolOrange.withOpacity(0.06) : colorScheme.surface,
         border: Border.all(color: colorScheme.surfaceContainerHighest),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -423,7 +423,7 @@ class _QuarterRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.08))),
+        border: Border(bottom: BorderSide(color: colorScheme.outline.withOpacity(0.08))),
       ),
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

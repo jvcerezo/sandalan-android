@@ -250,7 +250,7 @@ class _BillDueCalendarState extends ConsumerState<BillDueCalendar> {
                     height: 44,
                     margin: const EdgeInsets.all(1),
                     decoration: BoxDecoration(
-                      color: isToday ? cs.primary.withValues(alpha: 0.1) : null,
+                      color: isToday ? cs.primary.withOpacity(0.1) : null,
                       borderRadius: BorderRadius.circular(8),
                       border: isToday ? Border.all(color: cs.primary, width: 1.5) : null,
                     ),
@@ -265,7 +265,7 @@ class _BillDueCalendarState extends ConsumerState<BillDueCalendar> {
                             color: isToday
                                 ? cs.primary
                                 : isPast
-                                    ? cs.onSurfaceVariant.withValues(alpha: 0.4)
+                                    ? cs.onSurfaceVariant.withOpacity(0.4)
                                     : cs.onSurface,
                           ),
                         ),
@@ -399,7 +399,7 @@ class DueThisWeekStrip extends ConsumerWidget {
                     width: 32, height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isToday ? cs.primary.withValues(alpha: 0.1) : null,
+                      color: isToday ? cs.primary.withOpacity(0.1) : null,
                       border: isToday ? Border.all(color: cs.primary, width: 1.5) : null,
                     ),
                     child: Center(

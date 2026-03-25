@@ -25,8 +25,8 @@ class JourneyBackdropPainter extends CustomPainter {
         ),
         radius: radius / size.width,
         colors: [
-          stageColors[i].withValues(alpha: isDark ? 0.08 : 0.06),
-          stageColors[i].withValues(alpha: 0),
+          stageColors[i].withOpacity(isDark ? 0.08 : 0.06),
+          stageColors[i].withOpacity(0),
         ],
       );
 

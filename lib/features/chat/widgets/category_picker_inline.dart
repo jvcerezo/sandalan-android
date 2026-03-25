@@ -30,7 +30,7 @@ class CategoryPickerInline extends StatelessWidget {
               label: Text(cat, style: const TextStyle(fontSize: 12)),
               onPressed: () => onSelected(cat),
               backgroundColor: cs.surfaceContainerHighest,
-              side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+              side: BorderSide(color: cs.outlineVariant.withOpacity(0.5)),
               visualDensity: VisualDensity.compact,
             );
           }).toList(),

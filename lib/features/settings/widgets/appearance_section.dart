@@ -182,9 +182,9 @@ class _DynamicColorDot extends StatelessWidget {
               shape: BoxShape.circle,
               border: selected
                   ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2.5)
-                  : Border.all(color: Colors.grey.withValues(alpha: 0.3), width: 1.5),
+                  : Border.all(color: Colors.grey.withOpacity(0.3), width: 1.5),
               boxShadow: selected
-                  ? [BoxShadow(color: Colors.blue.withValues(alpha: 0.35), blurRadius: 8, spreadRadius: 1)]
+                  ? [BoxShadow(color: Colors.blue.withOpacity(0.35), blurRadius: 8, spreadRadius: 1)]
                   : null,
             ),
             child: selected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
@@ -227,9 +227,9 @@ class _ColorDot extends StatelessWidget {
               shape: BoxShape.circle,
               border: selected
                   ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2.5)
-                  : Border.all(color: displayColor.withValues(alpha: 0.3), width: 1.5),
+                  : Border.all(color: displayColor.withOpacity(0.3), width: 1.5),
               boxShadow: selected
-                  ? [BoxShadow(color: displayColor.withValues(alpha: 0.35), blurRadius: 8, spreadRadius: 1)]
+                  ? [BoxShadow(color: displayColor.withOpacity(0.35), blurRadius: 8, spreadRadius: 1)]
                   : null,
             ),
             child: selected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
@@ -269,7 +269,7 @@ class _ThemeBtn extends StatelessWidget {
             decoration: BoxDecoration(
               color: selected ? cs.primary : Colors.transparent,
               border: Border.all(
-                  color: selected ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+                  color: selected ? cs.primary : cs.outline.withOpacity(0.2)),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -306,7 +306,7 @@ class _ScaleBtn extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: selected ? cs.primary : Colors.transparent,
-            border: Border.all(color: selected ? cs.primary : cs.outline.withValues(alpha: 0.2)),
+            border: Border.all(color: selected ? cs.primary : cs.outline.withOpacity(0.2)),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(

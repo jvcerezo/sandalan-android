@@ -142,7 +142,7 @@ class _OptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -150,7 +150,7 @@ class _OptionTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 18, color: color),

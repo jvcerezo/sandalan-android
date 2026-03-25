@@ -43,7 +43,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shadowColor: colorScheme.onSurface.withValues(alpha: 0.10),
+        shadowColor: colorScheme.onSurface.withOpacity(0.10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: colorScheme.outlineVariant, width: 1),
@@ -67,7 +67,7 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurface.withValues(alpha: 0.35)),
+        hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurface.withOpacity(0.35)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -147,7 +147,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.3),
+        shadowColor: Colors.black.withOpacity(0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: colorScheme.outlineVariant),
@@ -265,7 +265,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shadowColor: const Color(0xFF1A2E23).withValues(alpha: 0.10),
+        shadowColor: const Color(0xFF1A2E23).withOpacity(0.10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: const Color(0xFFCCD5CF), width: 1),
@@ -289,7 +289,7 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-        hintStyle: TextStyle(fontSize: 14, color: const Color(0xFF1A2E23).withValues(alpha: 0.35)),
+        hintStyle: TextStyle(fontSize: 14, color: const Color(0xFF1A2E23).withOpacity(0.35)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -383,8 +383,8 @@ class AppTheme {
       surfaceContainer: card,
       surfaceContainerHigh: popover,
       surfaceContainerHighest: secondary,
-      outline: Colors.white.withValues(alpha: 0.16),
-      outlineVariant: Colors.white.withValues(alpha: 0.08),
+      outline: Colors.white.withOpacity(0.16),
+      outlineVariant: Colors.white.withOpacity(0.08),
       secondary: accent,
       onSecondary: foreground,
       tertiary: mutedFg,
@@ -411,10 +411,10 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.3),
+        shadowColor: Colors.black.withOpacity(0.3),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+          side: BorderSide(color: Colors.white.withOpacity(0.14)),
         ),
         color: card,
         margin: EdgeInsets.zero,
@@ -423,11 +423,11 @@ class AppTheme {
         filled: false,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.22)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.22)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.22)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.22)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -451,7 +451,7 @@ class AppTheme {
           foregroundColor: foreground,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+          side: BorderSide(color: Colors.white.withOpacity(0.16)),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
@@ -465,7 +465,7 @@ class AppTheme {
         unselectedLabelStyle: const TextStyle(fontSize: 11),
       ),
       dividerTheme: DividerThemeData(
-        color: Colors.white.withValues(alpha: 0.14),
+        color: Colors.white.withOpacity(0.14),
         thickness: 1,
         space: 0,
       ),

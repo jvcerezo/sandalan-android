@@ -103,7 +103,7 @@ class _SplitsScreenState extends State<SplitsScreen> {
                   if (_activeSplits.isEmpty && _settledSplits.isEmpty) ...[
                     const SizedBox(height: 60),
                     Center(child: Column(children: [
-                      Icon(LucideIcons.users, size: 64, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.2)),
+                      Icon(LucideIcons.users, size: 64, color: colorScheme.onSurfaceVariant.withOpacity(0.2)),
                       const SizedBox(height: 16),
                       Text('No splits yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colorScheme.onSurfaceVariant)),
                       const SizedBox(height: 4),
@@ -149,7 +149,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Text(text,
       style: TextStyle(
         fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8,
-        color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
       ));
 }
 
@@ -194,7 +194,7 @@ class _SplitCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
+                  color: AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text('Owed \u20b1${owed.toStringAsFixed(0)}',
@@ -204,7 +204,7 @@ class _SplitCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
+                  color: AppColors.success.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text('Settled',

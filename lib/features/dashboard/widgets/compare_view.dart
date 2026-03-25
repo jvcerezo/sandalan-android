@@ -48,7 +48,7 @@ class CompareView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(children: [
@@ -71,7 +71,7 @@ class CompareView extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                     decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: colorScheme.outline.withValues(alpha: 0.08))),
+                      border: Border(bottom: BorderSide(color: colorScheme.outline.withOpacity(0.08))),
                     ),
                     child: Row(children: [
                       Expanded(flex: 3, child: Text(cat, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),

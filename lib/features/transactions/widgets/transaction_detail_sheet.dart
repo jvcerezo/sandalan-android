@@ -37,7 +37,7 @@ void showTransactionDetailSheet(
         Center(child: Container(
           width: 36, height: 4, margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: colorScheme.outline.withValues(alpha: 0.2),
+            color: colorScheme.outline.withOpacity(0.2),
             borderRadius: BorderRadius.circular(2)),
         )),
 
@@ -123,7 +123,7 @@ void showTransactionDetailSheet(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              side: BorderSide(color: AppColors.error.withValues(alpha: 0.3)),
+              side: BorderSide(color: AppColors.error.withOpacity(0.3)),
             ),
           )),
         ]),
