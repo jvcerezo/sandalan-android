@@ -296,8 +296,18 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
               FilledButton(
                   onPressed: _deleteCtl.text == 'DELETE'
                       ? () async {
-                          await ref.read(authRepositoryProvider).deleteAccount();
-                          if (context.mounted) context.go('/login');
+                          try {
+                            await ref.read(authRepositoryProvider).deleteAccount();
+                            if (context.mounted) context.go('/login');
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Failed to delete account: $e'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: AppColors.expense,
+                              ));
+                            }
+                          }
                         }
                       : null,
                   style: FilledButton.styleFrom(
