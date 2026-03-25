@@ -167,33 +167,46 @@ class AuthRepository {
   /// Supabase hosted instances don't allow DELETE FROM auth.users via SQL,
   /// so we call the Next.js API route which uses the admin SDK.
   Future<void> deleteAccount() async {
-    // 1. Stop sync immediately to prevent re-uploading deleted data
+    // 1. Grab the access token BEFORE stopping anything
+    final sessionResponse = await _client.auth.getSession();
+    final accessToken = sessionResponse.session?.accessToken;
+    if (accessToken == null) {
+      throw Exception('Not authenticated — please sign in again');
+    }
+    final userId = _client.auth.currentUser?.id;
+
+    // 2. Stop sync to prevent re-uploading deleted data
     final sync = SyncService.instance;
     if (sync != null) {
       sync.stopSync();
       SyncService.instance = null;
     }
 
-    final session = _client.auth.currentSession;
-    if (session == null) throw Exception('Not authenticated');
-
-    // 2. Call the web app API route that uses admin SDK to delete the user
+    // 3. Call the web app API route that uses admin SDK to delete the user
     const apiBase = 'https://exitplan-tau.vercel.app';
-    final response = await http.post(
-      Uri.parse('$apiBase/api/delete-account'),
-      headers: {
-        'Authorization': 'Bearer ${session.accessToken}',
-        'Content-Type': 'application/json',
-      },
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBase/api/delete-account'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 15));
 
-    if (response.statusCode != 200) {
-      final body = jsonDecode(response.body);
-      throw Exception(body['error'] ?? 'Failed to delete account');
+      if (response.statusCode != 200) {
+        String errorMsg = 'Failed to delete account (${response.statusCode})';
+        try {
+          final body = jsonDecode(response.body);
+          errorMsg = body['error'] ?? errorMsg;
+        } catch (_) {}
+        throw Exception(errorMsg);
+      }
+    } catch (e) {
+      if (e is Exception && e.toString().contains('Failed to delete')) rethrow;
+      throw Exception('Could not reach server: $e');
     }
 
-    // 3. Clear local data after successful server deletion
-    final userId = _client.auth.currentUser?.id;
+    // 4. Clear local data after successful server deletion
     if (userId != null) {
       await AppDatabase.instance.clearAllData(userId);
     }
