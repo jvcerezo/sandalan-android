@@ -338,11 +338,11 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget> {
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.12),
+              color: colorScheme.outline.withOpacity(0.12),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
+                color: Colors.black.withOpacity(0.25),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),
@@ -394,7 +394,7 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget> {
                           decoration: BoxDecoration(
                             color: isCurrent
                                 ? colorScheme.primary
-                                : colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                                : colorScheme.onSurfaceVariant.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -424,7 +424,7 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget> {
                                 style: OutlinedButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.2)),
+                                  side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
                                 ),
                                 child: Icon(LucideIcons.arrowLeft, size: 16, color: colorScheme.onSurface),
                               ),
@@ -458,7 +458,7 @@ class _TourOverlayWidgetState extends State<_TourOverlayWidget> {
                       '${widget.currentStep + 1} / ${widget.totalSteps}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                        color: colorScheme.onSurfaceVariant.withOpacity(0.5),
                       ),
                     ),
                   ],
@@ -487,7 +487,7 @@ class _SpotlightPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withValues(alpha: 0.6);
+    final paint = Paint()..color = Colors.black.withOpacity(0.6);
 
     if (target == TourTarget.none) {
       canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
@@ -552,7 +552,7 @@ class _StepIllustration extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: _buildPreview(step.preview),
@@ -585,7 +585,7 @@ class _StepIllustration extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: step.iconColor.withValues(alpha: 0.12),
+              color: step.iconColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(step.icon, size: 32, color: step.iconColor),
@@ -621,7 +621,7 @@ class _MiniLogoPreview extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                  color: const Color(0xFF6366F1).withOpacity(0.3),
                   blurRadius: 16,
                   offset: const Offset(0, 4),
                 ),
@@ -681,7 +681,7 @@ class _MiniQuickActionsPreview extends StatelessWidget {
                 Container(
                   width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: a.color.withValues(alpha: 0.1),
+                    color: a.color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(a.icon, size: 20, color: a.color),
@@ -728,7 +728,7 @@ class _MiniJourneyMapPreview extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                  color: const Color(0xFF3B82F6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text('6 stages',
@@ -749,7 +749,7 @@ class _MiniJourneyMapPreview extends StatelessWidget {
                     Container(
                       width: 28, height: 28,
                       decoration: BoxDecoration(
-                        color: s.color.withValues(alpha: 0.15),
+                        color: s.color.withOpacity(0.15),
                         shape: BoxShape.circle,
                         border: i == 0 ? Border.all(color: s.color, width: 1.5) : null,
                       ),
@@ -800,7 +800,7 @@ class _MiniDashboardPreview extends StatelessWidget {
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: t == 'Overview' ? [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
                     ] : null,
                   ),
                   child: Text(t,
@@ -888,7 +888,7 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                    color: const Color(0xFF6366F1).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('"Magkano ginastos ko this week?"',
@@ -898,7 +898,7 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text('P3,450 ang total mo this week.',
@@ -913,7 +913,7 @@ class _MiniSmartFeaturesPreview extends StatelessWidget {
               Container(
                 width: 48, height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  color: const Color(0xFF6366F1).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(LucideIcons.scanLine, size: 24, color: Color(0xFF6366F1)),
@@ -943,7 +943,7 @@ class _PreviewFrame extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.12)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.12)),
       ),
       child: child,
     );
@@ -964,7 +964,7 @@ class _MiniBar extends StatelessWidget {
         child: Container(
           height: height,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.7),
+            color: color.withOpacity(0.7),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
