@@ -9,6 +9,7 @@ import '../../../core/providers/feature_visibility_provider.dart';
 import '../../goals/providers/goal_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../../core/services/invite_service.dart';
 import '../../transactions/screens/receipt_scanner_screen.dart';
 
 class MoreScreen extends ConsumerWidget {
@@ -227,6 +228,13 @@ class MoreScreen extends ConsumerWidget {
               builder: (_) => const ReceiptScannerScreen(),
             ));
           },
+        ),
+        _MoreItem(
+          icon: LucideIcons.userPlus,
+          color: const Color(0xFF10B981),
+          title: 'Invite Friends',
+          subtitle: 'Share Sandalan with friends & family',
+          onTap: () => InviteService.shareInvite(),
         ),
         _MoreItem(
           icon: LucideIcons.settings,

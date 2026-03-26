@@ -203,6 +203,22 @@ class AppDatabase {
       )
     ''');
 
+    // ─── Shared Goals ──────────────────────────────────────────────────────
+    await _db.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_shared_goals (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        target_amount REAL NOT NULL,
+        contributors TEXT NOT NULL,
+        deadline TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        sync_status TEXT NOT NULL DEFAULT 'pending'
+      )
+    ''');
+
     // ─── Net Worth Snapshots ────────────────────────────────────────────────
     await _db.customStatement('''
       CREATE TABLE IF NOT EXISTS net_worth_snapshots (
@@ -873,6 +889,21 @@ class AppDatabase {
   }
 
   Future<void> upsertBillSplit(Map<String, dynamic> values) => _upsert('local_bill_splits', values);
+
+  // ─── Shared Goals ─────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getSharedGoals(String userId) async {
+    return _db.customSelect(
+      'SELECT * FROM local_shared_goals WHERE user_id = ? ORDER BY deadline ASC',
+      variables: [Variable.withString(userId)],
+    ).get().then((rows) => rows.map((r) => r.data).toList());
+  }
+
+  Future<void> upsertSharedGoal(Map<String, dynamic> values) => _upsert('local_shared_goals', values);
+
+  Future<void> deleteSharedGoal(String id) async {
+    await _db.customStatement('DELETE FROM local_shared_goals WHERE id = ?', [id]);
+  }
 
   Future<void> deleteBillSplit(String id) async {
     await _db.customStatement('DELETE FROM local_bill_splits WHERE id = ?', [id]);

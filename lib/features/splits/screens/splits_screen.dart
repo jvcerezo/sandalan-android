@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/notification_service.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/bill_split.dart';
 import '../../../core/services/guest_mode_service.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/new_split_dialog.dart';
 
@@ -61,6 +65,60 @@ class _SplitsScreenState extends State<SplitsScreen> {
     await _loadSplits();
   }
 
+  Widget _buildSummaryCard(ColorScheme cs) {
+    final totalOwed = _activeSplits.fold<double>(0, (sum, s) => sum + s.amountOwed);
+    final totalPending = _activeSplits.where((s) => s.amountOwed > 0).length;
+
+    if (totalOwed <= 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [
+            cs.primary.withOpacity(0.08),
+            cs.primary.withOpacity(0.03),
+          ]),
+          border: Border.all(color: cs.primary.withOpacity(0.15)),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: cs.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(LucideIcons.banknote, size: 22, color: cs.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('You\'re owed', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+            Text(formatCurrency(totalOwed),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: cs.primary)),
+          ])),
+          Column(children: [
+            Text('$totalPending', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface)),
+            Text('pending', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Future<void> _scheduleReminder(BillSplit split) async {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final target = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 10, 0);
+    await NotificationService.instance.scheduleNotification(
+      id: split.id.hashCode + 50000,
+      title: 'Split Bill Reminder',
+      body: '${split.description}: ${formatCurrency(split.amountOwed)} still pending',
+      scheduledDate: target,
+    );
+    if (mounted) showSuccessSnackBar(context, 'Reminder set for tomorrow 10 AM');
+  }
+
   Future<void> _deleteSplit(BillSplit split) async {
     await AppDatabase.instance.deleteBillSplit(split.id);
     await _loadSplits();
@@ -85,7 +143,11 @@ class _SplitsScreenState extends State<SplitsScreen> {
                       ? 'Split expenses with friends'
                       : '${_activeSplits.length} active · ${_settledSplits.length} settled',
                       style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  // Summary card
+                  if (_activeSplits.isNotEmpty)
+                    _buildSummaryCard(colorScheme),
 
                   // Active splits
                   if (_activeSplits.isNotEmpty) ...[
@@ -95,6 +157,7 @@ class _SplitsScreenState extends State<SplitsScreen> {
                       _SplitCard(
                         split: split,
                         onNudge: () => Share.share(split.nudgeText()),
+                        onReminder: split.amountOwed > 0 ? () => _scheduleReminder(split) : null,
                         onTogglePaid: (i) => _togglePaid(split, i),
                         onDelete: () => _deleteSplit(split),
                       ),
@@ -156,12 +219,14 @@ class _SectionLabel extends StatelessWidget {
 class _SplitCard extends StatelessWidget {
   final BillSplit split;
   final VoidCallback? onNudge;
+  final VoidCallback? onReminder;
   final void Function(int index) onTogglePaid;
   final VoidCallback onDelete;
 
   const _SplitCard({
     required this.split,
     required this.onNudge,
+    this.onReminder,
     required this.onTogglePaid,
     required this.onDelete,
   });
@@ -248,6 +313,12 @@ class _SplitCard extends StatelessWidget {
                 onPressed: onNudge,
                 icon: const Icon(LucideIcons.send, size: 14),
                 label: const Text('Nudge', style: TextStyle(fontSize: 12)),
+              ),
+            if (onReminder != null)
+              TextButton.icon(
+                onPressed: onReminder,
+                icon: const Icon(LucideIcons.bell, size: 14),
+                label: const Text('Remind', style: TextStyle(fontSize: 12)),
               ),
             const Spacer(),
             IconButton(
