@@ -12,6 +12,7 @@ import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../accounts/providers/account_providers.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../providers/goal_providers.dart';
 import '../widgets/add_goal_dialog.dart';
 import '../../../shared/utils/snackbar_helper.dart';
@@ -107,7 +108,10 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                 StaggeredFadeIn(index: e.key, child: _GoalCard(goal: e.value))).toList());
           },
           loading: () => Column(children: List.generate(3, (_) => const ShimmerCard())),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (_, __) => ErrorRetry(
+            message: 'Could not load goals',
+            onRetry: () => ref.invalidate(goalsProvider),
+          ),
         ),
       ],
     ),

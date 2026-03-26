@@ -9,6 +9,7 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../providers/account_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../widgets/add_account_dialog.dart';
@@ -126,7 +127,10 @@ class AccountsScreen extends ConsumerWidget {
                   );
                 }).toList()),
           loading: () => Column(children: List.generate(3, (_) => const ShimmerCard(height: 72))),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (_, __) => ErrorRetry(
+            message: 'Could not load accounts',
+            onRetry: () => ref.invalidate(accountsProvider),
+          ),
         ),
         const SizedBox(height: 20),
 

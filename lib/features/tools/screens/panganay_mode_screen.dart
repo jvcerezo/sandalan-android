@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../../transactions/providers/transaction_providers.dart';
 
 class PanganayModeScreen extends ConsumerWidget {
@@ -109,7 +110,10 @@ class PanganayModeScreen extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (_, __) => ErrorRetry(
+        message: 'Could not load data',
+        onRetry: () => ref.invalidate(transactionsProvider),
+      ),
     );
   }
 }

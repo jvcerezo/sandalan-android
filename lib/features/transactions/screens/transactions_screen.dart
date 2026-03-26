@@ -10,6 +10,7 @@ import '../../../data/models/transaction.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../providers/transaction_providers.dart';
 import '../../../data/models/account.dart';
 import '../../accounts/providers/account_providers.dart';
@@ -300,7 +301,10 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             );
           },
           loading: () => const ShimmerList(itemCount: 6),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (_, __) => ErrorRetry(
+            message: 'Could not load transactions',
+            onRetry: () => ref.invalidate(transactionsProvider),
+          ),
         ),
       ],
     ),

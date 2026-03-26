@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/investment.dart';
 import '../../../data/repositories/local_investment_repository.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../widgets/add_investment_dialog.dart';
 
 final investmentsProvider = FutureProvider<List<Investment>>((ref) async {
@@ -28,7 +29,10 @@ class InvestmentsScreen extends ConsumerWidget {
     return Scaffold(
       body: investments.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (_, __) => ErrorRetry(
+            message: 'Could not load investments',
+            onRetry: () => ref.invalidate(investmentsProvider),
+          ),
           data: (list) {
             final totalInvested = list.fold(0.0, (s, i) => s + i.amountInvested);
             final totalValue = list.fold(0.0, (s, i) => s + i.currentValue);

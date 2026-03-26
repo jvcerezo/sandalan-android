@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../providers/report_providers.dart';
 
 class ReportsListScreen extends ConsumerWidget {
@@ -168,7 +169,10 @@ class ReportsListScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (_, __) => ErrorRetry(
+          message: 'Could not load reports',
+          onRetry: () => ref.invalidate(allReportsProvider),
+        ),
       );
   }
 

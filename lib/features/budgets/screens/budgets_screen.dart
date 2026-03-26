@@ -11,6 +11,7 @@ import '../../../data/repositories/transaction_repository.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../transactions/providers/transaction_providers.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../providers/budget_providers.dart';
 import '../widgets/add_budget_dialog.dart';
 import '../widgets/budget_rollover_dialog.dart';
@@ -284,7 +285,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             ]);
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (_, __) => ErrorRetry(
+            message: 'Could not load budgets',
+            onRetry: () => ref.invalidate(budgetsProvider),
+          ),
         ),
       ],
     );

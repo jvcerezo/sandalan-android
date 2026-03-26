@@ -11,6 +11,7 @@ import 'dart:io';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/monthly_report.dart';
+import '../../../shared/widgets/error_retry.dart';
 import '../providers/report_providers.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../../shared/utils/snackbar_helper.dart';
@@ -65,7 +66,12 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
       body: reportAsync.when(
         data: (report) => _buildReport(context, report),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error generating report: $e')),
+        error: (_, __) => ErrorRetry(
+          message: 'Could not load report',
+          onRetry: () => ref.invalidate(
+            monthlyReportProvider((year: widget.year, month: widget.month)),
+          ),
+        ),
       ),
     ));
   }
