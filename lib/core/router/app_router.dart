@@ -41,6 +41,12 @@ import '../../shared/widgets/safe_back_wrapper.dart';
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Global setter for money tab — called by redirects before GoRouter navigates.
+/// The MoneyScreen listens to moneyTabProvider and animates to the new tab.
+void Function(int)? _moneyTabSetter;
+void registerMoneyTabSetter(void Function(int) setter) => _moneyTabSetter = setter;
+void _setMoneyTab(int tab) => _moneyTabSetter?.call(tab);
+
 /// Cached landing page, loaded synchronously from SharedPreferences at startup.
 String _cachedLandingPage = '/home';
 
@@ -145,30 +151,37 @@ final appRouter = GoRouter(
             child: GuideScreen(),
           ),
         ),
-        // Money tabs: /dashboard (Overview), /transactions, /accounts, /budgets
+        // Money: single route, tab switching via moneyTabProvider
         GoRoute(
           path: '/dashboard',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: MoneyScreen(initialTab: 0),
-          ),
+          pageBuilder: (context, state) {
+            _setMoneyTab(0);
+            return const NoTransitionPage(
+              child: MoneyScreen(),
+            );
+          },
         ),
         GoRoute(
           path: '/transactions',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: MoneyScreen(initialTab: 1),
-          ),
+          redirect: (context, state) {
+            // Set tab to Transactions before redirecting
+            _setMoneyTab(1);
+            return '/dashboard';
+          },
         ),
         GoRoute(
           path: '/accounts',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: MoneyScreen(initialTab: 2),
-          ),
+          redirect: (context, state) {
+            _setMoneyTab(2);
+            return '/dashboard';
+          },
         ),
         GoRoute(
           path: '/budgets',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: MoneyScreen(initialTab: 3),
-          ),
+          redirect: (context, state) {
+            _setMoneyTab(3);
+            return '/dashboard';
+          },
         ),
         GoRoute(
           path: '/goals',

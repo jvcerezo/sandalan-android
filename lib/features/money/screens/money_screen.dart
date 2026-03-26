@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/router/app_router.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../transactions/screens/transactions_screen.dart';
 import '../../accounts/screens/accounts_screen.dart';
 import '../../budgets/screens/budgets_screen.dart';
 
+/// Tracks current Money tab so external navigation can set it
+/// without rebuilding the widget.
+final moneyTabProvider = StateProvider<int>((ref) => 0);
+
 class MoneyScreen extends ConsumerStatefulWidget {
-  final int initialTab;
-  const MoneyScreen({super.key, this.initialTab = 0});
+  const MoneyScreen({super.key});
 
   @override
   ConsumerState<MoneyScreen> createState() => _MoneyScreenState();
@@ -23,15 +27,28 @@ class _MoneyScreenState extends ConsumerState<MoneyScreen>
   @override
   void initState() {
     super.initState();
+    final initialTab = ref.read(moneyTabProvider);
     _tabController = TabController(
       length: _tabs.length,
       vsync: this,
-      initialIndex: widget.initialTab,
+      initialIndex: initialTab,
     );
+    _tabController.addListener(_onTabChanged);
+    // Register global setter so router redirects can switch tabs
+    registerMoneyTabSetter((tab) {
+      ref.read(moneyTabProvider.notifier).state = tab;
+    });
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      ref.read(moneyTabProvider.notifier).state = _tabController.index;
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -39,6 +56,13 @@ class _MoneyScreenState extends ConsumerState<MoneyScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    // Listen for external tab changes (e.g. from home screen links)
+    ref.listen<int>(moneyTabProvider, (prev, next) {
+      if (_tabController.index != next) {
+        _tabController.animateTo(next);
+      }
+    });
 
     return Column(
       children: [

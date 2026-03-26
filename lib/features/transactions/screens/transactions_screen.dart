@@ -207,9 +207,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         const SizedBox(height: 16),
 
         // Transaction list
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: transactions.when(
+        transactions.when(
           skipLoadingOnRefresh: true,
           skipLoadingOnReload: true,
           data: (txns) {
@@ -294,7 +292,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           },
           loading: () => const ShimmerList(itemCount: 6),
           error: (e, _) => Center(child: Text('Error: $e')),
-        )),
+        ),
       ],
     ),
     );
