@@ -53,6 +53,7 @@ class ParseResult {
   final String? message; // bot response text for queries/errors
   final QueryType? queryType;
   final String? queryCategory; // for spending-by-category queries
+  final String? queryPeriod; // for date-relative queries (yesterday, this_week, this_month)
   final List<double>? ambiguousAmounts; // for amount clarification
   final bool needsAmountConfirmation; // for amounts > 100k
 
@@ -68,6 +69,7 @@ class ParseResult {
     this.message,
     this.queryType,
     this.queryCategory,
+    this.queryPeriod,
     this.ambiguousAmounts,
     this.needsAmountConfirmation = false,
   });

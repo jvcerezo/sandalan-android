@@ -583,36 +583,62 @@ class ChatEngine {
 
     // Determine query type
     if (_containsAny(lower, ['net worth', 'networth', 'pera ko', 'total balance', 'total money',
-        'magkano pera ko', 'how much do i have'])) {
+        'magkano pera ko', 'how much do i have', 'ilan pera ko', 'total ko',
+        'magkano na lahat', 'overall balance'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.netWorth, message: '');
     }
-    if (_containsAny(lower, ['show my accounts', 'mga account ko', 'account ko'])) {
+    if (_containsAny(lower, ['show my accounts', 'mga account ko', 'account ko',
+        'list accounts', 'balances ko', 'ilan sa account'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.accountBalance, message: '');
     }
     if (_containsAny(lower, ['budget', 'over budget', 'kumusta budget', 'how\'s my budget',
-        'lumagpas', 'magkano pa pwede', 'how much can i still spend'])) {
+        'lumagpas', 'magkano pa pwede', 'how much can i still spend',
+        'natirang budget', 'budget status', 'budget ko'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.budgetStatus, message: '');
     }
     if (_containsAny(lower, ['goal', 'goals', 'savings progress', 'ipon',
-        'kumusta goals', 'how are my goals', 'gaano na kalaki', 'how close'])) {
+        'kumusta goals', 'how are my goals', 'gaano na kalaki', 'how close',
+        'target ko', 'kumusta ipon', 'magkano na ipon'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.goalProgress, message: '');
     }
     if (_containsAny(lower, ['utang', 'debt', 'debts', 'owe', 'naiutang',
-        'magkano utang', 'how much do i owe'])) {
+        'magkano utang', 'how much do i owe', 'mga utang ko'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.debtSummary, message: '');
     }
     if (_containsAny(lower, ['bill', 'bills', 'bayarin', 'due', 'upcoming bills',
-        'anong bills', 'what bills', 'when is', 'kailan due'])) {
+        'anong bills', 'what bills', 'when is', 'kailan due',
+        'mga bayarin', 'anong dapat bayaran', 'next payment'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.billsDue, message: '');
     }
-    if (_containsAny(lower, ['recent', 'last', 'history', 'huling'])) {
+    if (_containsAny(lower, ['recent', 'last', 'history', 'huling',
+        'last transactions', 'recent spending', 'mga binili ko'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.recentTransactions, message: '');
     }
-    if (_containsAny(lower, ['compare', 'versus', 'vs', 'last month', 'compare sa'])) {
+    // Date-relative spending queries
+    if (_containsAny(lower, ['kahapon', 'yesterday'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.recentTransactions,
+          message: '', queryPeriod: 'yesterday');
+    }
+    if (_containsAny(lower, ['this week', 'ngayong linggo', 'this linggo'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary,
+          message: '', queryPeriod: 'this_week');
+    }
+    if (_containsAny(lower, ['this month', 'ngayong buwan', 'this buwan'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary,
+          message: '', queryPeriod: 'this_month');
+    }
+    if (_containsAny(lower, ['compare', 'versus', 'vs', 'last month', 'compare sa',
+        'noong nakaraang buwan', 'kumpara'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary, message: '');
     }
     if (_containsAny(lower, ['saan napupunta', 'where does my money go', 'top expenses',
-        'pinaka malaki', 'pinakamalaki'])) {
+        'pinaka malaki', 'pinakamalaki', 'ano pinakamataas',
+        'saan ko ginagastos', 'biggest expense', 'top gastos'])) {
+      return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary, message: '');
+    }
+    // Taglish spending queries
+    if (_containsAny(lower, ['magkano gastos ko', 'magkano ginastos ko',
+        'how much spent', 'ilan ginastos', 'total gastos'])) {
       return const ParseResult(intent: ChatIntent.query, queryType: QueryType.spendingSummary, message: '');
     }
 

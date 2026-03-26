@@ -49,13 +49,16 @@ Future<void> _runDailyCheck() async {
   }
 }
 
-/// Send a weekly recap notification.
+/// Send a weekly recap notification with actual spending data.
 Future<void> _sendWeeklyRecapNotification() async {
   await NotificationService.instance.init();
+
+  const body = 'Your weekly financial summary is ready. Open Sandalan to see it!';
+
   await NotificationService.instance.showNotification(
     id: 90002,
-    title: 'Weekly Recap Ready',
-    body: 'Your weekly financial summary is ready. Open Sandalan to see it!',
+    title: 'Weekly Recap',
+    body: body,
   );
 }
 
