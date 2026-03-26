@@ -202,9 +202,13 @@ class _AppScaffoldState extends State<AppScaffold> {
                     child: Row(
                       children: [
                         const SizedBox(width: 16),
-                        GestureDetector(
-                          onTap: () => context.go('/home'),
-                          child: const BrandMark(size: 28),
+                        Semantics(
+                          label: 'Home',
+                          button: true,
+                          child: GestureDetector(
+                            onTap: () => context.go('/home'),
+                            child: const BrandMark(size: 28),
+                          ),
                         ),
                         const Spacer(),
                         const SyncIndicator(),
@@ -261,7 +265,10 @@ class _AppScaffoldState extends State<AppScaffold> {
                           ),
                           // Add (+) center button
                           Expanded(
-                            child: GestureDetector(
+                            child: Semantics(
+                              label: 'Add transaction',
+                              button: true,
+                              child: GestureDetector(
                               onTap: () => _showQuickActions(context),
                               behavior: HitTestBehavior.opaque,
                               child: Column(
@@ -282,6 +289,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                                   ),
                                 ],
                               ),
+                            ),
                             ),
                           ),
                           // Money
@@ -330,7 +338,11 @@ class _TabItem extends StatelessWidget {
         : colorScheme.onSurfaceVariant.withOpacity(0.5);
 
     return Expanded(
-      child: GestureDetector(
+      child: Semantics(
+        label: '$label tab${isActive ? ', selected' : ''}',
+        button: true,
+        selected: isActive,
+        child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
           if (!isActive) {
@@ -363,6 +375,7 @@ class _TabItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -423,7 +436,10 @@ class _QuickActionTileState extends State<_QuickActionTile>
       opacity: _opacity,
       child: ScaleTransition(
         scale: _scale,
-        child: GestureDetector(
+        child: Semantics(
+          label: 'Add ${widget.label}',
+          button: true,
+          child: GestureDetector(
           onTap: () {
             HapticFeedback.selectionClick();
             widget.onTap();
@@ -445,6 +461,7 @@ class _QuickActionTileState extends State<_QuickActionTile>
               ],
             ),
           ),
+        ),
         ),
       ),
     );
