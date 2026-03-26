@@ -35,9 +35,8 @@ Future<void> main() async {
   // Migrate plaintext PIN to secure hashed storage (one-time, safe to re-run).
   await AppLockService.instance.migrateIfNeeded();
 
-  // Initialize notifications and run automation after Supabase is ready.
+  // Initialize notifications (permission request deferred to after first frame).
   await NotificationService.instance.init();
-  await NotificationService.instance.requestPermission();
 
   // Only run sync and automation for authenticated (non-guest) users.
   final isGuest = GuestModeService.isGuestSync();

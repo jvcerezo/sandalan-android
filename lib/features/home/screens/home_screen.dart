@@ -64,6 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.didChangeDependencies();
     // Invalidate providers to force refresh when returning from other screens
     ref.invalidate(transactionsSummaryProvider);
+    ref.invalidate(recentTransactionsProvider);
     ref.invalidate(upcomingPaymentsProvider);
     ref.invalidate(billsSummaryProvider);
     ref.invalidate(debtSummaryProvider);
@@ -143,6 +144,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _onRefresh(WidgetRef ref) async {
     HapticFeedback.mediumImpact();
     ref.invalidate(transactionsSummaryProvider);
+    ref.invalidate(recentTransactionsProvider);
     ref.invalidate(profileProvider);
     ref.invalidate(billsSummaryProvider);
     ref.invalidate(debtSummaryProvider);
@@ -443,6 +445,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _buildContextualCard(),
           ),
 
+          // ─── Recent Transactions ─────────────────────────────────
+          StaggeredFadeIn(
+            index: 4,
+            child: _RecentTransactionsSection(ref: ref, hideBalances: hideBalances),
+          ),
+
           // ─── Upcoming Payments ───────────────────────────────────
           StaggeredFadeIn(
             index: 5,
@@ -527,6 +535,124 @@ class _FinStat extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Recent Transactions ──────────────────────────────────────────────────────
+
+class _RecentTransactionsSection extends StatelessWidget {
+  final WidgetRef ref;
+  final bool hideBalances;
+  const _RecentTransactionsSection({required this.ref, this.hideBalances = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final recent = ref.watch(recentTransactionsProvider);
+
+    return recent.when(
+      data: (txns) {
+        if (txns.isEmpty) return const SizedBox.shrink();
+
+        final visible = txns.take(5).toList();
+
+        return Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('RECENT TRANSACTIONS',
+                      style: TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
+                      )),
+                  GestureDetector(
+                    onTap: () => GoRouter.of(context).go('/transactions'),
+                    child: Text('See all',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                            color: colorScheme.primary)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Items
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.surfaceContainerHighest),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: visible.asMap().entries.map((entry) {
+                  final t = entry.value;
+                  final isLast = entry.key == visible.length - 1;
+                  final isExpense = t.amount < 0 || t.type == 'expense';
+                  final amountColor = isExpense
+                      ? colorScheme.onSurface
+                      : AppColors.income;
+                  final sign = isExpense ? '-' : '+';
+                  final displayAmt = hideBalances
+                      ? '••••'
+                      : '$sign${formatCurrency(t.amount.abs())}';
+
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32, height: 32,
+                              decoration: BoxDecoration(
+                                color: (isExpense
+                                    ? colorScheme.onSurfaceVariant
+                                    : AppColors.income).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                isExpense ? LucideIcons.arrowUpRight : LucideIcons.arrowDownLeft,
+                                size: 16,
+                                color: isExpense ? colorScheme.onSurfaceVariant : AppColors.income,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(t.description.isNotEmpty ? t.description : t.category,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  Text(t.category,
+                                      style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                                ],
+                              ),
+                            ),
+                            Text(displayAmt,
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                                    color: amountColor)),
+                          ],
+                        ),
+                      ),
+                      if (!isLast)
+                        Divider(height: 1, indent: 56, color: colorScheme.outline.withOpacity(0.08)),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

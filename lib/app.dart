@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_color.dart';
 import 'core/router/app_router.dart';
 import 'core/services/app_lock_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/services/privacy_service.dart';
 import 'features/auth/screens/lock_screen.dart';
 
@@ -330,6 +331,10 @@ class _SandalanAppState extends ConsumerState<SandalanApp> with WidgetsBindingOb
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkInitialLock();
+    // Request notification permission after first frame (needs activity context)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.instance.requestPermission();
+    });
   }
 
   @override

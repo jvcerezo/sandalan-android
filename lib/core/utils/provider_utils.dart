@@ -45,7 +45,9 @@ void invalidateFinancialProviders(dynamic ref) {
   inv(insuranceSummaryProvider);
 }
 
-/// Lighter version: just transaction + account providers (most common case).
+/// Invalidate all transaction-related providers + accounts.
+/// This is the go-to function after any transaction write (add/edit/delete).
+/// Covers: list views, summary cards, dashboard charts, home screen.
 void invalidateTransactionProviders(dynamic ref) {
   void inv(ProviderOrFamily provider) {
     try {
@@ -57,12 +59,21 @@ void invalidateTransactionProviders(dynamic ref) {
     } catch (_) {}
   }
 
+  // Transaction lists
   inv(recentTransactionsProvider);
   inv(transactionsProvider);
   inv(transactionsCountProvider);
+
+  // Summary (home + dashboard)
   inv(transactionsSummaryProvider);
+
+  // Dashboard charts
   inv(currentMonthTransactionsProvider);
   inv(last6MonthsTransactionsProvider);
   inv(categoryTotalsProvider);
+  inv(monthlyTotalsProvider);
+  inv(monthlyNetTotalsProvider);
+
+  // Accounts (balance changes)
   inv(accountsProvider);
 }
