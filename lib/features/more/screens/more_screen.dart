@@ -10,6 +10,7 @@ import '../../goals/providers/goal_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../core/services/invite_service.dart';
+import '../../settings/widgets/feedback_dialog.dart';
 import '../../transactions/screens/receipt_scanner_screen.dart';
 
 class MoreScreen extends ConsumerWidget {
@@ -235,6 +236,13 @@ class MoreScreen extends ConsumerWidget {
           title: 'Document Vault',
           subtitle: 'Store IDs, contracts & important files',
           onTap: () => context.go('/vault'),
+        ),
+        _MoreItem(
+          icon: LucideIcons.messageSquare,
+          color: const Color(0xFF3B82F6),
+          title: 'Send Feedback',
+          subtitle: 'Suggestions, bugs, or praise',
+          onTap: () => showFeedbackDialog(context),
         ),
         _MoreItem(
           icon: LucideIcons.userPlus,
