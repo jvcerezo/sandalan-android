@@ -14,6 +14,7 @@ import 'core/services/deep_link_service.dart';
 import 'core/services/sync_service.dart';
 import 'core/services/sync_status_notifier.dart';
 import 'core/services/background_worker.dart';
+import 'core/services/premium_service.dart';
 import 'data/local/app_database.dart';
 
 Future<void> main() async {
@@ -38,6 +39,9 @@ Future<void> main() async {
 
   // Initialize notifications (permission request deferred to after first frame).
   await NotificationService.instance.init();
+
+  // Initialize premium service (check subscription status).
+  await PremiumService.instance.init();
 
   // Initialize WorkManager for persistent background tasks (daily reminder
   // re-scheduling, weekly recap notifications). Survives app close & reboot.

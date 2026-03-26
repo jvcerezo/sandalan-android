@@ -14,6 +14,7 @@ import '../widgets/privacy_section.dart';
 import '../widgets/bug_report_section.dart';
 import '../widgets/account_section.dart';
 import '../widgets/feature_visibility_section.dart';
+import '../widgets/about_section.dart';
 
 // ─── Main Settings Menu ────────────────────────────────────────────────────────
 
@@ -153,6 +154,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Account',
             sub: isGuest ? 'Tour, create account' : 'Sign out, tour, sync',
             onTap: () => _goToSection('account')),
+        _MenuItem(
+            icon: LucideIcons.info,
+            title: 'About Sandalan',
+            sub: 'Version, credits, legal',
+            onTap: () => _goToSection('about')),
       ],
     );
   }
@@ -209,6 +215,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return BugReportSection(back: back);
       case 'account':
         return AccountSection(back: back);
+      case 'about':
+        return AboutSection(back: back);
       default:
         return const SizedBox.shrink();
     }
