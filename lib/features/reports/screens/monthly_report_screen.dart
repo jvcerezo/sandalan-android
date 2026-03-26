@@ -12,6 +12,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/monthly_report.dart';
 import '../providers/report_providers.dart';
+import '../../../shared/widgets/animated_counter.dart';
 
 class MonthlyReportScreen extends ConsumerStatefulWidget {
   final int year;
@@ -748,16 +749,11 @@ class _CategoryBar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: SizedBox(
-            height: 6,
-            child: LinearProgressIndicator(
-              value: (category.percentage / 100).clamp(0.0, 1.0),
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation(barColor),
-            ),
-          ),
+        AnimatedProgressBar(
+          value: (category.percentage / 100).clamp(0.0, 1.0),
+          minHeight: 6,
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          color: barColor,
         ),
       ],
     );

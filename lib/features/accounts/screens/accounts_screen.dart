@@ -218,12 +218,13 @@ class _AccountCard extends ConsumerWidget {
                 ]),
               ]),
             ),
-            Text(formatCurrency(account.balance, currencyCode: account.currency),
+            AnimatedCurrency(
+                value: account.balance,
+                currencyCode: account.currency,
                 style: TextStyle(
                   fontSize: 15, fontWeight: FontWeight.w700,
                   color: account.balance >= 0 ? colorScheme.onSurface : AppColors.expense,
-                ),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
+                )),
           ]),
         ),
       ),

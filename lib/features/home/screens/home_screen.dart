@@ -281,26 +281,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 if (_streak > 0)
                   GestureDetector(
                     onTap: _showStreakDetail,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: _flameColor(_streak).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(LucideIcons.flame, size: 16, color: _flameColor(_streak)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$_streak',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: _flameColor(_streak),
+                    child: _PulseWidget(
+                      enabled: _streak >= 3,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: _flameColor(_streak).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.flame, size: 16, color: _flameColor(_streak)),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$_streak',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: _flameColor(_streak),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -463,6 +466,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+
+// ─── Pulse Animation (for streak badge) ──────────────────────────────────────
+
+class _PulseWidget extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+  const _PulseWidget({required this.child, this.enabled = true});
+
+  @override
+  State<_PulseWidget> createState() => _PulseWidgetState();
+}
+
+class _PulseWidgetState extends State<_PulseWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    if (widget.enabled) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) return widget.child;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final scale = 1.0 + (_controller.value * 0.06);
+        return Transform.scale(scale: scale, child: child);
+      },
+      child: widget.child,
+    );
+  }
+}
 
 // ─── Financial Stat Card ───────────────────────────────────────────────────────
 

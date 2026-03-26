@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/providers/feature_visibility_provider.dart';
 import '../../goals/providers/goal_providers.dart';
 import '../../tools/providers/tool_providers.dart';
+import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../transactions/screens/receipt_scanner_screen.dart';
 
 class MoreScreen extends ConsumerWidget {
@@ -176,15 +177,17 @@ class MoreScreen extends ConsumerWidget {
 
         // ─── Manage ────────────────────────────────────────────────
         if (manageItems.isNotEmpty) ...[
-          const _SectionHeader(title: 'Manage'),
-          ...manageItems,
+          const StaggeredFadeIn(index: 0, child: _SectionHeader(title: 'Manage')),
+          ...manageItems.asMap().entries.map((e) =>
+            StaggeredFadeIn(index: e.key + 1, baseDelay: const Duration(milliseconds: 30), child: e.value)),
           const SizedBox(height: 16),
         ],
 
         // ─── Tools ─────────────────────────────────────────────────
         if (toolItems.isNotEmpty) ...[
-          const _SectionHeader(title: 'Tools'),
-          ...toolItems,
+          StaggeredFadeIn(index: manageItems.length + 1, child: const _SectionHeader(title: 'Tools')),
+          ...toolItems.asMap().entries.map((e) =>
+            StaggeredFadeIn(index: e.key + manageItems.length + 2, baseDelay: const Duration(milliseconds: 30), child: e.value)),
           const SizedBox(height: 16),
         ],
 

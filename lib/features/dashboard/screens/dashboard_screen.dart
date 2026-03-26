@@ -165,9 +165,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Row(children: [
                                   Icon(LucideIcons.trendingUp, size: 12, color: AppColors.income),
                                   const SizedBox(width: 3),
-                                  Flexible(child: Text(fc(s.income),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income),
-                                      overflow: TextOverflow.ellipsis)),
+                                  Flexible(child: hideBalances
+                                      ? const Text('••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income))
+                                      : AnimatedCurrency(value: s.income,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income))),
                                 ]),
                               ])),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -176,9 +177,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Row(children: [
                                   Icon(LucideIcons.trendingDown, size: 12, color: AppColors.expense),
                                   const SizedBox(width: 3),
-                                  Flexible(child: Text(fc(s.expenses),
-                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense),
-                                      overflow: TextOverflow.ellipsis)),
+                                  Flexible(child: hideBalances
+                                      ? const Text('••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense))
+                                      : AnimatedCurrency(value: s.expenses,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense))),
                                 ]),
                               ])),
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -187,10 +189,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 Row(children: [
                                   Icon(LucideIcons.piggyBank, size: 12, color: saved >= 0 ? AppColors.income : AppColors.expense),
                                   const SizedBox(width: 3),
-                                  Flexible(child: Text(fc(saved.abs()),
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                                          color: saved >= 0 ? AppColors.income : AppColors.expense),
-                                      overflow: TextOverflow.ellipsis)),
+                                  Flexible(child: hideBalances
+                                      ? Text('••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                                          color: saved >= 0 ? AppColors.income : AppColors.expense))
+                                      : AnimatedCurrency(value: saved.abs(),
+                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                                              color: saved >= 0 ? AppColors.income : AppColors.expense))),
                                 ]),
                               ])),
                             ]);

@@ -14,6 +14,7 @@ import '../providers/tool_providers.dart';
 import '../widgets/add_debt_dialog.dart';
 import '../widgets/confirm_payment_dialog.dart';
 import '../widgets/record_debt_payment_dialog.dart';
+import '../../../shared/widgets/animated_counter.dart';
 
 class DebtManagerScreen extends ConsumerStatefulWidget {
   const DebtManagerScreen({super.key});
@@ -422,11 +423,8 @@ class _DebtRow extends StatelessWidget {
               style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
         ]),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: LinearProgressIndicator(value: paidPct, minHeight: 4,
-              backgroundColor: cs.surfaceContainerHighest, color: AppColors.income),
-        ),
+        AnimatedProgressBar(value: paidPct, minHeight: 4,
+            backgroundColor: cs.surfaceContainerHighest, color: AppColors.income),
         const SizedBox(height: 8),
         // Record Payment button
         SizedBox(

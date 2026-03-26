@@ -66,6 +66,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                   child: _QuickActionTile(
                     icon: LucideIcons.arrowUpRight,
                     label: 'Expense',
+                    delay: 0,
                     color: cs.onSurface,
                     onTap: () {
                       Navigator.pop(sheetCtx);
@@ -84,6 +85,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                   child: _QuickActionTile(
                     icon: LucideIcons.arrowDownLeft,
                     label: 'Income',
+                    delay: 1,
                     color: const Color(0xFF2D8B5E),
                     onTap: () {
                       Navigator.pop(sheetCtx);
@@ -102,6 +104,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                   child: _QuickActionTile(
                     icon: LucideIcons.scanLine,
                     label: 'Scan',
+                    delay: 2,
                     color: cs.primary,
                     onTap: () {
                       Navigator.pop(sheetCtx);
@@ -372,41 +375,83 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-class _QuickActionTile extends StatelessWidget {
+class _QuickActionTile extends StatefulWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final int delay;
   final VoidCallback onTap;
 
   const _QuickActionTile({
     required this.icon,
     required this.label,
     required this.color,
+    this.delay = 0,
     required this.onTap,
   });
 
   @override
+  State<_QuickActionTile> createState() => _QuickActionTileState();
+}
+
+class _QuickActionTileState extends State<_QuickActionTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _scale = Tween(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _opacity = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    Future.delayed(Duration(milliseconds: 60 * widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 24, color: color),
-            const SizedBox(height: 6),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w600, color: color)),
-          ],
+    return FadeTransition(
+      opacity: _opacity,
+      child: ScaleTransition(
+        scale: _scale,
+        child: GestureDetector(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            widget.onTap();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: widget.color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(widget.icon, size: 24, color: widget.color),
+                const SizedBox(height: 6),
+                Text(widget.label,
+                    style: TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w600, color: widget.color)),
+              ],
+            ),
+          ),
         ),
       ),
     );

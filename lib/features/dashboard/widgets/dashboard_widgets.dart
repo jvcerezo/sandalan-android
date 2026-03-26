@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../shared/widgets/animated_counter.dart';
 
 /// Shared Y-axis label formatter for chart widgets.
 /// Converts values like 1500000 -> "₱1.5M", 25000 -> "₱25K", 500 -> "₱500".
@@ -158,14 +159,11 @@ class HealthRow extends StatelessWidget {
           Text(value, style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
         ]),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(3),
-          child: LinearProgressIndicator(
-            value: progress.clamp(0, 1),
-            minHeight: 4,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            color: color,
-          ),
+        AnimatedProgressBar(
+          value: progress.clamp(0, 1),
+          minHeight: 4,
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          color: color,
         ),
       ]),
     );

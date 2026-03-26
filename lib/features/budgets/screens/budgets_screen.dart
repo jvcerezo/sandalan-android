@@ -8,6 +8,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/categories.dart';
 import '../../../data/models/budget.dart';
 import '../../../data/repositories/transaction_repository.dart';
+import '../../../shared/widgets/animated_counter.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/budget_providers.dart';
@@ -412,14 +413,11 @@ class _BudgetCard extends StatelessWidget {
                 maxLines: 1, overflow: TextOverflow.ellipsis),
           ]),
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: 0, // Would be spent/budget ratio
-              minHeight: 6,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              color: colorScheme.primary,
-            ),
+          AnimatedProgressBar(
+            value: 0, // Would be spent/budget ratio
+            minHeight: 6,
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            color: colorScheme.primary,
           ),
           const SizedBox(height: 4),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [

@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/widgets/animated_counter.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../../goals/providers/goal_providers.dart';
 import '../../budgets/providers/budget_providers.dart';
@@ -101,14 +102,11 @@ class PlanningTab extends ConsumerWidget {
                         ),
                       ]),
                       const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: ratio.clamp(0, 1).toDouble(),
-                          minHeight: 8,
-                          backgroundColor: colorScheme.surfaceContainerHighest,
-                          color: progressColor,
-                        ),
+                      AnimatedProgressBar(
+                        value: ratio.clamp(0, 1).toDouble(),
+                        minHeight: 8,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        color: progressColor,
                       ),
                       if (isOver) ...[
                         const SizedBox(height: 4),

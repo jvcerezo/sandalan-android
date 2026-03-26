@@ -251,14 +251,11 @@ class HealthTab extends ConsumerWidget {
               AnimatedCurrency(value: totalBalance,
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: (emergencyMonths / 3).clamp(0, 1),
-                  minHeight: 6,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  color: AppColors.income,
-                ),
+              AnimatedProgressBar(
+                value: (emergencyMonths / 3).clamp(0, 1),
+                minHeight: 6,
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                color: AppColors.income,
               ),
               const SizedBox(height: 8),
               if (emergencyMonths >= 3)

@@ -9,6 +9,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+import '../../../shared/widgets/staggered_fade_in.dart';
 import '../providers/transaction_providers.dart';
 import '../../../data/models/account.dart';
 import '../../accounts/providers/account_providers.dart';
@@ -271,6 +272,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               grouped.putIfAbsent(key, () => []).add(t);
             }
 
+            int itemIndex = 0;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: grouped.entries.map((entry) => Column(
@@ -281,11 +283,18 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     child: Text(entry.key, style: TextStyle(fontSize: 12,
                         fontWeight: FontWeight.w500, color: colorScheme.onSurfaceVariant)),
                   ),
-                  ...entry.value.map((t) => _TransactionRow(
-                    transaction: t,
-                    accounts: accounts,
-                    onTap: () => showTransactionDetailSheet(context, ref, t, accounts),
-                  )),
+                  ...entry.value.map((t) {
+                    final idx = itemIndex++;
+                    return StaggeredFadeIn(
+                      index: idx,
+                      baseDelay: const Duration(milliseconds: 30),
+                      child: _TransactionRow(
+                        transaction: t,
+                        accounts: accounts,
+                        onTap: () => showTransactionDetailSheet(context, ref, t, accounts),
+                      ),
+                    );
+                  }),
                 ],
               )).toList(),
             );
