@@ -14,6 +14,7 @@ import '../../../data/models/account.dart';
 import '../../../shared/widgets/shimmer_loading.dart' show ShimmerLoading;
 import '../../accounts/providers/account_providers.dart';
 import '../providers/tool_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class ContributionsScreen extends ConsumerStatefulWidget {
   const ContributionsScreen({super.key});
@@ -85,9 +86,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
   void _showPayDialog(Contribution contrib) {
     final accounts = ref.read(accountsProvider).valueOrNull ?? [];
     if (accounts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add an account first to mark contributions as paid')),
-      );
+      showAppSnackBar(context, 'Add an account first to mark contributions as paid');
       return;
     }
     showModalBottomSheet(
@@ -121,11 +120,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
                   ref.invalidate(contributionsProvider);
                   ref.invalidate(contributionSummaryProvider);
                   ref.invalidate(accountsProvider);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${typeLabels[contrib.type] ?? contrib.type} marked as paid from ${a.name}')),
-                    );
-                  }
+                  showSuccessSnackBar(context, '${typeLabels[contrib.type] ?? contrib.type} marked as paid from ${a.name}');
                 },
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
@@ -308,11 +303,9 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
                   firstDate: DateTime(2020),
                   lastDate: DateTime(now.year + 1, 12),
                 );
-                if (picked != null && mounted) {
+                if (picked != null) {
                   // Period is informational — the Update button uses DateTime.now()
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Selected: ${picked.year}-${picked.month.toString().padLeft(2, '0')}')),
-                  );
+                  showAppSnackBar(context, 'Selected: ${picked.year}-${picked.month.toString().padLeft(2, '0')}');
                 }
               },
               child: AbsorbPointer(
@@ -419,11 +412,7 @@ class _ContributionsScreenState extends ConsumerState<ContributionsScreen> {
             }
             ref.invalidate(contributionsProvider);
             ref.invalidate(contributionSummaryProvider);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Contributions updated')),
-              );
-            }
+            showSuccessSnackBar(context, 'Contributions updated');
           },
           icon: const Icon(LucideIcons.save, size: 16),
           label: Text('Update ${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}'),
@@ -777,9 +766,7 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
 
   Future<void> _import() async {
     if (_fromDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Select a start date')),
-      );
+      showAppSnackBar(context, 'Select a start date');
       return;
     }
 
@@ -848,14 +835,10 @@ class _ImportPastDialogState extends ConsumerState<_ImportPastContributionsDialo
       widget.onImported();
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Past contributions imported and marked as paid')),
-        );
+        showSuccessSnackBar(context, 'Past contributions imported and marked as paid');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      showAppSnackBar(context, 'Error: $e', isError: true);
     } finally {
       if (mounted) setState(() => _importing = false);
     }

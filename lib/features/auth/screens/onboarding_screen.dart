@@ -12,6 +12,7 @@ import '../../../core/providers/feature_visibility_provider.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/repositories/local_account_repository.dart';
 import '../providers/auth_provider.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -251,11 +252,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       }
     } catch (e) {
       setState(() => _saving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
+      showAppSnackBar(context, 'Error: ${e.toString()}', isError: true);
     }
   }
 

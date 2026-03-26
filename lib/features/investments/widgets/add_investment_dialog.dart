@@ -8,6 +8,7 @@ import '../../../data/local/app_database.dart';
 import '../../../data/models/investment.dart';
 import '../../../core/utils/input_validator.dart';
 import '../../../data/repositories/local_investment_repository.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 const _types = [
   ('mp2', 'MP2'),
@@ -60,8 +61,7 @@ class _State extends ConsumerState<AddInvestmentDialog> {
     final value = InputValidator.positiveAmount(
         _valueCtl.text.replaceAll(',', '').isEmpty ? amount : _valueCtl.text.replaceAll(',', ''));
     if (name.isEmpty || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Name and amount are required')));
+      showAppSnackBar(context, 'Name and amount are required', isError: true);
       return;
     }
     setState(() => _saving = true);
@@ -87,10 +87,7 @@ class _State extends ConsumerState<AddInvestmentDialog> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       setState(() => _saving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')));
-      }
+      showAppSnackBar(context, 'Error: $e', isError: true);
     }
   }
 

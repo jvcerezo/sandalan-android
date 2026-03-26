@@ -9,6 +9,7 @@ import '../../../core/utils/provider_utils.dart';
 import '../../../data/models/expense_template.dart';
 import '../providers/transaction_providers.dart';
 import 'manage_templates_sheet.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 /// Category emoji mapping for template chips.
 String _categoryEmoji(String category) {
@@ -173,11 +174,7 @@ class QuickAddStrip extends ConsumerWidget {
         ));
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to log transaction'), behavior: SnackBarBehavior.floating),
-        );
-      }
+      showAppSnackBar(context, 'Failed to log transaction', isError: true);
     }
   }
 }

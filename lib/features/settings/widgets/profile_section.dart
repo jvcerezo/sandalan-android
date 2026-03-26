@@ -8,6 +8,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class ProfileSection extends ConsumerStatefulWidget {
   final Widget back;
@@ -41,11 +42,7 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
     // Validate file size (max 2 MB)
     final bytes = await picked.readAsBytes();
     if (bytes.lengthInBytes > 2 * 1024 * 1024) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image must be under 2 MB')),
-        );
-      }
+      showAppSnackBar(context, 'Image must be under 2 MB', isError: true);
       return;
     }
 
@@ -56,11 +53,7 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
       await ref.read(profileRepositoryProvider).uploadAvatar(bytes, fileName);
       ref.invalidate(profileProvider);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload photo: $e')),
-        );
-      }
+      showAppSnackBar(context, 'Failed to upload photo: $e', isError: true);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
@@ -72,11 +65,7 @@ class _ProfileSectionState extends ConsumerState<ProfileSection> {
       await ref.read(profileRepositoryProvider).removeAvatar();
       ref.invalidate(profileProvider);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove photo: $e')),
-        );
-      }
+      showAppSnackBar(context, 'Failed to remove photo: $e', isError: true);
     } finally {
       if (mounted) setState(() => _uploading = false);
     }

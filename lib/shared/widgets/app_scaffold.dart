@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'brand_mark.dart';
 import 'sync_indicator.dart';
+import '../utils/snackbar_helper.dart';
 import 'universal_search.dart';
 import 'tour_overlay.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
@@ -169,15 +170,7 @@ class _AppScaffoldState extends State<AppScaffold> {
             SystemNavigator.pop();
           } else {
             _lastBackPress = now;
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Press back again to exit'),
-                  duration: Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
+            showAppSnackBar(context, 'Press back again to exit');
           }
         } else if (location == '/more') {
           context.go('/home');

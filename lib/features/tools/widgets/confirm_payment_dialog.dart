@@ -10,6 +10,7 @@ import '../../../shared/widgets/milestone_celebration.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/tool_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
   @override
@@ -154,9 +155,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
       if (mounted) {
         final ctx = context;
         Navigator.of(ctx).pop(true);
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(content: Text('Payment of ${formatCurrency(amount)} confirmed')),
-        );
+        showSuccessSnackBar(ctx, 'Payment of ${formatCurrency(amount)} confirmed');
         // Fire-and-forget debt milestone check
         if (_sourceType == 'debt' && _sourceId != null) {
           _checkDebtMilestonesAfterConfirm(ctx);
@@ -169,9 +168,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.expense),
-    );
+    showAppSnackBar(context, msg, isError: true);
   }
 
   Future<void> _checkDebtMilestonesAfterConfirm(BuildContext ctx) async {

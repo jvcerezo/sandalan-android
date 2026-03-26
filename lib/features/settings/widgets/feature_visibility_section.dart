@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/providers/feature_visibility_provider.dart';
 import 'settings_shared.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class FeatureVisibilitySection extends ConsumerWidget {
   final Widget back;
@@ -28,10 +29,7 @@ class FeatureVisibilitySection extends ConsumerWidget {
             onChanged: (_) {
               notifier.toggle(key);
               final nowVisible = !(visibility[key] ?? FeatureKeys.defaultFor(key));
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(nowVisible ? '$label is now visible' : '$label hidden from menu'),
-                duration: const Duration(seconds: 2),
-              ));
+              showAppSnackBar(context, nowVisible ? '$label is now visible' : '$label hidden from menu');
             },
           ),
         ]),
@@ -117,11 +115,7 @@ class FeatureVisibilitySection extends ConsumerWidget {
           }
           // Reload to pick up defaults
           await notifier.reload();
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Reset to beginner defaults.')),
-            );
-          }
+          showSuccessSnackBar(context, 'Reset to beginner defaults.');
         },
         child: Text('Reset to defaults',
             style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
@@ -135,11 +129,7 @@ class FeatureVisibilitySection extends ConsumerWidget {
             await prefs.setBool(key, true);
           }
           await notifier.reload();
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('All features enabled.')),
-            );
-          }
+          showSuccessSnackBar(context, 'All features enabled.');
         },
         child: Text('Show all features',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.primary)),

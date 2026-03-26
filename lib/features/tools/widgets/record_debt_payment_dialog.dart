@@ -11,6 +11,7 @@ import '../../../shared/widgets/milestone_celebration.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/tool_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
   @override
@@ -107,9 +108,7 @@ class _RecordDebtPaymentDialogState extends ConsumerState<RecordDebtPaymentDialo
       if (mounted) {
         final ctx = context;
         Navigator.of(ctx).pop(true);
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(content: Text('Payment of ${formatCurrency(amount)} recorded')),
-        );
+        showSuccessSnackBar(ctx, 'Payment of ${formatCurrency(amount)} recorded');
         // Fire-and-forget debt milestone checks
         _checkDebtMilestones(ctx, newBalance);
       }
@@ -120,9 +119,7 @@ class _RecordDebtPaymentDialogState extends ConsumerState<RecordDebtPaymentDialo
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.expense),
-    );
+    showAppSnackBar(context, msg, isError: true);
   }
 
   Future<void> _checkDebtMilestones(BuildContext ctx, double newBalance) async {

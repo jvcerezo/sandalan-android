@@ -14,6 +14,7 @@ import '../../../shared/widgets/animated_counter.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/goal_providers.dart';
 import '../widgets/add_goal_dialog.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class GoalsScreen extends ConsumerStatefulWidget {
   const GoalsScreen({super.key});
@@ -350,21 +351,18 @@ class _GoalCard extends ConsumerWidget {
                 onPressed: () async {
                   final amount = double.tryParse(amountCtl.text.replaceAll(',', ''));
                   if (amount == null || amount <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Enter a valid amount')));
+                    showAppSnackBar(context, 'Enter a valid amount', isError: true);
                     return;
                   }
                   if (amount > remaining) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Amount exceeds remaining (${formatCurrency(remaining)})')));
+                    showAppSnackBar(context, 'Amount exceeds remaining (${formatCurrency(remaining)})', isError: true);
                     return;
                   }
                   // Need an account to deduct from
                   final accounts = ref.read(accountsProvider).valueOrNull ?? [];
                   final accountId = goal.accountId ?? (accounts.isNotEmpty ? accounts.first.id : null);
                   if (accountId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No account available to deduct from')));
+                    showAppSnackBar(context, 'No account available to deduct from', isError: true);
                     return;
                   }
                   Navigator.pop(context);
@@ -378,8 +376,7 @@ class _GoalCard extends ConsumerWidget {
                     ref.invalidate(goalsSummaryProvider);
                     ref.invalidate(accountsProvider);
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Added ${formatCurrency(amount)} to ${goal.name}')));
+                      showSuccessSnackBar(context, 'Added ${formatCurrency(amount)} to ${goal.name}');
                       // Check goal milestones if this funding completes the goal
                       final newAmount = goal.currentAmount + amount;
                       if (newAmount >= goal.targetAmount) {
@@ -387,10 +384,7 @@ class _GoalCard extends ConsumerWidget {
                       }
                     }
                   } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed: $e')));
-                    }
+                    showAppSnackBar(context, 'Failed: $e', isError: true);
                   }
                 },
                 child: const Text('Add Funds'),
@@ -418,10 +412,7 @@ class _GoalCard extends ConsumerWidget {
                 ref.invalidate(goalsProvider);
                 ref.invalidate(goalsSummaryProvider);
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete: $e')));
-                }
+                showAppSnackBar(context, 'Failed to delete: $e', isError: true);
               }
             },
             child: Text('Delete', style: TextStyle(color: AppColors.expense)),
@@ -477,20 +468,17 @@ class _GoalCard extends ConsumerWidget {
                 onPressed: () async {
                   final amount = double.tryParse(amountCtl.text.replaceAll(',', ''));
                   if (amount == null || amount <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Enter a valid amount')));
+                    showAppSnackBar(context, 'Enter a valid amount', isError: true);
                     return;
                   }
                   if (amount > goal.currentAmount) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Amount exceeds available (${formatCurrency(goal.currentAmount)})')));
+                    showAppSnackBar(context, 'Amount exceeds available (${formatCurrency(goal.currentAmount)})', isError: true);
                     return;
                   }
                   final accounts = ref.read(accountsProvider).valueOrNull ?? [];
                   final accountId = goal.accountId ?? (accounts.isNotEmpty ? accounts.first.id : null);
                   if (accountId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No account available to return funds to')));
+                    showAppSnackBar(context, 'No account available to return funds to', isError: true);
                     return;
                   }
                   Navigator.pop(context);
@@ -503,15 +491,9 @@ class _GoalCard extends ConsumerWidget {
                     ref.invalidate(goalsProvider);
                     ref.invalidate(goalsSummaryProvider);
                     ref.invalidate(accountsProvider);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Released ${formatCurrency(amount)} from ${goal.name}')));
-                    }
+                    showSuccessSnackBar(context, 'Released ${formatCurrency(amount)} from ${goal.name}');
                   } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed: $e')));
-                    }
+                    showAppSnackBar(context, 'Failed: $e', isError: true);
                   }
                 },
                 style: FilledButton.styleFrom(backgroundColor: colorScheme.onSurfaceVariant),

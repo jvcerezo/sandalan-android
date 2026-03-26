@@ -3,6 +3,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
 import 'settings_shared.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class BugReportSection extends StatefulWidget {
   final Widget back;
@@ -30,9 +31,7 @@ class _BugReportSectionState extends State<BugReportSection> {
     final desc = _descCtl.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title.')),
-      );
+      showAppSnackBar(context, 'Please enter a title.');
       return;
     }
 
@@ -59,22 +58,12 @@ class _BugReportSectionState extends State<BugReportSection> {
           _severity = 'medium';
           _submitting = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Bug report submitted! Thank you for your feedback.'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showSuccessSnackBar(context, 'Bug report submitted! Thank you for your feedback.');
       }
     } catch (e) {
       if (mounted) {
         setState(() => _submitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showAppSnackBar(context, 'Failed to submit: ${e.toString()}', isError: true);
       }
     }
   }

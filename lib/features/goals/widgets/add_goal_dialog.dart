@@ -6,6 +6,7 @@ import '../../../core/constants/categories.dart';
 import '../../../core/utils/input_sanitizer.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../providers/goal_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 // Formats numbers with thousand separators: 10000 → 10,000
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
@@ -115,9 +116,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
     final target = double.tryParse(_targetCtl.text.replaceAll(',', ''));
     if (name.isEmpty || target == null || target <= 0) return;
     if (target > 999999999) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Amount must be less than \u20B1999,999,999')),
-      );
+      showAppSnackBar(context, 'Amount must be less than \u20B1999,999,999', isError: true);
       return;
     }
     setState(() => _saving = true);

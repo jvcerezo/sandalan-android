@@ -9,6 +9,7 @@ import '../../../data/models/insurance_policy.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../providers/tool_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
   @override
@@ -101,9 +102,7 @@ class _PayInsuranceDialogState extends ConsumerState<PayInsuranceDialog> {
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Premium payment of ${formatCurrency(amount)} recorded')),
-        );
+        showSuccessSnackBar(context, 'Premium payment of ${formatCurrency(amount)} recorded');
       }
     } catch (e) {
       setState(() => _saving = false);
@@ -112,9 +111,7 @@ class _PayInsuranceDialogState extends ConsumerState<PayInsuranceDialog> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.expense),
-    );
+    showAppSnackBar(context, msg, isError: true);
   }
 
   @override

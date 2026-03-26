@@ -7,6 +7,7 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/ph_rates.dart';
 import '../../../core/math/ph_math.dart';
 import '../providers/tool_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class TaxTrackerScreen extends ConsumerStatefulWidget {
   const TaxTrackerScreen({super.key});
@@ -259,11 +260,7 @@ class _TaxTrackerScreenState extends ConsumerState<TaxTrackerScreen> {
                     'status': 'draft',
                   });
                   ref.invalidate(taxRecordsProvider);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tax record saved as draft')),
-                    );
-                  }
+                  showSuccessSnackBar(context, 'Tax record saved as draft');
                 },
                 icon: const Icon(LucideIcons.save, size: 16),
                 label: const Text('Save as Draft'),

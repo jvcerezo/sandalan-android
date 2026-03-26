@@ -12,6 +12,7 @@ import '../../../data/local/app_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'settings_shared.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class PrivacySection extends ConsumerStatefulWidget {
   final Widget back;
@@ -125,16 +126,9 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
     if (!mounted) return;
     setState(() => _exporting = false);
     if (path != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Data exported to:\n$path', style: const TextStyle(fontSize: 12)),
-        duration: const Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-      ));
+      showSuccessSnackBar(context, 'Data exported to:\n$path');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Export failed. Please try again.'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnackBar(context, 'Export failed. Please try again.', isError: true);
     }
   }
 
@@ -153,16 +147,9 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
     if (!mounted) return;
     setState(() => _exportingCsv = false);
     if (path != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('CSV exported to:\n$path', style: const TextStyle(fontSize: 12)),
-        duration: const Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-      ));
+      showSuccessSnackBar(context, 'CSV exported to:\n$path');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('CSV export failed. Please try again.'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnackBar(context, 'CSV export failed. Please try again.', isError: true);
     }
   }
 
@@ -304,14 +291,7 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
                             if (context.mounted) context.go('/login');
                           } catch (e) {
                             setButtonState(() => deleting = false);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text('$e'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: AppColors.expense,
-                                duration: const Duration(seconds: 6),
-                              ));
-                            }
+                            showAppSnackBar(context, '$e', isError: true);
                           }
                         }
                       : null,

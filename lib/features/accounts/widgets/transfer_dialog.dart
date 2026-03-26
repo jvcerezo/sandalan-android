@@ -6,6 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../providers/account_providers.dart';
 import '../../transactions/providers/transaction_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
   @override
@@ -93,9 +94,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
 
       if (mounted) {
         Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Transferred ${formatCurrency(amount)}')),
-        );
+        showSuccessSnackBar(context, 'Transferred ${formatCurrency(amount)}');
       }
     } catch (e) {
       setState(() => _saving = false);
@@ -104,9 +103,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.expense),
-    );
+    showAppSnackBar(context, msg, isError: true);
   }
 
   @override

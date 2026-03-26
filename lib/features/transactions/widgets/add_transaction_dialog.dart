@@ -17,6 +17,7 @@ import '../../tools/providers/tool_providers.dart';
 import '../providers/transaction_providers.dart';
 import 'split_transaction_section.dart';
 import 'recurring_transaction_section.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class AddTransactionDialog extends ConsumerStatefulWidget {
   final bool isIncome;
@@ -113,10 +114,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   }
 
   void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    showAppSnackBar(context, message, isError: true);
   }
 
   /// Check milestones using an external context (for after dialog is closed).
@@ -298,12 +296,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
         if (mounted) {
           final ctx = context;
-          ScaffoldMessenger.of(ctx).showSnackBar(
-            const SnackBar(
-              content: Text('Transaction added!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showSuccessSnackBar(ctx, 'Transaction added!');
           invalidateTransactionProviders(ref);
           Navigator.of(ctx).pop(true);
           // Check milestones using the root navigator context (dialog is already closed)
@@ -314,11 +307,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         }
       } catch (e) {
         setState(() => _saving = false);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to save: $e')),
-          );
-        }
+        showAppSnackBar(context, 'Failed to save: $e', isError: true);
       }
       return;
     }
@@ -389,16 +378,11 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
       if (mounted) {
         final ctx = context;
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(
-            content: Text(edit != null
-                ? 'Transaction updated!'
-                : _showRepeat
-                    ? 'Transaction added with repeat!'
-                    : 'Transaction added!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showSuccessSnackBar(ctx, edit != null
+            ? 'Transaction updated!'
+            : _showRepeat
+                ? 'Transaction added with repeat!'
+                : 'Transaction added!');
         Navigator.of(ctx).pop(true);
         // Fire-and-forget milestone check for new transactions (not edits)
         if (edit == null) {
@@ -410,11 +394,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       }
     } catch (e) {
       setState(() => _saving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
-        );
-      }
+      showAppSnackBar(context, 'Failed to save: $e', isError: true);
     }
   }
 

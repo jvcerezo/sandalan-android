@@ -14,6 +14,7 @@ import '../../transactions/providers/transaction_providers.dart';
 import '../providers/budget_providers.dart';
 import '../widgets/add_budget_dialog.dart';
 import '../widgets/budget_rollover_dialog.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class BudgetsScreen extends ConsumerStatefulWidget {
   const BudgetsScreen({super.key});
@@ -124,9 +125,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     ref.invalidate(budgetsProvider);
 
     if (mounted && created > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Rolled over $created budget${created == 1 ? '' : 's'} with unused amounts')),
-      );
+      showSuccessSnackBar(context, 'Rolled over $created budget${created == 1 ? '' : 's'} with unused amounts');
     }
   }
 
@@ -149,9 +148,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     if (!context.mounted) return;
 
     if (lastMonthBudgets.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No budgets found for ${DateFormat('MMMM yyyy').format(lastMonth)}')),
-      );
+      showAppSnackBar(context, 'No budgets found for ${DateFormat('MMMM yyyy').format(lastMonth)}');
       return;
     }
 
@@ -188,11 +185,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     }
 
     ref.invalidate(budgetsProvider);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Copied $copied budget${copied == 1 ? '' : 's'} from ${DateFormat('MMMM').format(lastMonth)}')),
-      );
-    }
+    showSuccessSnackBar(context, 'Copied $copied budget${copied == 1 ? '' : 's'} from ${DateFormat('MMMM').format(lastMonth)}');
   }
 
   @override

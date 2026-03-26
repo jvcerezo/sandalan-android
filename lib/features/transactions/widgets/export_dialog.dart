@@ -5,6 +5,7 @@ import '../../../core/services/csv_export_service.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../data/local/app_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 /// Shows a bottom sheet for exporting transactions as CSV.
 void showExportDialog(BuildContext context) {
@@ -97,10 +98,7 @@ class _ExportSheetState extends State<_ExportSheet> {
         ),
       ));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Export failed. Please try again.'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnackBar(context, 'Export failed. Please try again.', isError: true);
     }
   }
 

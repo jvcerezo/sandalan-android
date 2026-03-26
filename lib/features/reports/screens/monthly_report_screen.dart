@@ -13,6 +13,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/models/monthly_report.dart';
 import '../providers/report_providers.dart';
 import '../../../shared/widgets/animated_counter.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class MonthlyReportScreen extends ConsumerStatefulWidget {
   final int year;
@@ -428,11 +429,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
         text: 'My ${DateFormat('MMMM yyyy').format(DateTime(report.year, report.month))} financial report card from Sandalan!',
       );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not share: $e')),
-        );
-      }
+      showAppSnackBar(context, 'Could not share: $e', isError: true);
     }
   }
 

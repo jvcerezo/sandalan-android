@@ -16,6 +16,7 @@ import '../../../data/merchants/merchant_categories.dart';
 import '../../accounts/providers/account_providers.dart';
 import '../../accounts/widgets/add_account_dialog.dart';
 import '../providers/transaction_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 /// Formats numbers with thousand separators: 10000 -> 10,000
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
@@ -226,10 +227,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
   }
 
   void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    showAppSnackBar(context, message, isError: true);
   }
 
   bool get _isTransferReceipt {
@@ -296,12 +294,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Transfer recorded from receipt!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showSuccessSnackBar(context, 'Transfer recorded from receipt!');
           Navigator.of(context).pop(true);
         }
       } else {
@@ -329,22 +322,13 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Expense added from receipt!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showSuccessSnackBar(context, 'Expense added from receipt!');
           Navigator.of(context).pop(true);
         }
       }
     } catch (e) {
       setState(() => _saving = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
-        );
-      }
+      showAppSnackBar(context, 'Failed to save: $e', isError: true);
     }
   }
 

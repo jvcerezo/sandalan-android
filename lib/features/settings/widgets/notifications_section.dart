@@ -6,6 +6,7 @@ import '../../../app.dart';
 import '../../../core/services/automation_service.dart';
 import '../../../core/services/notification_service.dart';
 import 'settings_shared.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class NotificationsSection extends ConsumerStatefulWidget {
   final Widget back;
@@ -138,11 +139,7 @@ class _NotificationsSectionState extends ConsumerState<NotificationsSection> {
           child: OutlinedButton.icon(
             onPressed: () async {
               await NotificationService.instance.sendTestNotification();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Test notification sent!')),
-                );
-              }
+              showSuccessSnackBar(context, 'Test notification sent!');
             },
             icon: const Icon(LucideIcons.send, size: 16),
             label: const Text('Send Test Notification'),

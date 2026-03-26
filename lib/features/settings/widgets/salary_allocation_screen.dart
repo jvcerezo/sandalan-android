@@ -6,6 +6,7 @@ import '../../../core/services/salary_allocation_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../budgets/providers/budget_providers.dart';
 import '../../goals/providers/goal_providers.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class SalaryAllocationScreen extends ConsumerStatefulWidget {
   const SalaryAllocationScreen({super.key});
@@ -59,24 +60,19 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
   Future<void> _save() async {
     final salary = double.tryParse(_salaryCtl.text.replaceAll(',', '')) ?? 0;
     if (salary <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter your salary')));
+      showAppSnackBar(context, 'Please enter your salary', isError: true);
       return;
     }
     final totalAllocated = _rules.fold(0.0, (s, r) => s + r.amount);
     if (totalAllocated > salary) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Total allocation exceeds salary amount')));
+      showAppSnackBar(context, 'Total allocation exceeds salary amount', isError: true);
       return;
     }
     await SalaryAllocationService.saveConfig(SalaryAllocationConfig(
       salary: salary, frequency: _frequency,
       payDates: [_payDate1, _payDate2], rules: _rules,
     ));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Allocation rules saved!')));
-    }
+    showSuccessSnackBar(context, 'Allocation rules saved!');
   }
 
   void _showRuleDialog({int? editIndex}) {
