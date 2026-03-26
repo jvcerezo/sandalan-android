@@ -378,6 +378,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
       if (mounted) {
         final ctx = context;
+        invalidateTransactionProviders(ref);
         showSuccessSnackBar(ctx, edit != null
             ? 'Transaction updated!'
             : _showRepeat
