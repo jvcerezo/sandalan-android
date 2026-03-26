@@ -746,16 +746,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       Text('₱', style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
                       const SizedBox(width: 4),
                       SizedBox(
-                        width: 80,
+                        width: 120,
                         child: TextField(
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                            _ThousandsSeparatorFormatter(),
+                          ],
                           textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                           decoration: const InputDecoration(
                             hintText: '0',
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
+                            contentPadding: EdgeInsets.symmetric(vertical: 8),
                             isDense: true,
                           ),
                           onChanged: (v) => acc.balance = v.replaceAll(',', ''),
@@ -865,6 +868,34 @@ class _StepProgress extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+/// Formats number input with thousands separators (1234 → 1,234).
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) return newValue;
+
+    // Strip existing commas and non-numeric (except decimal)
+    final stripped = newValue.text.replaceAll(',', '');
+    final parts = stripped.split('.');
+    final intPart = parts[0];
+    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+
+    // Add commas to integer part
+    final buffer = StringBuffer();
+    for (var i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+    final formatted = '$buffer$decPart';
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
