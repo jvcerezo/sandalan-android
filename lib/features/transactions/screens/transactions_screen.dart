@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/categories.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/provider_utils.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/transaction.dart';
 import '../../../data/repositories/transaction_repository.dart';
@@ -73,7 +74,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final transactions = ref.watch(transactionsProvider);
     final count = ref.watch(transactionsCountProvider);
 
-    return ListView(
+    return RefreshIndicator(
+      onRefresh: () async {
+        invalidateTransactionProviders(ref);
+        // Wait for the provider to reload
+        await ref.read(transactionsProvider.future);
+      },
+      child: ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       children: [
         // Title + Export button
@@ -289,6 +296,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           error: (e, _) => Center(child: Text('Error: $e')),
         )),
       ],
+    ),
     );
   }
 }

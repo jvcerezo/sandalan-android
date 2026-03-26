@@ -55,6 +55,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(goalsSummaryProvider);
     ref.invalidate(accountsProvider);
     ref.invalidate(budgetsProvider);
+    ref.invalidate(categoryTotalsProvider);
     ref.invalidate(netWorthHistoryProvider);
     await ref.read(transactionsSummaryProvider.future);
   }

@@ -182,41 +182,41 @@ final appRouter = GoRouter(
             child: ToolsHubScreen(),
           ),
         ),
-        // ─── Finance & Tool sub-pages (inside shell for consistent header) ─
-        GoRoute(path: '/investments', pageBuilder: (_, s) => const MaterialPage(child: InvestmentsScreen())),
-        GoRoute(path: '/salary-allocation', pageBuilder: (_, s) => const MaterialPage(child: SalaryAllocationScreen())),
-        GoRoute(path: '/tools/contributions', pageBuilder: (_, s) => MaterialPage(child: ContributionsScreen())),
-        GoRoute(path: '/tools/13th-month', pageBuilder: (_, s) => MaterialPage(child: ThirteenthMonthScreen())),
-        GoRoute(path: '/tools/retirement', pageBuilder: (_, s) => MaterialPage(child: RetirementScreen())),
-        GoRoute(path: '/tools/rent-vs-buy', pageBuilder: (_, s) => MaterialPage(child: RentVsBuyScreen())),
-        GoRoute(path: '/tools/panganay', pageBuilder: (_, s) => MaterialPage(child: PanganayModeScreen())),
-        GoRoute(path: '/tools/calculators', pageBuilder: (_, s) => MaterialPage(child: CalculatorsScreen())),
-        GoRoute(path: '/tools/insurance', pageBuilder: (_, s) => MaterialPage(child: InsuranceScreen())),
-        GoRoute(path: '/tools/bills', pageBuilder: (_, s) => MaterialPage(child: BillsScreen())),
-        GoRoute(path: '/tools/debts', pageBuilder: (_, s) => MaterialPage(child: DebtManagerScreen())),
-        GoRoute(path: '/tools/taxes', pageBuilder: (_, s) => MaterialPage(child: TaxTrackerScreen())),
-        GoRoute(path: '/tools/currency', pageBuilder: (_, s) => const MaterialPage(child: CurrencyConverterScreen())),
+        // ─── Finance & Tool sub-pages (inside shell — no transition) ────
+        GoRoute(path: '/investments', pageBuilder: (_, s) => const NoTransitionPage(child: InvestmentsScreen())),
+        GoRoute(path: '/salary-allocation', pageBuilder: (_, s) => const NoTransitionPage(child: SalaryAllocationScreen())),
+        GoRoute(path: '/tools/contributions', pageBuilder: (_, s) => NoTransitionPage(child: ContributionsScreen())),
+        GoRoute(path: '/tools/13th-month', pageBuilder: (_, s) => NoTransitionPage(child: ThirteenthMonthScreen())),
+        GoRoute(path: '/tools/retirement', pageBuilder: (_, s) => NoTransitionPage(child: RetirementScreen())),
+        GoRoute(path: '/tools/rent-vs-buy', pageBuilder: (_, s) => NoTransitionPage(child: RentVsBuyScreen())),
+        GoRoute(path: '/tools/panganay', pageBuilder: (_, s) => NoTransitionPage(child: PanganayModeScreen())),
+        GoRoute(path: '/tools/calculators', pageBuilder: (_, s) => NoTransitionPage(child: CalculatorsScreen())),
+        GoRoute(path: '/tools/insurance', pageBuilder: (_, s) => NoTransitionPage(child: InsuranceScreen())),
+        GoRoute(path: '/tools/bills', pageBuilder: (_, s) => NoTransitionPage(child: BillsScreen())),
+        GoRoute(path: '/tools/debts', pageBuilder: (_, s) => NoTransitionPage(child: DebtManagerScreen())),
+        GoRoute(path: '/tools/taxes', pageBuilder: (_, s) => NoTransitionPage(child: TaxTrackerScreen())),
+        GoRoute(path: '/tools/currency', pageBuilder: (_, s) => const NoTransitionPage(child: CurrencyConverterScreen())),
         GoRoute(
           path: '/split-bills',
-          pageBuilder: (context, state) => const MaterialPage(
+          pageBuilder: (context, state) => const NoTransitionPage(
             child: SplitsScreen(),
           ),
         ),
         GoRoute(
           path: '/achievements',
-          pageBuilder: (context, state) => const MaterialPage(
+          pageBuilder: (context, state) => const NoTransitionPage(
             child: AchievementsScreen(),
           ),
         ),
         GoRoute(
           path: '/reports',
-          pageBuilder: (context, state) => const MaterialPage(
+          pageBuilder: (context, state) => const NoTransitionPage(
             child: ReportsListScreen(),
           ),
         ),
         GoRoute(
           path: '/reports/:year/:month',
-          pageBuilder: (context, state) => MaterialPage(
+          pageBuilder: (context, state) => NoTransitionPage(
             child: MonthlyReportScreen(
               year: int.parse(state.pathParameters['year']!),
               month: int.parse(state.pathParameters['month']!),

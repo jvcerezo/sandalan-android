@@ -61,5 +61,8 @@ void invalidateTransactionProviders(dynamic ref) {
   inv(transactionsProvider);
   inv(transactionsCountProvider);
   inv(transactionsSummaryProvider);
+  inv(currentMonthTransactionsProvider);
+  inv(last6MonthsTransactionsProvider);
+  inv(categoryTotalsProvider);
   inv(accountsProvider);
 }
