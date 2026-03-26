@@ -13,6 +13,7 @@ import 'core/services/progress_sync_service.dart';
 import 'core/services/deep_link_service.dart';
 import 'core/services/sync_service.dart';
 import 'core/services/sync_status_notifier.dart';
+import 'core/services/background_worker.dart';
 import 'data/local/app_database.dart';
 
 Future<void> main() async {
@@ -37,6 +38,10 @@ Future<void> main() async {
 
   // Initialize notifications (permission request deferred to after first frame).
   await NotificationService.instance.init();
+
+  // Initialize WorkManager for persistent background tasks (daily reminder
+  // re-scheduling, weekly recap notifications). Survives app close & reboot.
+  await BackgroundWorker.init();
 
   // Only run sync and automation for authenticated (non-guest) users.
   final isGuest = GuestModeService.isGuestSync();

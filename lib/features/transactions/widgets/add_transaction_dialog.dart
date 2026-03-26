@@ -9,6 +9,7 @@ import '../../../core/utils/input_sanitizer.dart';
 import '../../../core/utils/provider_utils.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/services/milestone_service.dart';
+import '../../../core/services/auto_categorize_service.dart';
 import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../data/models/transaction.dart';
 import '../../accounts/providers/account_providers.dart';
@@ -75,6 +76,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       _selectedAccountId = widget.defaultAccountId;
       _category = _categories.first;
     }
+    // Auto-categorize when description changes (only for new transactions)
+    if (edit == null) {
+      _noteController.addListener(_onDescriptionChanged);
+    }
     // Initialize with 2 split entries
     _splitEntries.add(SplitEntry());
     _splitEntries.add(SplitEntry());
@@ -111,6 +116,19 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     _tagsController.dispose();
     _customCategoryController.dispose();
     super.dispose();
+  }
+
+  bool _userPickedCategory = false;
+
+  void _onDescriptionChanged() {
+    if (_userPickedCategory) return; // User manually chose — don't override
+    final suggested = AutoCategorizeService.suggest(
+      _noteController.text,
+      isIncome: _isIncome,
+    );
+    if (suggested != null && suggested != _category && _categories.contains(suggested)) {
+      setState(() => _category = suggested);
+    }
   }
 
   void _showError(String message) {
@@ -663,7 +681,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
             Wrap(spacing: 6, runSpacing: 4, children: _categories.map((c) {
               final selected = _category == c;
               return GestureDetector(
-                onTap: () => setState(() => _category = c),
+                onTap: () => setState(() { _category = c; _userPickedCategory = true; }),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(

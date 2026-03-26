@@ -17,6 +17,7 @@ import '../../../shared/widgets/animated_counter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../../goals/providers/goal_providers.dart';
+import '../providers/smart_suggestions_provider.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../providers/upcoming_payments_provider.dart';
 import '../widgets/streak_detail_sheet.dart';
@@ -437,9 +438,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          // ─── Spending Insight ─────────────────────────────────────
+          // ─── Smart Suggestions ────────────────────────────────────
           StaggeredFadeIn(
             index: 3,
+            child: _SmartSuggestionsSection(ref: ref),
+          ),
+
+          // ─── Spending Insight ─────────────────────────────────────
+          StaggeredFadeIn(
+            index: 4,
             child: const HomeInsightCard(),
           ),
 
@@ -967,6 +974,67 @@ class _ErrorRetry extends StatelessWidget {
           ),
         ),
       ]),
+    );
+  }
+}
+
+// ─── Smart Suggestions Section ───────────────────────────────────────────────────
+
+class _SmartSuggestionsSection extends StatelessWidget {
+  final WidgetRef ref;
+  const _SmartSuggestionsSection({required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final suggestions = ref.watch(smartSuggestionsProvider);
+
+    return suggestions.when(
+      data: (items) {
+        if (items.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Column(
+            children: items.map((s) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                onTap: s.route != null ? () => GoRouter.of(context).go(s.route!) : null,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: s.color.withOpacity(0.06),
+                    border: Border.all(color: s.color.withOpacity(0.15)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(children: [
+                    Container(
+                      width: 32, height: 32,
+                      decoration: BoxDecoration(
+                        color: s.color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(s.icon, size: 16, color: s.color),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(s.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(s.subtitle, style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                      ],
+                    )),
+                    if (s.route != null)
+                      Icon(LucideIcons.chevronRight, size: 16, color: colorScheme.onSurfaceVariant.withOpacity(0.4)),
+                  ]),
+                ),
+              ),
+            )).toList(),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
