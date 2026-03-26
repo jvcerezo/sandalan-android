@@ -100,6 +100,9 @@ dev_dependencies:
   envied_generator: ^1.1.1
   flutter_launcher_icons: ^0.14.4
 
+dependency_overrides:
+  analyzer: '>=7.7.0'
+
 flutter_launcher_icons:
   android: true
   ios: false
