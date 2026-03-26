@@ -142,6 +142,7 @@ class _AppScaffoldState extends State<AppScaffold> {
     '/reports',
     '/settings',
     '/chat',
+    '/vault',
   ];
 
   int _tabIndex(String location) {

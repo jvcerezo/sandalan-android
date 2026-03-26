@@ -230,6 +230,13 @@ class MoreScreen extends ConsumerWidget {
           },
         ),
         _MoreItem(
+          icon: LucideIcons.folderLock,
+          color: const Color(0xFF6366F1),
+          title: 'Document Vault',
+          subtitle: 'Store IDs, contracts & important files',
+          onTap: () => context.go('/vault'),
+        ),
+        _MoreItem(
           icon: LucideIcons.userPlus,
           color: const Color(0xFF10B981),
           title: 'Invite Friends',

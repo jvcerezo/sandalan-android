@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/anomaly_service.dart';
+import '../../../core/services/document_vault_service.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/repositories/local_bill_repository.dart';
 import '../../../data/repositories/local_goal_repository.dart';
@@ -92,7 +93,21 @@ final smartSuggestionsProvider = FutureProvider<List<SmartSuggestion>>((ref) asy
       }
     } catch (_) {}
 
-    // 4. No transactions today
+    // 4. Expiring documents
+    try {
+      final expiring = await DocumentVaultService.instance.getExpiring();
+      for (final doc in expiring.take(1)) {
+        final days = doc.expiryDate!.difference(DateTime.now()).inDays;
+        suggestions.add(SmartSuggestion(
+          title: '${doc.name} expiring in $days day${days == 1 ? '' : 's'}',
+          subtitle: 'Renew before it expires',
+          icon: LucideIcons.fileWarning,
+          color: const Color(0xFFEF4444),
+        ));
+      }
+    } catch (_) {}
+
+    // 5. No transactions today
     try {
       final txnRepo = LocalTransactionRepository(db, client);
       final today = DateTime.now();

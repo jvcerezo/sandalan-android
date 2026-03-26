@@ -13,6 +13,7 @@ import '../../features/guide/screens/checklist_detail_screen.dart';
 import '../../features/money/screens/money_screen.dart';
 import '../../features/goals/screens/goals_screen.dart';
 import '../../features/tools/screens/tools_hub_screen.dart';
+import '../../features/vault/screens/vault_screen.dart';
 import '../../features/tools/screens/contributions_screen.dart';
 import '../../features/tools/screens/tax_tracker_screen.dart';
 import '../../features/tools/screens/thirteenth_month_screen.dart';
@@ -215,6 +216,7 @@ final appRouter = GoRouter(
             child: SplitsScreen(),
           ),
         ),
+        GoRoute(path: '/vault', pageBuilder: (_, s) => const NoTransitionPage(child: VaultScreen())),
         GoRoute(
           path: '/achievements',
           pageBuilder: (context, state) => const NoTransitionPage(
