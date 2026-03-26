@@ -71,9 +71,22 @@ class SyncService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      // Sync when app goes to background.
+      // Push pending changes when app goes to background.
       fullSync();
+    } else if (state == AppLifecycleState.resumed) {
+      // Pull fresh data when app resumes (multi-device: another device may have synced).
+      _pullIfStale();
     }
+  }
+
+  /// Pull from remote if last sync was more than 5 minutes ago.
+  /// This catches changes made on other devices while this one was backgrounded.
+  Future<void> _pullIfStale() async {
+    if (_lastSyncAttempt != null &&
+        DateTime.now().difference(_lastSyncAttempt!) < const Duration(minutes: 5)) {
+      return; // Recently synced, skip
+    }
+    await fullSync();
   }
 
   /// Check if we should sync today (once per day).

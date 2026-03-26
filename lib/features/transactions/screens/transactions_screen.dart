@@ -17,6 +17,7 @@ import '../widgets/add_transaction_dialog.dart';
 import '../widgets/transaction_detail_sheet.dart';
 import '../widgets/transaction_filters_panel.dart';
 import '../widgets/export_dialog.dart';
+import '../widgets/import_dialog.dart';
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
@@ -96,6 +97,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
               error: (_, __) => const SizedBox.shrink(),
             ),
           ])),
+          IconButton(
+            icon: Icon(LucideIcons.upload, size: 18, color: colorScheme.onSurfaceVariant),
+            tooltip: 'Import CSV',
+            onPressed: () => showImportDialog(context),
+          ),
           IconButton(
             icon: Icon(LucideIcons.download, size: 18, color: colorScheme.onSurfaceVariant),
             tooltip: 'Export CSV',
