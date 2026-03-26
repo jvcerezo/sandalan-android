@@ -337,14 +337,20 @@ class ChatEngine {
     // Collapse whitespace
     s = s.replaceAll(RegExp(r'\s+'), ' ');
     if (s.isEmpty) return null;
-    if (s.length > 200) return null;
+    if (s.length > 500) return null; // Reject absurdly long inputs
     // Strip HTML tags
     s = s.replaceAll(RegExp(r'<[^>]*>'), '');
     // Strip control characters (keep basic unicode)
     s = s.replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]'), '');
+    // Strip potential SQL/JS injection patterns
+    s = s.replaceAll(RegExp(r'(--|;|DROP\s|DELETE\s|INSERT\s|UPDATE\s|SELECT\s)', caseSensitive: false), '');
+    // Strip script tags and event handlers
+    s = s.replaceAll(RegExp(r'(javascript:|on\w+=)', caseSensitive: false), '');
     // Check if only special characters remain
     final alphanumeric = s.replaceAll(RegExp(r'[^a-zA-Z0-9\u00C0-\u024F\u1700-\u171F]'), '');
     if (alphanumeric.isEmpty) return null;
+    // Truncate to reasonable length after cleaning
+    if (s.length > 200) s = s.substring(0, 200);
     return s;
   }
 
@@ -720,6 +726,9 @@ class ChatEngine {
         }
       }
     }
+
+    // Filter out amounts that are zero, negative, or absurdly large
+    filteredTokens.removeWhere((t) => t.value <= 0 || t.value > 999999999);
 
     if (filteredTokens.isEmpty) {
       return _AmountExtraction([], []);

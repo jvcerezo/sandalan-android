@@ -16,6 +16,7 @@ import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../transactions/providers/transaction_providers.dart';
+import '../../goals/providers/goal_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../providers/upcoming_payments_provider.dart';
 import '../widgets/streak_detail_sheet.dart';
@@ -448,16 +449,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: _buildContextualCard(),
           ),
 
-          // ─── Recent Transactions ─────────────────────────────────
+          // ─── Goal Progress ──────────────────────────────────────
           StaggeredFadeIn(
             index: 4,
+            child: _GoalProgressSection(ref: ref, hideBalances: hideBalances),
+          ),
+
+          // ─── Recent Transactions ─────────────────────────────────
+          StaggeredFadeIn(
+            index: 5,
             child: _RecentTransactionsSection(ref: ref, hideBalances: hideBalances),
           ),
 
           // ─── Upcoming Payments ───────────────────────────────────
           StaggeredFadeIn(
-            index: 5,
+            index: 6,
             child: _UpcomingPaymentsSection(ref: ref, hideBalances: hideBalances),
+          ),
+
+          // ─── Quick Links ──────────────────────────────────────────
+          StaggeredFadeIn(
+            index: 7,
+            child: _QuickLinksSection(),
           ),
 
         ],
@@ -958,3 +971,192 @@ class _ErrorRetry extends StatelessWidget {
   }
 }
 
+// ─── Goal Progress Section ──────────────────────────────────────────────────────
+
+class _GoalProgressSection extends StatelessWidget {
+  final WidgetRef ref;
+  final bool hideBalances;
+  const _GoalProgressSection({required this.ref, this.hideBalances = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final goals = ref.watch(goalsProvider);
+
+    return goals.when(
+      data: (goalList) {
+        final active = goalList.where((g) => !g.isCompleted).take(2).toList();
+        if (active.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('GOAL PROGRESS',
+                      style: TextStyle(
+                        fontSize: 11, fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
+                      )),
+                  GestureDetector(
+                    onTap: () => GoRouter.of(context).go('/goals'),
+                    child: Text('See all',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                            color: colorScheme.primary)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...active.map((goal) {
+              final progress = goal.targetAmount > 0
+                  ? (goal.currentAmount / goal.targetAmount).clamp(0.0, 1.0)
+                  : 0.0;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  onTap: () => GoRouter.of(context).go('/goals'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      border: Border.all(color: colorScheme.surfaceContainerHighest),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Icon(LucideIcons.target, size: 14, color: colorScheme.primary),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text(goal.name,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Text(hideBalances
+                              ? '••••'
+                              : '${(progress * 100).toStringAsFixed(0)}%',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                                  color: colorScheme.primary)),
+                        ]),
+                        const SizedBox(height: 8),
+                        AnimatedProgressBar(
+                          value: progress,
+                          minHeight: 6,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                          Text(hideBalances ? '••••' : formatCurrency(goal.currentAmount),
+                              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                          Text(hideBalances ? '••••' : formatCurrency(goal.targetAmount),
+                              style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 10),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+// ─── Quick Links Section ────────────────────────────────────────────────────────
+
+class _QuickLinksSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text('QUICK LINKS',
+              style: TextStyle(
+                fontSize: 11, fontWeight: FontWeight.w600,
+                letterSpacing: 0.8, color: colorScheme.onSurfaceVariant,
+              )),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _QuickLink(
+              icon: LucideIcons.bookOpen,
+              label: 'Guide',
+              color: const Color(0xFF10B981),
+              onTap: () => GoRouter.of(context).go('/guide'),
+            ),
+            const SizedBox(width: 8),
+            _QuickLink(
+              icon: LucideIcons.messageCircle,
+              label: 'AI Chat',
+              color: const Color(0xFF8B5CF6),
+              onTap: () => GoRouter.of(context).go('/chat'),
+            ),
+            const SizedBox(width: 8),
+            _QuickLink(
+              icon: LucideIcons.pieChart,
+              label: 'Reports',
+              color: const Color(0xFF3B82F6),
+              onTap: () => GoRouter.of(context).go('/reports'),
+            ),
+            const SizedBox(width: 8),
+            _QuickLink(
+              icon: LucideIcons.settings,
+              label: 'Settings',
+              color: const Color(0xFF64748B),
+              onTap: () => GoRouter.of(context).go('/settings'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+class _QuickLink extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _QuickLink({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurfaceVariant)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

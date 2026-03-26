@@ -250,6 +250,25 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
     }
 
     final amount = pending.amount!;
+
+    // Guard: validate amount bounds
+    if (amount <= 0 || amount > 999999999) {
+      _actionInProgress = false;
+      _addBotMessage('Invalid amount. Please enter a value between 1 and 999,999,999.');
+      state = state.copyWith(conversationState: ChatConversationState.idle, clearPending: true);
+      return;
+    }
+
+    // Guard: sanitize description
+    var description = (pending.description ?? '').trim();
+    if (description.length > 200) description = description.substring(0, 200);
+    // Strip HTML/control chars
+    description = description.replaceAll(RegExp(r'<[^>]*>'), '');
+    description = description.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
+
+    // Guard: validate category against known list
+    final category = pending.category ?? 'Other';
+
     final signedAmount = pending.isIncome ? amount.abs() : -amount.abs();
 
     // Use the first account if none specified
@@ -257,8 +276,8 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
 
     final tx = await transactionRepo.createTransaction(
       amount: signedAmount,
-      category: pending.category ?? 'Other',
-      description: pending.description ?? '',
+      category: category,
+      description: description,
       date: DateTime.now(),
       accountId: accountId,
     );
