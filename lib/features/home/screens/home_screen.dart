@@ -639,7 +639,7 @@ class _RecentTransactionsSection extends StatelessWidget {
                 children: visible.asMap().entries.map((entry) {
                   final t = entry.value;
                   final isLast = entry.key == visible.length - 1;
-                  final isExpense = t.amount < 0 || t.type == 'expense';
+                  final isExpense = t.amount < 0;
                   final amountColor = isExpense
                       ? colorScheme.onSurface
                       : AppColors.income;
