@@ -43,9 +43,12 @@ Future<void> main() async {
   // Initialize premium service (check subscription status).
   await PremiumService.instance.init();
 
-  // Initialize WorkManager for persistent background tasks (daily reminder
-  // re-scheduling, weekly recap notifications). Survives app close & reboot.
-  await BackgroundWorker.init();
+  // Schedule background notifications (daily reminder, weekly recap).
+  try {
+    await BackgroundWorker.init();
+  } catch (_) {
+    // Non-critical — app works without background notifications
+  }
 
   // Only run sync and automation for authenticated (non-guest) users.
   final isGuest = GuestModeService.isGuestSync();

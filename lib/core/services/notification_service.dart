@@ -51,13 +51,6 @@ class NotificationService {
       ),
     );
 
-    // Request exact alarm permission (Android 12+) — needed for reliable scheduling.
-    try {
-      await androidPlugin?.requestExactAlarmsPermission();
-    } catch (_) {
-      // Not critical — falls back to inexact alarms
-    }
-
     _initialized = true;
   }
 
@@ -135,7 +128,7 @@ class NotificationService {
           priority: Priority.high,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
