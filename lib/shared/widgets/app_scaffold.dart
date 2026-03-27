@@ -49,8 +49,10 @@ class _AppScaffoldState extends State<AppScaffold> {
     showModalBottomSheet(
       context: ctx,
       backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      builder: (sheetCtx) {
+        final bottomPadding = MediaQuery.of(sheetCtx).padding.bottom;
+        return Container(
+        margin: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding + 16),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         decoration: BoxDecoration(
           color: cs.surface,
@@ -119,7 +121,8 @@ class _AppScaffoldState extends State<AppScaffold> {
             ),
           ],
         ),
-      ),
+      );
+      },
     );
   }
 
