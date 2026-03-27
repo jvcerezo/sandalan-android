@@ -687,6 +687,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 controller: _customNameController,
                 decoration: const InputDecoration(labelText: 'Name', hintText: 'e.g., BDO, BPI, Tonik'),
                 autofocus: true,
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
