@@ -71,6 +71,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
   String _category = 'Other';
   DateTime _date = DateTime.now();
   bool _saving = false;
+  bool _showItems = false;
   bool _autoSelected = false;
   String? _originalCategory; // Track for learned merchants
 
@@ -662,6 +663,47 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           ),
           style: const TextStyle(fontSize: 13),
         ),
+        const SizedBox(height: 14),
+      ],
+
+      // Items (if detected)
+      if (_receipt != null && _receipt!.items.isNotEmpty) ...[
+        GestureDetector(
+          onTap: () => setState(() => _showItems = !_showItems),
+          child: Row(children: [
+            Icon(LucideIcons.list, size: 14, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text('${_receipt!.items.length} items detected',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurfaceVariant)),
+            const Spacer(),
+            Icon(_showItems ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                size: 14, color: cs.onSurfaceVariant),
+          ]),
+        ),
+        if (_showItems) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(children: [
+              for (final item in _receipt!.items)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(children: [
+                    Expanded(child: Text(item.name,
+                        style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                        maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    if (item.amount != null)
+                      Text(formatCurrency(item.amount!),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: cs.onSurface)),
+                  ]),
+                ),
+            ]),
+          ),
+        ],
         const SizedBox(height: 14),
       ],
 
