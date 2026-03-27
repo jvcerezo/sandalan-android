@@ -36,9 +36,6 @@ dependencies:
   # Charts
   fl_chart: ^1.2.0
 
-  # Animations
-  flutter_animate: ^4.5.2
-
   # Connectivity
   connectivity_plus: ^6.1.4
 
