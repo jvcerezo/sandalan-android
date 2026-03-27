@@ -48,7 +48,7 @@ class AccountsScreen extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: () => context.go('/salary-allocation'),
               icon: const Icon(LucideIcons.piggyBank, size: 14),
-              label: const Text('Allocate'),
+              label: const Text('Split Salary'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
             ),
             const SizedBox(width: 6),

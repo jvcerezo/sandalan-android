@@ -283,12 +283,30 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
           Row(children: [
             Icon(LucideIcons.wallet, size: 24, color: cs.primary),
             const SizedBox(width: 8),
-            const Text('Salary Allocation', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text('Payday Splitter', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           ]),
           const SizedBox(height: 4),
-          Text('Auto-split your salary on payday',
+          Text('Tell us your salary and where to put it — we\'ll remind you to split it every payday.',
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
+
+          // How it works
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: cs.primary.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(LucideIcons.info, size: 14, color: cs.primary),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                'Example: ₱30,000 salary → ₱10,000 to rent budget, ₱5,000 to emergency fund goal, ₱15,000 free spending.',
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+              )),
+            ]),
+          ),
 
           // Salary input
           TextField(
