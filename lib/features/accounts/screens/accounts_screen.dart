@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
@@ -45,6 +46,13 @@ class AccountsScreen extends ConsumerWidget {
             ])),
           Row(children: [
             OutlinedButton.icon(
+              onPressed: () => context.go('/salary-allocation'),
+              icon: const Icon(LucideIcons.piggyBank, size: 14),
+              label: const Text('Allocate'),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+            ),
+            const SizedBox(width: 6),
+            OutlinedButton.icon(
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -61,7 +69,7 @@ class AccountsScreen extends ConsumerWidget {
               label: const Text('Transfer'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             FilledButton.icon(
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Add'),

@@ -8,6 +8,8 @@ import '../widgets/profile_section.dart';
 import '../widgets/appearance_section.dart';
 import '../widgets/automation_section.dart';
 import '../widgets/notifications_section.dart';
+import '../widgets/home_page_section.dart';
+import '../widgets/currency_section.dart';
 import '../widgets/privacy_section.dart';
 import '../widgets/bug_report_section.dart';
 import '../widgets/account_section.dart';
@@ -117,6 +119,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             sub: 'Push notification settings',
             onTap: () => _goToSection('notifications')),
         _MenuItem(
+            icon: LucideIcons.layoutGrid,
+            title: 'Home Page',
+            sub: 'Default start page',
+            onTap: () => _goToSection('homepage')),
+        _MenuItem(
             icon: LucideIcons.eyeOff,
             title: 'Feature Visibility',
             sub: 'Hide features you don\'t need',
@@ -186,8 +193,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return AutomationSection(back: back);
       case 'notifications':
         return NotificationsSection(back: back);
+      case 'homepage':
+        return HomePageSection(back: back);
       case 'visibility':
         return FeatureVisibilitySection(back: back);
+      case 'currency':
+        return CurrencySection(back: back);
       case 'privacy':
         return PrivacySection(back: back);
       case 'bug':
