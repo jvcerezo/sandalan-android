@@ -46,13 +46,6 @@ class AccountsScreen extends ConsumerWidget {
             ])),
           Row(children: [
             OutlinedButton.icon(
-              onPressed: () => context.go('/salary-allocation'),
-              icon: const Icon(LucideIcons.piggyBank, size: 14),
-              label: const Text('Split Salary'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
-            ),
-            const SizedBox(width: 6),
-            OutlinedButton.icon(
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -69,7 +62,7 @@ class AccountsScreen extends ConsumerWidget {
               label: const Text('Transfer'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             FilledButton.icon(
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Add'),
@@ -88,7 +81,29 @@ class AccountsScreen extends ConsumerWidget {
           value: totalBalance,
           style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
+
+        // Payday Splitter shortcut
+        InkWell(
+          onTap: () => context.go('/salary-allocation'),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.05),
+              border: Border.all(color: colorScheme.primary.withOpacity(0.12)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              Icon(LucideIcons.piggyBank, size: 16, color: colorScheme.primary),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Payday Splitter',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.primary))),
+              Icon(LucideIcons.chevronRight, size: 16, color: colorScheme.primary.withOpacity(0.5)),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 16),
 
         // Active accounts
         accounts.when(

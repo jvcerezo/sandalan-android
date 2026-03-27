@@ -275,11 +275,9 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
     final pct = salary > 0 ? (totalAllocated / salary * 100) : 0.0;
     final overAllocated = totalAllocated > salary && salary > 0;
 
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) return const Center(child: CircularProgressIndicator());
 
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 100), children: [
+    return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 100), children: [
           Row(children: [
             Icon(LucideIcons.wallet, size: 24, color: cs.primary),
             const SizedBox(width: 8),
@@ -504,8 +502,6 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
             child: const Text('Save Allocation Rules'),
           ),
-        ]),
-      ),
-    );
+        ]);
   }
 }
