@@ -652,6 +652,11 @@ class ReceiptParser {
       'national bookstore', 'fully booked', 'uniqlo', 'h&m', 'miniso', 'daiso',
       'shell', 'petron', 'caltex', 'seaoil', 'phoenix',
       'meralco', 'maynilad', 'manila water', 'pldt', 'globe', 'smart', 'converge',
+      // Grocery-specific
+      'ever gotesco', 'metro gaisano', 'gaisano', 'prince hypermart',
+      'south supermarket', 'super8', 'super 8', 'nccc', 'cherry foodarama',
+      'rustans', "rustan's", 'marketplace', 'shopwise', 'the marketplace',
+      'landmark', 'handyman', 'ace hardware', 'true value', 'cdr king',
     ];
     for (final merchant in knownMerchants) {
       if (allText.contains(merchant)) {
@@ -757,7 +762,8 @@ class ReceiptParser {
     double? bestAmount;
     int bestPriority = 999;
 
-    for (final line in lines) {
+    for (var lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+      final line = lines[lineIdx];
       final lower = line.toLowerCase().trim();
 
       // Skip lines with payment/tender/change keywords
@@ -777,6 +783,19 @@ class ReceiptParser {
             if (amount != null && amount > 0 && priority < bestPriority) {
               bestAmount = amount;
               bestPriority = priority;
+            }
+          } else if (lineIdx + 1 < lines.length) {
+            // Amount might be on the NEXT line (common in grocery receipts)
+            final nextLine = lines[lineIdx + 1];
+            final nextMatch = amountPattern.firstMatch(nextLine);
+            if (nextMatch != null) {
+              final amountStr =
+                  nextMatch.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
+              final amount = double.tryParse(amountStr);
+              if (amount != null && amount > 0 && priority < bestPriority) {
+                bestAmount = amount;
+                bestPriority = priority;
+              }
             }
           }
           break;
@@ -875,7 +894,7 @@ class ReceiptParser {
   static List<ReceiptLineItem> _extractLineItems(List<String> lines) {
     final items = <ReceiptLineItem>[];
     final itemPattern = RegExp(
-      r'^(.+?)\s+[₱P]?\s*(\d{1,3}(?:[,]\d{3})*(?:\.\d{1,2}))\s*$',
+      r'^(.+?)\s+[₱P]?\s*(\d{1,3}(?:[,]\d{3})*(?:\.\d{1,2})?)\s*$',
     );
 
     // Skip keywords that indicate totals, not items
