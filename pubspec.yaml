@@ -23,6 +23,7 @@ dependencies:
 
   # Navigation
   go_router: ^14.8.1
+  flutter_animate: ^4.5.2
 
   # Offline storage
   drift: ^2.25.0

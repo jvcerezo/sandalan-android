@@ -6,7 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/account.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
 import '../../../shared/widgets/animated_counter.dart';
@@ -108,7 +108,7 @@ class AccountsScreen extends ConsumerWidget {
         // Active accounts
         accounts.when(
           data: (accs) => accs.isEmpty
-              ? EmptyState(
+              ? AnimatedEmptyState(
                   icon: LucideIcons.landmark,
                   title: 'No accounts yet',
                   subtitle: 'Add your first bank, e-wallet, or cash account.',

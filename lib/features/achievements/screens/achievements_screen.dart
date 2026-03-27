@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/services/milestone_service.dart';
 import '../../../shared/widgets/error_retry.dart';
 import '../providers/milestone_providers.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 
 class AchievementsScreen extends ConsumerStatefulWidget {
   const AchievementsScreen({super.key});
@@ -27,7 +28,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
     return earnedAsync.when(
       data: (earned) => _buildContent(context, earned, colorScheme),
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: SandalanLoading()),
       error: (_, __) => ErrorRetry(
         message: 'Could not load achievements',
         onRetry: () => ref.invalidate(earnedMilestonesProvider),

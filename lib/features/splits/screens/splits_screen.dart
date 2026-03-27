@@ -8,6 +8,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/bill_split.dart';
 import '../../../core/services/guest_mode_service.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../../shared/utils/snackbar_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/new_split_dialog.dart';
@@ -128,7 +129,7 @@ class _SplitsScreenState extends State<SplitsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) return const Center(child: SandalanLoading());
 
     return Scaffold(
       body: RefreshIndicator(

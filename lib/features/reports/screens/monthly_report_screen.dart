@@ -8,6 +8,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/models/monthly_report.dart';
@@ -65,7 +66,7 @@ class _MonthlyReportScreenState extends ConsumerState<MonthlyReportScreen> {
       ),
       body: reportAsync.when(
         data: (report) => _buildReport(context, report),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: SandalanLoading()),
         error: (_, __) => ErrorRetry(
           message: 'Could not load report',
           onRetry: () => ref.invalidate(

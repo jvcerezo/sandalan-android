@@ -6,7 +6,7 @@ import '../../../core/services/milestone_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../data/models/goal.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
@@ -98,7 +98,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
           data: (list) {
             final filtered = list.where((g) => g.isCompleted == _showCompleted).toList();
             if (filtered.isEmpty) {
-              return EmptyState(
+              return AnimatedEmptyState(
                 icon: _showCompleted ? LucideIcons.checkCircle2 : LucideIcons.target,
                 title: _showCompleted ? 'No completed goals yet' : 'No active goals',
                 subtitle: _showCompleted ? 'Keep working toward your goals!' : 'Set a goal to start saving.',

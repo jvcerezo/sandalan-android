@@ -7,6 +7,7 @@ import 'package:open_filex/open_filex.dart';
 import '../../../core/services/document_vault_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/utils/snackbar_helper.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 
 class VaultScreen extends StatefulWidget {
   const VaultScreen({super.key});
@@ -136,7 +137,7 @@ class _VaultScreenState extends State<VaultScreen> {
         if (_loading)
           const Center(child: Padding(
             padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(),
+            child: SandalanLoading(),
           )),
 
         if (!_loading && _docs.isEmpty)

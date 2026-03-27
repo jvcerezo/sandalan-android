@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/error_retry.dart';
 import '../providers/report_providers.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 
 class ReportsListScreen extends ConsumerWidget {
   const ReportsListScreen({super.key});
@@ -168,7 +169,7 @@ class ReportsListScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: SandalanLoading()),
         error: (_, __) => ErrorRetry(
           message: 'Could not load reports',
           onRetry: () => ref.invalidate(allReportsProvider),

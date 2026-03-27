@@ -8,8 +8,9 @@ import '../../../core/theme/color_tokens.dart';
 import '../../../core/constants/categories.dart';
 import '../../../data/models/budget.dart';
 import '../../../data/repositories/transaction_repository.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../../shared/widgets/animated_counter.dart';
-import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../transactions/providers/transaction_providers.dart';
 import '../../../shared/widgets/error_retry.dart';
 import '../providers/budget_providers.dart';
@@ -260,7 +261,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         budgets.when(
           data: (list) {
             if (list.isEmpty) {
-              return EmptyState(
+              return AnimatedEmptyState(
                 icon: LucideIcons.pieChart,
                 title: 'No budgets for this period',
                 subtitle: 'Create budgets to track your spending by category.',
@@ -284,7 +285,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               ...list.map((b) => _BudgetCard(budget: b)),
             ]);
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: SandalanLoading()),
           error: (_, __) => ErrorRetry(
             message: 'Could not load budgets',
             onRetry: () => ref.invalidate(budgetsProvider),

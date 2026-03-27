@@ -7,8 +7,10 @@ import '../../../app.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/investment.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../../../data/repositories/local_investment_repository.dart';
 import '../../../shared/widgets/error_retry.dart';
+import '../../../shared/widgets/sandalan_loading.dart';
 import '../widgets/add_investment_dialog.dart';
 
 final investmentsProvider = FutureProvider<List<Investment>>((ref) async {
@@ -28,7 +30,7 @@ class InvestmentsScreen extends ConsumerWidget {
 
     return Scaffold(
       body: investments.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: SandalanLoading()),
           error: (_, __) => ErrorRetry(
             message: 'Could not load investments',
             onRetry: () => ref.invalidate(investmentsProvider),
@@ -114,21 +116,10 @@ class InvestmentsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
 
                 if (list.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.outline.withOpacity(0.15)),
-                    ),
-                    child: Column(children: [
-                      Icon(LucideIcons.trendingUp, size: 32, color: cs.onSurfaceVariant.withOpacity(0.4)),
-                      const SizedBox(height: 8),
-                      Text('No investments yet', style: TextStyle(color: cs.onSurfaceVariant)),
-                      const SizedBox(height: 4),
-                      Text('Start tracking your MP2, UITF, stocks, and more',
-                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant.withOpacity(0.7)),
-                          textAlign: TextAlign.center),
-                    ]),
+                  AnimatedEmptyState(
+                    icon: LucideIcons.trendingUp,
+                    title: 'No investments yet',
+                    subtitle: 'Start tracking your MP2, UITF, stocks, and more',
                   )
                 else
                   ...list.map((inv) => _InvestmentCard(
