@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'premium_service.dart';
 
 /// Tracks daily app usage streaks using SharedPreferences.
 class StreakService {
@@ -17,10 +18,18 @@ class StreakService {
   /// Whether a pahinha token was consumed on this visit.
   bool lastVisitUsedPahinha = false;
 
+  /// Whether this visit unlocked the 90-day streak reward.
+  bool justUnlockedStreakReward = false;
+
+  static const _keyLastServerVerify = 'streak_last_server_verify';
+
   /// Record a visit. Call on home screen load.
   /// - Same day: no-op
   /// - Yesterday: increment streak
   /// - >1 day gap: reset to 1
+  ///
+  /// Anti-tamper: periodically verifies device time against server.
+  /// If device clock is >48h ahead of server, streak is reset.
   Future<void> recordVisit() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
@@ -28,6 +37,26 @@ class StreakService {
     final lastStr = prefs.getString(_keyLastActiveDate);
 
     if (lastStr == todayStr) return; // Same day, no-op
+
+    // Anti-tamper: verify device time every 3 days
+    final lastVerifyStr = prefs.getString(_keyLastServerVerify);
+    final lastVerify = lastVerifyStr != null ? DateTime.tryParse(lastVerifyStr) : null;
+    final shouldVerify = lastVerify == null ||
+        now.difference(lastVerify).inDays >= 3;
+
+    if (shouldVerify) {
+      final serverTime = await PremiumService.getServerTime();
+      if (serverTime != null) {
+        final drift = now.difference(serverTime).inHours;
+        if (drift > 48) {
+          // Device clock is way ahead — reset streak to prevent gaming
+          await prefs.setInt(_keyStreakCount, 0);
+          await prefs.setString(_keyLastActiveDate, todayStr);
+          return;
+        }
+        await prefs.setString(_keyLastServerVerify, serverTime.toIso8601String());
+      }
+    }
 
     int streak = prefs.getInt(_keyStreakCount) ?? 0;
     int best = prefs.getInt(_keyStreakBest) ?? 0;
@@ -71,6 +100,14 @@ class StreakService {
     }
 
     if (streak > best) best = streak;
+
+    // Check if user just hit the 90-day streak reward threshold
+    justUnlockedStreakReward = false;
+    if (streak == PremiumService.streakRewardThreshold &&
+        !PremiumService.instance.hasActiveStreakReward) {
+      justUnlockedStreakReward = true;
+    }
+
     await prefs.setInt(_keyPahinhaTokens, pahinhaTokens);
 
     await prefs.setInt(_keyStreakCount, streak);

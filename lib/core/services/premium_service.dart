@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,18 +27,32 @@ class PremiumService {
 
   static const _premiumKey = 'is_premium_user';
   static const _purchaseDateKey = 'premium_purchase_date';
+  static const _streakRewardExpiryKey = 'streak_reward_expiry';
+  static const _streakRewardClaimedKey = 'streak_reward_claimed_count';
+  static const _lastServerTimeKey = 'last_verified_server_time';
+
+  /// Streak days required to unlock 1 month of free premium.
+  static const streakRewardThreshold = 90;
 
   /// Set to false when ready to enforce premium gates.
   static const _isBetaPeriod = true;
 
   bool _isPremium = false;
   bool _loaded = false;
+  DateTime? _streakRewardExpiry;
 
   /// Initialize premium state from SharedPreferences.
   Future<void> init() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
     _isPremium = prefs.getBool(_premiumKey) ?? false;
+
+    // Check streak reward expiry
+    final expiryStr = prefs.getString(_streakRewardExpiryKey);
+    if (expiryStr != null) {
+      _streakRewardExpiry = DateTime.tryParse(expiryStr);
+    }
+
     _loaded = true;
   }
 
@@ -45,6 +61,7 @@ class PremiumService {
   bool hasAccess(PremiumFeature feature) {
     if (_isBetaPeriod) return true;
     if (_isPremium) return true;
+    if (hasActiveStreakReward) return true;
 
     // Free tier features (always available):
     switch (feature) {
@@ -65,7 +82,26 @@ class PremiumService {
   bool get isBetaPeriod => _isBetaPeriod;
 
   /// Whether the user has an active premium subscription.
-  bool get isPremium => _isPremium || _isBetaPeriod;
+  bool get isPremium => _isPremium || _isBetaPeriod || hasActiveStreakReward;
+
+  /// Whether the user has an active streak reward (free premium from 90-day streak).
+  bool get hasActiveStreakReward {
+    if (_streakRewardExpiry == null) return false;
+    return DateTime.now().isBefore(_streakRewardExpiry!);
+  }
+
+  /// Days remaining on streak reward, or 0 if expired/none.
+  int get streakRewardDaysLeft {
+    if (_streakRewardExpiry == null) return 0;
+    final diff = _streakRewardExpiry!.difference(DateTime.now()).inDays;
+    return diff > 0 ? diff : 0;
+  }
+
+  /// How many times the user has claimed the streak reward.
+  Future<int> getStreakRewardClaimCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_streakRewardClaimedKey) ?? 0;
+  }
 
   /// Set premium status (called after successful purchase verification).
   Future<void> setPremium(bool value) async {
@@ -75,6 +111,78 @@ class PremiumService {
     if (value) {
       await prefs.setString(_purchaseDateKey, DateTime.now().toIso8601String());
     }
+  }
+
+  // ─── Streak Reward ────────────────────────────────────────────────────────
+
+  /// Claim the 90-day streak reward: 1 month of free premium.
+  ///
+  /// Uses server time from worldtimeapi.org to prevent device clock manipulation.
+  /// Returns true if successfully claimed, false if validation failed.
+  Future<bool> claimStreakReward(int currentStreak) async {
+    if (currentStreak < streakRewardThreshold) return false;
+    if (hasActiveStreakReward) return false; // Already have an active reward
+
+    // Verify with server time — prevents claiming by changing device date
+    final serverTime = await getServerTime();
+    if (serverTime == null) return false; // Can't verify, reject
+
+    // Anti-tamper: check device time isn't more than 24h ahead of server
+    final deviceTime = DateTime.now();
+    final drift = deviceTime.difference(serverTime).inHours.abs();
+    if (drift > 24) return false; // Clock is manipulated
+
+    // Anti-tamper: check that time hasn't gone backwards since last verification
+    final prefs = await SharedPreferences.getInstance();
+    final lastServerStr = prefs.getString(_lastServerTimeKey);
+    if (lastServerStr != null) {
+      final lastServer = DateTime.tryParse(lastServerStr);
+      if (lastServer != null && serverTime.isBefore(lastServer)) {
+        return false; // Time went backwards — tampered
+      }
+    }
+
+    // All checks passed — grant reward
+    _streakRewardExpiry = serverTime.add(const Duration(days: 30));
+    await prefs.setString(_streakRewardExpiryKey, _streakRewardExpiry!.toIso8601String());
+    await prefs.setString(_lastServerTimeKey, serverTime.toIso8601String());
+    final claimCount = prefs.getInt(_streakRewardClaimedKey) ?? 0;
+    await prefs.setInt(_streakRewardClaimedKey, claimCount + 1);
+
+    return true;
+  }
+
+  /// Fetch current time from a trusted server.
+  /// Uses worldtimeapi.org (free, no key needed).
+  /// Returns null if unavailable (no internet, API down).
+  static Future<DateTime?> getServerTime() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://worldtimeapi.org/api/timezone/Asia/Manila'),
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        // Response contains "datetime": "2026-03-28T14:30:00.123456+08:00"
+        final body = response.body;
+        final match = RegExp(r'"datetime"\s*:\s*"([^"]+)"').firstMatch(body);
+        if (match != null) {
+          return DateTime.tryParse(match.group(1)!);
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: try HTTP Date header from any reliable server
+    try {
+      final response = await http.head(
+        Uri.parse('https://www.google.com'),
+      ).timeout(const Duration(seconds: 5));
+      final dateHeader = response.headers['date'];
+      if (dateHeader != null) {
+        return HttpDate.parse(dateHeader);
+      }
+    } catch (_) {}
+
+    return null;
   }
 
   /// Get the list of premium features for display.
