@@ -641,22 +641,37 @@ class ReceiptParser {
 
     // First pass: try to match a known merchant name anywhere in the first 8 lines
     final allText = lines.take(8).join(' ').toLowerCase();
+    // Known merchants — includes both trade names AND corporate names
+    // (BIR requires the registered corporate name on receipts, which OCR reads)
     final knownMerchants = [
-      'jollibee', 'mcdonalds', "mcdonald's", 'kfc', 'chowking', 'mang inasal',
-      'greenwich', 'pizza hut', 'starbucks', 'tim hortons', 'bonchon',
-      'army navy', 'yellow cab', "shakey's", 'max\'s', 'goldilocks',
-      'red ribbon', 'ministop', '7-eleven', '7 eleven', 'family mart',
-      'alfamart', 'sm supermarket', 'sm hypermarket', 'puregold', 'savemore',
-      'robinsons', 'waltermart', 'landers', 's&r', 'metro supermarket',
+      // Fast food (trade name → corporate name)
+      'jollibee', 'jollibee foods', 'mcdonalds', "mcdonald's", 'golden arches',
+      'kfc', 'chowking', 'mang inasal', 'greenwich', 'pizza hut',
+      'starbucks', 'tim hortons', 'bonchon', 'army navy', 'yellow cab',
+      "shakey's", 'max\'s', 'goldilocks', 'red ribbon', 'burger king',
+      'wendys', "wendy's", 'subway', 'kenny rogers', 'pancake house',
+      'turks', 'potato corner', 'angels pizza',
+      // Convenience stores
+      'ministop', '7-eleven', '7 eleven', 'philippine seven',
+      'family mart', 'familymart', 'alfamart',
+      // Supermarkets/grocery
+      'sm supermarket', 'sm hypermarket', 'sm retail', 'sm marketplace',
+      'puregold', 'puregold price club', 'savemore', 'robinsons supermarket',
+      'robinsons retail', 'waltermart', 'landers', 's&r', 'metro supermarket',
+      'ever gotesco', 'metro gaisano', 'gaisano', 'nccc', 'shopwise',
+      'rustans', "rustan's", 'landmark', 'south supermarket',
+      // Pharmacy
       'mercury drug', 'watsons', 'southstar', 'generika', 'rose pharmacy',
-      'national bookstore', 'fully booked', 'uniqlo', 'h&m', 'miniso', 'daiso',
-      'shell', 'petron', 'caltex', 'seaoil', 'phoenix',
-      'meralco', 'maynilad', 'manila water', 'pldt', 'globe', 'smart', 'converge',
-      // Grocery-specific
-      'ever gotesco', 'metro gaisano', 'gaisano', 'prince hypermart',
-      'south supermarket', 'super8', 'super 8', 'nccc', 'cherry foodarama',
-      'rustans', "rustan's", 'marketplace', 'shopwise', 'the marketplace',
-      'landmark', 'handyman', 'ace hardware', 'true value', 'cdr king',
+      'the generics pharmacy', 'tgp',
+      // Retail
+      'national bookstore', 'fully booked', 'uniqlo', 'h&m', 'miniso',
+      'daiso', 'handyman', 'ace hardware', 'true value', 'cdr king',
+      // Gas stations
+      'shell', 'pilipinas shell', 'petron', 'caltex', 'chevron',
+      'seaoil', 'phoenix', 'total', 'flying v', 'ptt',
+      // Utilities (bill payment receipts)
+      'meralco', 'manila electric', 'maynilad', 'manila water',
+      'pldt', 'globe', 'smart', 'converge', 'dito',
     ];
     for (final merchant in knownMerchants) {
       if (allText.contains(merchant)) {
@@ -722,13 +737,15 @@ class ReceiptParser {
   /// Extract total amount -- look for keywords near numbers.
   static double? _extractTotalAmount(List<String> lines) {
     // Keywords that represent the ACTUAL COST (what you owe) — highest priority first
+    // Based on BIR RR 10-2015 mandated receipt format for all PH establishments
     final totalKeywords = [
       'grand total',
       'total due',
+      'total amount due',
       'total amount',
       'amount due',
-      'net amount',
       'balance due',
+      'net amount',
       'amount payable',
       'sub total',
       'subtotal',
@@ -736,7 +753,6 @@ class ReceiptParser {
     ];
 
     // Keywords that represent PAYMENT/TENDER (what customer paid) — EXCLUDE these
-    // Be specific: "cash" alone is too broad (appears in item names)
     final paymentKeywords = [
       'amount tendered',
       'amount paid',
@@ -755,6 +771,27 @@ class ReceiptParser {
       'your change',
     ];
 
+    // Keywords from the VAT breakdown section — EXCLUDE these
+    // These appear BEFORE the total on BIR-mandated receipts and show
+    // sales breakdowns, not the amount owed
+    final vatSectionKeywords = [
+      'vatable sale',
+      'vatable sales',
+      'vat exempt',
+      'vat-exempt',
+      'zero rated',
+      'zero-rated',
+      'vat amount',
+      'vat amt',
+      '12% vat',
+      'total sales', // gross sales, not payment total
+      'sc disc',
+      'sc discount',
+      'pwd disc',
+      'pwd discount',
+      'senior citizen',
+    ];
+
     // Match amounts: handles ₱125.00, P 1,234.56, 125.00, 125
     // Uses rightmost match on the line (amounts are usually right-aligned)
     final amountPattern = RegExp(
@@ -771,6 +808,8 @@ class ReceiptParser {
       // Skip lines with payment/tender/change keywords
       if (paymentKeywords.any((k) => lower.contains(k))) continue;
       if (changeKeywords.any((k) => lower.contains(k))) continue;
+      // Skip VAT breakdown lines (appear before total on BIR receipts)
+      if (vatSectionKeywords.any((k) => lower.contains(k))) continue;
       // Skip standalone "CASH" or "PAYMENT" lines (tender, not total)
       // but NOT lines like "CASH TOTAL" or "TOTAL CASH" which are totals
       if ((lower.startsWith('cash') || lower.startsWith('payment') || lower.startsWith('paid'))
