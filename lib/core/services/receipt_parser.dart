@@ -736,16 +736,16 @@ class ReceiptParser {
     ];
 
     // Keywords that represent PAYMENT/TENDER (what customer paid) — EXCLUDE these
+    // Be specific: "cash" alone is too broad (appears in item names)
     final paymentKeywords = [
       'amount tendered',
       'amount paid',
       'cash tendered',
       'cash received',
+      'cash peso',
       'tendered',
       'tender',
-      'cash',
-      'paid',
-      'payment',
+      'paid amount',
     ];
 
     // Keywords that represent CHANGE — EXCLUDE these too
@@ -755,6 +755,8 @@ class ReceiptParser {
       'your change',
     ];
 
+    // Match amounts: handles ₱125.00, P 1,234.56, 125.00, 125
+    // Uses rightmost match on the line (amounts are usually right-aligned)
     final amountPattern = RegExp(
       r'[₱P]?\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)',
     );
@@ -769,28 +771,41 @@ class ReceiptParser {
       // Skip lines with payment/tender/change keywords
       if (paymentKeywords.any((k) => lower.contains(k))) continue;
       if (changeKeywords.any((k) => lower.contains(k))) continue;
+      // Skip standalone "CASH" or "PAYMENT" lines (tender, not total)
+      // but NOT lines like "CASH TOTAL" or "TOTAL CASH" which are totals
+      if ((lower.startsWith('cash') || lower.startsWith('payment') || lower.startsWith('paid'))
+          && !lower.contains('total') && !lower.contains('due') && !lower.contains('amount')) continue;
 
       for (var priority = 0;
           priority < totalKeywords.length;
           priority++) {
         if (lower.contains(totalKeywords[priority])) {
-          // Found a total keyword -- extract the amount on this line
-          final match = amountPattern.firstMatch(line);
-          if (match != null) {
-            final amountStr =
-                match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
+          // Clean the line: strip filler dots/dashes between keyword and amount
+          // e.g. "TOTAL.............125.00" -> "TOTAL 125.00"
+          // e.g. "TOTAL-----------125.00" -> "TOTAL 125.00"
+          final cleaned = line.replaceAll(RegExp(r'[.]{2,}'), ' ')
+                              .replaceAll(RegExp(r'[-]{2,}'), ' ')
+                              .replaceAll(RegExp(r'[=]{2,}'), ' ')
+                              .replaceAll(RegExp(r'[*]{2,}'), ' ');
+
+          // Use the LAST (rightmost) amount on the line — totals are right-aligned
+          double? lineAmount;
+          for (final match in amountPattern.allMatches(cleaned)) {
+            final amountStr = match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
             final amount = double.tryParse(amountStr);
-            if (amount != null && amount > 0 && priority < bestPriority) {
-              bestAmount = amount;
-              bestPriority = priority;
+            if (amount != null && amount > 0) {
+              lineAmount = amount; // Keep overwriting — last match wins
             }
-          } else if (lineIdx + 1 < lines.length) {
+          }
+
+          if (lineAmount != null && priority < bestPriority) {
+            bestAmount = lineAmount;
+            bestPriority = priority;
+          } else if (lineAmount == null && lineIdx + 1 < lines.length) {
             // Amount might be on the NEXT line (common in grocery receipts)
             final nextLine = lines[lineIdx + 1];
-            final nextMatch = amountPattern.firstMatch(nextLine);
-            if (nextMatch != null) {
-              final amountStr =
-                  nextMatch.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
+            for (final match in amountPattern.allMatches(nextLine)) {
+              final amountStr = match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
               final amount = double.tryParse(amountStr);
               if (amount != null && amount > 0 && priority < bestPriority) {
                 bestAmount = amount;
