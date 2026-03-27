@@ -27,6 +27,51 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
   bool _exporting = false;
   bool _exportingCsv = false;
 
+  Future<void> _handleDeleteAccount(BuildContext context, WidgetRef ref) async {
+    // Show full-screen loading overlay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            margin: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const SizedBox(height: 8),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              const Text('Deleting your account...',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text('Clearing all data. This may take a moment.',
+                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  textAlign: TextAlign.center),
+            ]),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount();
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+        context.go('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+        showAppSnackBar(context, '$e', isError: true);
+      }
+    }
+  }
+
   // App lock state
   bool _appLockEnabled = false;
   bool _biometricEnabled = false;
@@ -280,30 +325,14 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
                   decoration: const InputDecoration(isDense: true, hintText: 'DELETE'),
                   onChanged: (_) => setState(() {})),
               const SizedBox(height: 8),
-              StatefulBuilder(builder: (context, setButtonState) {
-                bool deleting = false;
-                return FilledButton(
-                  onPressed: _deleteCtl.text == 'DELETE' && !deleting
-                      ? () async {
-                          setButtonState(() => deleting = true);
-                          try {
-                            await ref.read(authRepositoryProvider).deleteAccount();
-                            if (context.mounted) context.go('/login');
-                          } catch (e) {
-                            setButtonState(() => deleting = false);
-                            showAppSnackBar(context, '$e', isError: true);
-                          }
-                        }
-                      : null,
-                  style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.expense,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      minimumSize: const Size(double.infinity, 0)),
-                  child: deleting
-                      ? const SizedBox(height: 18, width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Delete My Account Permanently'));
-              }),
+              FilledButton(
+                onPressed: _deleteCtl.text == 'DELETE' ? () => _handleDeleteAccount(context, ref) : null,
+                style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.expense,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    minimumSize: const Size(double.infinity, 0)),
+                child: const Text('Delete My Account Permanently'),
+              ),
             ]),
           ),
         ]),
