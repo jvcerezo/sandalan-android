@@ -7,8 +7,8 @@ import '../../transactions/screens/transactions_screen.dart';
 import '../../accounts/screens/accounts_screen.dart';
 import '../../budgets/screens/budgets_screen.dart';
 
-/// Tracks current Money tab so external navigation can set it
-/// without rebuilding the widget.
+/// Tracks which Money tab to show. Set by router redirects before
+/// navigating to /dashboard.
 final moneyTabProvider = StateProvider<int>((ref) => 0);
 
 class MoneyScreen extends ConsumerStatefulWidget {
@@ -20,34 +20,33 @@ class MoneyScreen extends ConsumerStatefulWidget {
 
 class _MoneyScreenState extends ConsumerState<MoneyScreen>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+  late TabController _tabController;
+  bool _disposed = false;
 
   static const _tabs = ['Overview', 'Transactions', 'Accounts', 'Budgets'];
 
   @override
   void initState() {
     super.initState();
-    final initialTab = ref.read(moneyTabProvider);
+    // Use pending tab from router redirect, then reset it
+    final initialTab = pendingMoneyTab.clamp(0, _tabs.length - 1);
     _tabController = TabController(
       length: _tabs.length,
       vsync: this,
       initialIndex: initialTab,
     );
     _tabController.addListener(_onTabChanged);
-    // Register global setter so router redirects can switch tabs
-    registerMoneyTabSetter((tab) {
-      ref.read(moneyTabProvider.notifier).state = tab;
-    });
   }
 
   void _onTabChanged() {
-    if (!_tabController.indexIsChanging) {
+    if (!_disposed && !_tabController.indexIsChanging) {
       ref.read(moneyTabProvider.notifier).state = _tabController.index;
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
@@ -57,10 +56,11 @@ class _MoneyScreenState extends ConsumerState<MoneyScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Listen for external tab changes (e.g. from home screen links)
+    // Listen for external tab changes (e.g. /transactions redirect sets tab to 1)
     ref.listen<int>(moneyTabProvider, (prev, next) {
-      if (_tabController.index != next) {
-        _tabController.animateTo(next);
+      if (!_disposed && _tabController.index != next) {
+        final clamped = next.clamp(0, _tabs.length - 1);
+        _tabController.animateTo(clamped);
       }
     });
 

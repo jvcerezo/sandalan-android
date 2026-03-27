@@ -42,11 +42,11 @@ import '../../shared/widgets/safe_back_wrapper.dart';
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Global setter for money tab — called by redirects before GoRouter navigates.
-/// The MoneyScreen listens to moneyTabProvider and animates to the new tab.
-void Function(int)? _moneyTabSetter;
-void registerMoneyTabSetter(void Function(int) setter) => _moneyTabSetter = setter;
-void _setMoneyTab(int tab) => _moneyTabSetter?.call(tab);
+/// Pending money tab — set by router redirects before navigation.
+/// MoneyScreen reads this in initState to set the initial tab.
+int _pendingMoneyTab = 0;
+int get pendingMoneyTab => _pendingMoneyTab;
+void _setMoneyTab(int tab) => _pendingMoneyTab = tab;
 
 /// Cached landing page, loaded synchronously from SharedPreferences at startup.
 String _cachedLandingPage = '/home';
@@ -155,12 +155,9 @@ final appRouter = GoRouter(
         // Money: single route, tab switching via moneyTabProvider
         GoRoute(
           path: '/dashboard',
-          pageBuilder: (context, state) {
-            _setMoneyTab(0);
-            return const NoTransitionPage(
-              child: MoneyScreen(),
-            );
-          },
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: MoneyScreen(),
+          ),
         ),
         GoRoute(
           path: '/transactions',
