@@ -437,8 +437,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
     final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
 
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.75,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.75,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,
@@ -449,7 +451,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         ),
         child: ListView(
           controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + keyboardHeight),
           children: [
             // Drag handle
             Center(child: Container(

@@ -94,15 +94,17 @@ class _State extends ConsumerState<AddInvestmentDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.0,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.85, maxChildSize: 0.95, minChildSize: 0.0,
       snap: true, snapSizes: const [0.0, 0.85],
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
           color: cs.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        child: ListView(controller: ctrl, padding: const EdgeInsets.all(20), children: [
+        child: ListView(controller: ctrl, padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + keyboardHeight), children: [
           Center(child: Container(width: 32, height: 4, margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(color: cs.onSurfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2)))),

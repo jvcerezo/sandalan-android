@@ -160,8 +160,10 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
     final cs = Theme.of(context).colorScheme;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.75,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.75,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,
@@ -172,7 +174,7 @@ class _AddBillDialogState extends ConsumerState<AddBillDialog> {
         ),
         child: ListView(
           controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + keyboardHeight),
           children: [
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),

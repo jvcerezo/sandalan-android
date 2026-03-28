@@ -131,8 +131,10 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.3, expand: false,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.65, maxChildSize: 0.95, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
@@ -150,7 +152,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
           const SizedBox(height: 8),
 
           // Scrollable content
-          Expanded(child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 0, 20, 0), children: [
+          Expanded(child: ListView(controller: ctl, padding: EdgeInsets.fromLTRB(20, 0, 20, 0 + keyboardHeight), children: [
             // Category
             const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),

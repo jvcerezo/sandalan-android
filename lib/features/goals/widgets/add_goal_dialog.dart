@@ -146,6 +146,8 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
       // Selected category is hidden — show all
     }
 
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9, maxChildSize: 0.95, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
@@ -162,7 +164,7 @@ class _AddGoalDialogState extends ConsumerState<AddGoalDialog> {
           const SizedBox(height: 8),
 
           // Scrollable content
-          Expanded(child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 0, 20, 0), children: [
+          Expanded(child: ListView(controller: ctl, padding: EdgeInsets.fromLTRB(20, 0, 20, 0 + keyboardHeight), children: [
             // Category
             const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),

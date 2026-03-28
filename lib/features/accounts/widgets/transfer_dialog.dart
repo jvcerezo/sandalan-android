@@ -113,9 +113,11 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
     final fromAccount = accounts.where((a) => a.id == _fromAccountId).firstOrNull;
     final toAccounts = accounts.where((a) => a.id != _fromAccountId).toList();
 
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.5,
-      maxChildSize: 0.7,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.5,
+      maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,
       builder: (context, scrollController) => Container(
@@ -125,7 +127,7 @@ class _TransferDialogState extends ConsumerState<TransferDialog> {
         ),
         child: ListView(
           controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + keyboardHeight),
           children: [
             Center(child: Container(
               width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),

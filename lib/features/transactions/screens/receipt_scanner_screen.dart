@@ -371,8 +371,10 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.85,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,
@@ -383,7 +385,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         ),
         child: ListView(
           controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + keyboardHeight),
           children: [
             // Drag handle
             Center(child: Container(

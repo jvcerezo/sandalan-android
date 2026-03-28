@@ -132,6 +132,8 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
     final cs = Theme.of(context).colorScheme;
     final accounts = ref.watch(accountsProvider).valueOrNull ?? [];
 
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       maxChildSize: 0.95,
@@ -159,7 +161,7 @@ class _AddDebtDialogState extends ConsumerState<AddDebtDialog> {
           // Scrollable form fields
           Expanded(child: ListView(
             controller: scrollController,
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 0 + keyboardHeight),
             children: [
               _label('Name *'),
               const SizedBox(height: 6),
