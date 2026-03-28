@@ -121,12 +121,14 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
-      initialChildSize: 0.65, maxChildSize: 0.85, minChildSize: 0.3, expand: false,
+      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.65,
+      maxChildSize: 0.95, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),
-        child: ListView(controller: ctl, padding: const EdgeInsets.fromLTRB(20, 8, 20, 20), children: [
+        child: ListView(controller: ctl, padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + keyboardHeight), children: [
           // Drag handle
           Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(color: cs.outline.withOpacity(0.2), borderRadius: BorderRadius.circular(2)))),
