@@ -187,10 +187,24 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
               DropdownButtonFormField<String>(
                 value: pickerItems.contains(label) ? label : null,
                 decoration: InputDecoration(labelText: type == 'budget' ? 'Budget Category' : 'Goal'),
-                items: pickerItems.map((item) => DropdownMenuItem(value: item, child: Text(item, style: const TextStyle(fontSize: 14)))).toList(),
+                items: [
+                  ...pickerItems.map((item) => DropdownMenuItem(value: item, child: Text(item, style: const TextStyle(fontSize: 14)))),
+                  DropdownMenuItem(value: '__new__', child: Row(children: [
+                    Icon(LucideIcons.plus, size: 14, color: Theme.of(ctx).colorScheme.primary),
+                    const SizedBox(width: 6),
+                    Text('Create new', style: TextStyle(fontSize: 14, color: Theme.of(ctx).colorScheme.primary)),
+                  ])),
+                ],
                 onChanged: (v) => setSt(() {
-                  label = v ?? '';
-                  labelCtl.text = label;
+                  if (v == '__new__') {
+                    // Switch to text field mode
+                    pickerItems.clear();
+                    label = '';
+                    labelCtl.clear();
+                  } else {
+                    label = v ?? '';
+                    labelCtl.text = label;
+                  }
                 }),
               ),
             ] else ...[
