@@ -106,392 +106,77 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
           const SizedBox(height: 16),
 
-          // ── OVERVIEW ────────────────────────────────────────────
-          const SectionLabel('OVERVIEW'),
-          const SizedBox(height: 8),
-
-          // ── Section 1: Hero Card — Net Worth + monthly summary ──
-          Builder(builder: (_) {
-            final debtSummary = ref.watch(debtSummaryProvider);
-            final goalsSummary = ref.watch(goalsSummaryProvider);
-            final investments = ref.watch(investmentsProvider);
-            final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
-            final totalGoalSavings = goalsSummary.valueOrNull?.totalSaved ?? 0.0;
-            final investmentTotal = investments.valueOrNull?.fold<double>(0, (sum, inv) => sum + inv.currentValue) ?? 0.0;
-            final netWorth = totalBalance + totalGoalSavings + investmentTotal - totalDebt;
-
-            return InkWell(
-              onTap: () => context.go('/accounts'),
-              borderRadius: BorderRadius.circular(14),
-              child: Semantics(
-              label: 'Net worth: ${fc(netWorth)}',
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  border: Border.all(color: colorScheme.surfaceContainerHighest),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(children: [
-                  Container(
-                    width: 4,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(14),
-                        bottomLeft: Radius.circular(14),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 16, 16, 16),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('NET WORTH', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                            letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                        const SizedBox(height: 6),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: hideBalances
-                              ? Text('••••', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
-                                  color: colorScheme.primary))
-                              : AnimatedCurrency(value: netWorth,
-                                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
-                                      color: colorScheme.primary)),
-                        ),
-                        const SizedBox(height: 12),
-                        summary.when(
-                          data: (s) {
-                            final saved = s.income - s.expenses;
-                            return Row(children: [
-                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Income', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
-                                const SizedBox(height: 2),
-                                Row(children: [
-                                  Icon(LucideIcons.trendingUp, size: 12, color: AppColors.income),
-                                  const SizedBox(width: 3),
-                                  Flexible(child: hideBalances
-                                      ? const Text('••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income))
-                                      : AnimatedCurrency(value: s.income,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.income))),
-                                ]),
-                              ])),
-                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Expenses', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
-                                const SizedBox(height: 2),
-                                Row(children: [
-                                  Icon(LucideIcons.trendingDown, size: 12, color: AppColors.expense),
-                                  const SizedBox(width: 3),
-                                  Flexible(child: hideBalances
-                                      ? const Text('••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense))
-                                      : AnimatedCurrency(value: s.expenses,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.expense))),
-                                ]),
-                              ])),
-                              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Saved', style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
-                                const SizedBox(height: 2),
-                                Row(children: [
-                                  Icon(LucideIcons.piggyBank, size: 12, color: saved >= 0 ? AppColors.income : AppColors.expense),
-                                  const SizedBox(width: 3),
-                                  Flexible(child: hideBalances
-                                      ? Text('••••', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                                          color: saved >= 0 ? AppColors.income : AppColors.expense))
-                                      : AnimatedCurrency(value: saved.abs(),
-                                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                                              color: saved >= 0 ? AppColors.income : AppColors.expense))),
-                                ]),
-                              ])),
-                            ]);
-                          },
-                          loading: () => const ShimmerLoading(height: 16),
-                          error: (_, __) => const SizedBox.shrink(),
-                        ),
-                      ]),
-                    ),
-                  ),
-                ]),
-              ),
-            ),
-            );
-          }),
-          const SizedBox(height: 10),
-
-          // ── Section 2: Quick Stats Row — Accounts, Goals, Debts ──
-          Builder(builder: (_) {
-            final accounts = ref.watch(accountsProvider);
-            final goalsSummary = ref.watch(goalsSummaryProvider);
-            final debtSummary = ref.watch(debtSummaryProvider);
-
-            final accountCount = accounts.valueOrNull?.length ?? 0;
-            final goalSaved = goalsSummary.valueOrNull?.totalSaved ?? 0.0;
-            final activeGoals = goalsSummary.valueOrNull?.active ?? 0;
-            final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
-            final activeDebts = debtSummary.valueOrNull?.activeCount ?? 0;
-
-            final investments = ref.watch(investmentsProvider);
-            final investmentTotal = investments.valueOrNull?.fold<double>(0, (sum, inv) => sum + inv.currentValue) ?? 0.0;
-            final investmentCount = investments.valueOrNull?.length ?? 0;
-
-            return Column(children: [
-              Row(children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.go('/accounts'),
-                    child: _QuickStatContent(icon: LucideIcons.landmark,
-                        label: 'Accounts',
-                        value: fc(totalBalance),
-                        subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.go('/goals'),
-                    child: _QuickStatContent(icon: LucideIcons.target,
-                        label: 'Goals',
-                        value: fc(goalSaved),
-                        subtitle: '$activeGoals active'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.go('/tools/debts'),
-                    child: _QuickStatContent(icon: LucideIcons.creditCard,
-                        label: 'Debts',
-                        value: fc(totalDebt),
-                        subtitle: '$activeDebts active'),
-                  ),
-                ),
-              ]),
-              if (investmentCount > 0) ...[
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () => context.go('/investments'),
-                  child: _QuickStatContent(icon: LucideIcons.barChart3,
-                      label: 'Portfolio',
-                      value: fc(investmentTotal),
-                      subtitle: '$investmentCount investment${investmentCount == 1 ? '' : 's'}'),
-                ),
-              ],
-            ]);
-          }),
-          const SizedBox(height: 10),
-
-          // ── Section 3: This Month Bar — savings vs expenses ──
+          // ── Hero: Safe to Spend ──────────────────────────────────
           summary.when(
             data: (s) {
-              final income = s.income;
-              final expenses = s.expenses;
-              final saved = income - expenses;
-              final savingsRatio = income > 0 ? (saved / income).clamp(0.0, 1.0) : 0.0;
-              final expenseRatio = income > 0 ? (expenses / income).clamp(0.0, 1.0) : 0.0;
-              final pct = (savingsRatio * 100).toInt();
+              // Safe to spend = income - expenses (this cutoff period)
+              final safeToSpend = s.income - s.expenses;
+              final now = DateTime.now();
+              // Filipino salary cycle: 15th and 30th
+              final nextCutoff = now.day <= 15
+                  ? DateTime(now.year, now.month, 15)
+                  : DateTime(now.year, now.month + 1, 1) .subtract(const Duration(days: 1));
+              final daysLeft = nextCutoff.difference(now).inDays + 1;
+              final isHealthy = safeToSpend > 0;
 
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  border: Border.all(color: colorScheme.surfaceContainerHighest),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: SizedBox(
-                      height: 10,
-                      child: Row(children: [
-                        if (expenseRatio > 0)
-                          Expanded(
-                            flex: (expenseRatio * 100).round().clamp(1, 100),
-                            child: Container(color: AppColors.expense),
-                          ),
-                        if (savingsRatio > 0)
-                          Expanded(
-                            flex: (savingsRatio * 100).round().clamp(1, 100),
-                            child: Container(color: AppColors.income),
-                          ),
-                        if (income == 0)
-                          Expanded(child: Container(color: colorScheme.surfaceContainerHighest)),
-                      ]),
+              return InkWell(
+                onTap: () => context.go('/transactions'),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    border: Border.all(color: colorScheme.surfaceContainerHighest),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Text('SAFE TO SPEND', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: (isHealthy ? AppColors.income : AppColors.expense).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('$daysLeft day${daysLeft == 1 ? '' : 's'} left',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                                color: isHealthy ? AppColors.income : AppColors.expense)),
+                      ),
+                    ]),
+                    const SizedBox(height: 8),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: hideBalances
+                          ? Text('••••', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold,
+                              color: isHealthy ? colorScheme.primary : AppColors.expense))
+                          : AnimatedCurrency(value: safeToSpend.abs(),
+                              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold,
+                                  color: isHealthy ? colorScheme.primary : AppColors.expense)),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    income > 0
-                        ? (saved >= 0
-                            ? 'You saved $pct% of your income this month'
-                            : 'You\'ve spent ${fc(expenses)} of ${fc(income)} income')
-                        : 'No income recorded this month',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-                  ),
-                ]),
+                    if (!isHealthy && !hideBalances)
+                      Text('Over budget by ${formatCurrency(safeToSpend.abs())}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.expense)),
+                    const SizedBox(height: 14),
+                    // Income / Expenses / Saved compact row
+                    Row(children: [
+                      _MiniStat(label: 'Income', value: s.income, color: AppColors.income, hidden: hideBalances),
+                      const SizedBox(width: 12),
+                      _MiniStat(label: 'Expenses', value: s.expenses, color: AppColors.expense, hidden: hideBalances),
+                      const SizedBox(width: 12),
+                      _MiniStat(label: 'Saved', value: (s.income - s.expenses).abs(),
+                          color: s.income >= s.expenses ? AppColors.income : AppColors.expense, hidden: hideBalances),
+                    ]),
+                  ]),
+                ),
               );
             },
-            loading: () => const ShimmerCard(height: 50),
-            error: (_, __) => Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: colorScheme.surfaceContainerHighest),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(children: [
-                Icon(LucideIcons.alertCircle, size: 14, color: colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-                Text('Could not load summary',
-                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => ref.invalidate(transactionsSummaryProvider),
-                  child: Text('Retry',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colorScheme.primary)),
-                ),
-              ]),
-            ),
+            loading: () => const ShimmerCard(height: 120),
+            error: (_, __) => const SizedBox.shrink(),
           ),
-          const SizedBox(height: 16),
-
-          // ── Budgets snapshot ────────────────────────────────────
-          Builder(builder: (_) {
-            final budgets = ref.watch(budgetsProvider);
-            return budgets.when(
-              data: (list) {
-                if (list.isEmpty) return const SizedBox.shrink();
-                final top = list.take(3).toList();
-                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Text('BUDGETS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => context.go('/budgets'),
-                      child: Text('See all', style: TextStyle(fontSize: 12,
-                          fontWeight: FontWeight.w600, color: colorScheme.primary)),
-                    ),
-                  ]),
-                  const SizedBox(height: 8),
-                  ...top.map((b) => GestureDetector(
-                    onTap: () => context.go('/budgets'),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        border: Border.all(color: colorScheme.surfaceContainerHighest),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(children: [
-                        Expanded(child: Text(b.category,
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-                        Text(hideBalances ? '••••' : formatCurrency(b.amount),
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                                color: colorScheme.primary)),
-                      ]),
-                    ),
-                  )),
-                  const SizedBox(height: 10),
-                ]);
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            );
-          }),
-
-          // ── Portfolio snapshot ─────────────────────────────────
-          Builder(builder: (_) {
-            final investments = ref.watch(investmentsProvider);
-            return investments.when(
-              data: (list) {
-                if (list.isEmpty) return const SizedBox.shrink();
-                final total = list.fold<double>(0, (s, i) => s + i.currentValue);
-                final invested = list.fold<double>(0, (s, i) => s + i.amountInvested);
-                final gain = total - invested;
-                final gainPct = invested > 0 ? (gain / invested * 100) : 0.0;
-                final top = list.take(3).toList();
-
-                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Text('PORTFOLIO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => context.go('/investments'),
-                      child: Text('See all', style: TextStyle(fontSize: 12,
-                          fontWeight: FontWeight.w600, color: colorScheme.primary)),
-                    ),
-                  ]),
-                  const SizedBox(height: 8),
-                  // Total value card
-                  GestureDetector(
-                    onTap: () => context.go('/investments'),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 6),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        border: Border.all(color: colorScheme.surfaceContainerHighest),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(children: [
-                        Icon(LucideIcons.barChart3, size: 16, color: colorScheme.primary),
-                        const SizedBox(width: 10),
-                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Total Value', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
-                          Text(hideBalances ? '••••' : formatCurrency(total),
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colorScheme.onSurface)),
-                        ])),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: (gain >= 0 ? AppColors.income : AppColors.expense).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${gain >= 0 ? '+' : ''}${gainPct.toStringAsFixed(1)}%',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                                color: gain >= 0 ? AppColors.income : AppColors.expense),
-                          ),
-                        ),
-                      ]),
-                    ),
-                  ),
-                  // Top investments
-                  ...top.map((inv) {
-                    final invGain = inv.currentValue - inv.amountInvested;
-                    return GestureDetector(
-                      onTap: () => context.go('/investments'),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Row(children: [
-                          Expanded(child: Text(inv.name,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                              maxLines: 1, overflow: TextOverflow.ellipsis)),
-                          Text(hideBalances ? '••••' : formatCurrency(inv.currentValue),
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                          const SizedBox(width: 6),
-                          Text('${invGain >= 0 ? '+' : ''}${formatCurrency(invGain)}',
-                              style: TextStyle(fontSize: 10,
-                                  color: invGain >= 0 ? AppColors.income : AppColors.expense)),
-                        ]),
-                      ),
-                    );
-                  }),
-                  const SizedBox(height: 10),
-                ]);
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            );
-          }),
-
-          // ── DASHBOARD SECTIONS ──────────────────────────────────
-          const SectionLabel('DASHBOARD SECTIONS'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Tab bar
           Container(
@@ -596,5 +281,25 @@ class _QuickStatContent extends StatelessWidget {
         Text(subtitle, style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
       ]),
     );
+  }
+}
+
+/// Compact stat for the hero card (Income / Expenses / Saved).
+class _MiniStat extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+  final bool hidden;
+  const _MiniStat({required this.label, required this.value, required this.color, this.hidden = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      const SizedBox(height: 2),
+      Text(hidden ? '••••' : formatCurrency(value),
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color),
+          maxLines: 1, overflow: TextOverflow.ellipsis),
+    ]));
   }
 }
