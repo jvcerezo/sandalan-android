@@ -401,6 +401,94 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             );
           }),
 
+          // ── Portfolio snapshot ─────────────────────────────────
+          Builder(builder: (_) {
+            final investments = ref.watch(investmentsProvider);
+            return investments.when(
+              data: (list) {
+                if (list.isEmpty) return const SizedBox.shrink();
+                final total = list.fold<double>(0, (s, i) => s + i.currentValue);
+                final invested = list.fold<double>(0, (s, i) => s + i.amountInvested);
+                final gain = total - invested;
+                final gainPct = invested > 0 ? (gain / invested * 100) : 0.0;
+                final top = list.take(3).toList();
+
+                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Text('PORTFOLIO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => context.go('/investments'),
+                      child: Text('See all', style: TextStyle(fontSize: 12,
+                          fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                    ),
+                  ]),
+                  const SizedBox(height: 8),
+                  // Total value card
+                  GestureDetector(
+                    onTap: () => context.go('/investments'),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        border: Border.all(color: colorScheme.surfaceContainerHighest),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        Icon(LucideIcons.barChart3, size: 16, color: colorScheme.primary),
+                        const SizedBox(width: 10),
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Total Value', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                          Text(hideBalances ? '••••' : formatCurrency(total),
+                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colorScheme.onSurface)),
+                        ])),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: (gain >= 0 ? AppColors.income : AppColors.expense).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${gain >= 0 ? '+' : ''}${gainPct.toStringAsFixed(1)}%',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                                color: gain >= 0 ? AppColors.income : AppColors.expense),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  // Top investments
+                  ...top.map((inv) {
+                    final invGain = inv.currentValue - inv.amountInvested;
+                    return GestureDetector(
+                      onTap: () => context.go('/investments'),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(children: [
+                          Expanded(child: Text(inv.name,
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                              maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Text(hideBalances ? '••••' : formatCurrency(inv.currentValue),
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          const SizedBox(width: 6),
+                          Text('${invGain >= 0 ? '+' : ''}${formatCurrency(invGain)}',
+                              style: TextStyle(fontSize: 10,
+                                  color: invGain >= 0 ? AppColors.income : AppColors.expense)),
+                        ]),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 10),
+                ]);
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            );
+          }),
+
           // ── DASHBOARD SECTIONS ──────────────────────────────────
           const SectionLabel('DASHBOARD SECTIONS'),
           const SizedBox(height: 8),
