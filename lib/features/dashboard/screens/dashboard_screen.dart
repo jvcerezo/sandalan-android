@@ -353,6 +353,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ]),
             ),
           ),
+          const SizedBox(height: 10),
+
+          // ── Safe to Spend ──────────────────────────────────────
+          summary.when(
+            data: (s) {
+              final safeToSpend = s.income - s.expenses;
+              final now = DateTime.now();
+              final nextCutoff = now.day <= 15
+                  ? DateTime(now.year, now.month, 15)
+                  : DateTime(now.year, now.month + 1, 0);
+              final daysLeft = nextCutoff.difference(now).inDays + 1;
+              final isHealthy = safeToSpend >= 0;
+
+              return InkWell(
+                onTap: () => context.go('/transactions'),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: (isHealthy ? AppColors.income : AppColors.expense).withOpacity(0.06),
+                    border: Border.all(color: (isHealthy ? AppColors.income : AppColors.expense).withOpacity(0.15)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(children: [
+                    Icon(isHealthy ? LucideIcons.shieldCheck : LucideIcons.alertTriangle,
+                        size: 20, color: isHealthy ? AppColors.income : AppColors.expense),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Safe to spend', style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant)),
+                      Text(hideBalances ? '••••' : formatCurrency(safeToSpend.abs()),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
+                              color: isHealthy ? AppColors.income : AppColors.expense)),
+                    ])),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('$daysLeft day${daysLeft == 1 ? '' : 's'} left',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+                              color: colorScheme.onSurfaceVariant)),
+                    ),
+                  ]),
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
           const SizedBox(height: 16),
 
           // ── Budgets snapshot ────────────────────────────────────
