@@ -13,6 +13,7 @@ import '../../accounts/providers/account_providers.dart';
 import '../../goals/providers/goal_providers.dart';
 import '../../budgets/providers/budget_providers.dart';
 import '../../tools/providers/tool_providers.dart';
+import '../../investments/screens/investments_screen.dart';
 import '../widgets/dashboard_widgets.dart';
 import '../widgets/trends_tab.dart';
 import '../widgets/planning_tab.dart';
@@ -113,11 +114,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Builder(builder: (_) {
             final debtSummary = ref.watch(debtSummaryProvider);
             final goalsSummary = ref.watch(goalsSummaryProvider);
+            final investments = ref.watch(investmentsProvider);
             final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
             final totalGoalSavings = goalsSummary.valueOrNull?.totalSaved ?? 0.0;
-            final netWorth = totalBalance + totalGoalSavings - totalDebt;
+            final investmentTotal = investments.valueOrNull?.fold<double>(0, (sum, inv) => sum + inv.currentValue) ?? 0.0;
+            final netWorth = totalBalance + totalGoalSavings + investmentTotal - totalDebt;
 
-            return Semantics(
+            return InkWell(
+              onTap: () => context.go('/accounts'),
+              borderRadius: BorderRadius.circular(14),
+              child: Semantics(
               label: 'Net worth: ${fc(netWorth)}',
               child: Container(
                 width: double.infinity,
@@ -207,6 +213,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ]),
               ),
+            ),
             );
           }),
           const SizedBox(height: 10),
@@ -223,36 +230,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final totalDebt = debtSummary.valueOrNull?.totalDebt ?? 0.0;
             final activeDebts = debtSummary.valueOrNull?.activeCount ?? 0;
 
-            return Row(children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => context.go('/accounts'),
-                  child: _QuickStatContent(icon: LucideIcons.landmark,
-                      label: 'Accounts',
-                      value: fc(totalBalance),
-                      subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
+            final investments = ref.watch(investmentsProvider);
+            final investmentTotal = investments.valueOrNull?.fold<double>(0, (sum, inv) => sum + inv.currentValue) ?? 0.0;
+            final investmentCount = investments.valueOrNull?.length ?? 0;
+
+            return Column(children: [
+              Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => context.go('/accounts'),
+                    child: _QuickStatContent(icon: LucideIcons.landmark,
+                        label: 'Accounts',
+                        value: fc(totalBalance),
+                        subtitle: '$accountCount account${accountCount == 1 ? '' : 's'}'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => context.go('/goals'),
-                  child: _QuickStatContent(icon: LucideIcons.target,
-                      label: 'Goals',
-                      value: fc(goalSaved),
-                      subtitle: '$activeGoals active'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => context.go('/goals'),
+                    child: _QuickStatContent(icon: LucideIcons.target,
+                        label: 'Goals',
+                        value: fc(goalSaved),
+                        subtitle: '$activeGoals active'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => context.go('/budgets'),
-                  child: _QuickStatContent(icon: LucideIcons.creditCard,
-                      label: 'Debts',
-                      value: fc(totalDebt),
-                      subtitle: '$activeDebts active'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => context.go('/tools/debts'),
+                    child: _QuickStatContent(icon: LucideIcons.creditCard,
+                        label: 'Debts',
+                        value: fc(totalDebt),
+                        subtitle: '$activeDebts active'),
+                  ),
                 ),
-              ),
+              ]),
+              if (investmentCount > 0) ...[
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => context.go('/investments'),
+                  child: _QuickStatContent(icon: LucideIcons.barChart3,
+                      label: 'Portfolio',
+                      value: fc(investmentTotal),
+                      subtitle: '$investmentCount investment${investmentCount == 1 ? '' : 's'}'),
+                ),
+              ],
             ]);
           }),
           const SizedBox(height: 10),
@@ -330,7 +353,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ]),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // ── Budgets snapshot ────────────────────────────────────
+          Builder(builder: (_) {
+            final budgets = ref.watch(budgetsProvider);
+            return budgets.when(
+              data: (list) {
+                if (list.isEmpty) return const SizedBox.shrink();
+                final top = list.take(3).toList();
+                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Text('BUDGETS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8, color: colorScheme.onSurfaceVariant)),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => context.go('/budgets'),
+                      child: Text('See all', style: TextStyle(fontSize: 12,
+                          fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                    ),
+                  ]),
+                  const SizedBox(height: 8),
+                  ...top.map((b) => GestureDetector(
+                    onTap: () => context.go('/budgets'),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        border: Border.all(color: colorScheme.surfaceContainerHighest),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        Expanded(child: Text(b.category,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+                        Text(hideBalances ? '••••' : formatCurrency(b.amount),
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                                color: colorScheme.primary)),
+                      ]),
+                    ),
+                  )),
+                  const SizedBox(height: 10),
+                ]);
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            );
+          }),
 
           // ── DASHBOARD SECTIONS ──────────────────────────────────
           const SectionLabel('DASHBOARD SECTIONS'),
