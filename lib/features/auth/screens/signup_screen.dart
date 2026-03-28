@@ -475,16 +475,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
               const SizedBox(height: 16),
 
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text('Already have an account? ',
-                    style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
-                GestureDetector(
-                  onTap: () => context.go('/login'),
-                  child: Text('Sign in',
-                      style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
-                ),
-              ]),
+              // Hide sign-in link for guests — they must create an account, not sign into an existing one
+              if (!_wasGuest)
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text('Already have an account? ',
+                      style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
+                  GestureDetector(
+                    onTap: () => context.go('/login'),
+                    child: Text('Sign in',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600, color: colorScheme.primary)),
+                  ),
+                ]),
 
               const SizedBox(height: 24),
 

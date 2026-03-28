@@ -71,6 +71,12 @@ final appRouter = GoRouter(
       return '/login';
     }
 
+    // Guest trying to access login -> block, send to signup instead
+    // (guests must create an account, not sign into an existing one)
+    if (isGuest && state.uri.path == '/login') {
+      return '/signup';
+    }
+
     // Active session on signup route -> redirect to home
     // (but NOT on /login — let them see the quick-login card)
     if (isLoggedIn && state.uri.path == '/signup') {

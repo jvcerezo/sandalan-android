@@ -26,17 +26,32 @@ class TransactionsScreen extends ConsumerStatefulWidget {
   ConsumerState<TransactionsScreen> createState() => _TransactionsScreenState();
 }
 
-class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
+class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedTypeTab = 0; // 0=All, 1=Income, 2=Expenses
   final _searchController = TextEditingController();
   bool _showFilters = false;
   String _dateRange = 'all';
   String _categoryFilter = 'All';
   static const _typeLabels = ['All', 'Income', 'Expenses'];
+  late final TabController _typeTabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _typeTabController = TabController(length: 3, vsync: this);
+    _typeTabController.addListener(() {
+      if (!_typeTabController.indexIsChanging && _selectedTypeTab != _typeTabController.index) {
+        setState(() => _selectedTypeTab = _typeTabController.index);
+        _applyFilters();
+      }
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _typeTabController.dispose();
     super.dispose();
   }
 
@@ -110,40 +125,31 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         ]),
         const SizedBox(height: 14),
 
-        // All / Income / Expenses tabs
+        // All / Income / Expenses tabs (same style as Money screen tabs)
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withOpacity(0.4),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Row(
-            children: List.generate(3, (i) => Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  if (_selectedTypeTab == i) return;
-                  HapticFeedback.selectionClick();
-                  setState(() => _selectedTypeTab = i);
-                  // Delay filter application to next frame to prevent stutter
-                  WidgetsBinding.instance.addPostFrameCallback((_) => _applyFilters());
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _selectedTypeTab == i ? colorScheme.surface : Colors.transparent,
-                    borderRadius: BorderRadius.circular(7),
-                    boxShadow: _selectedTypeTab == i ? [
-                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4),
-                    ] : null,
-                  ),
-                  child: Center(child: Text(_typeLabels[i],
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
-                          color: _selectedTypeTab == i ? colorScheme.onSurface : colorScheme.onSurfaceVariant))),
-                ),
-              ),
-            )),
+          child: TabBar(
+            controller: _typeTabController,
+            onTap: (_) => HapticFeedback.selectionClick(),
+            indicator: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(7),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4),
+              ],
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerHeight: 0,
+            labelColor: colorScheme.onSurface,
+            unselectedLabelColor: colorScheme.onSurfaceVariant,
+            labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            labelPadding: EdgeInsets.zero,
+            tabs: _typeLabels.map((t) => Tab(height: 32, text: t)).toList(),
           ),
         ),
         const SizedBox(height: 14),
