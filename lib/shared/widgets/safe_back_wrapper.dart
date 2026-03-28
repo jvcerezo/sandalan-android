@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Wraps a full-screen pushed route with a PopScope that prevents
-/// the app from closing when the user presses the system back button.
-/// Instead, navigates to [fallbackRoute].
+/// Wraps a full-screen pushed route with a PopScope that navigates
+/// to [fallbackRoute] on back press instead of popping (which could
+/// go to an unrelated screen like Home).
 class SafeBackWrapper extends StatelessWidget {
   final Widget child;
   final String fallbackRoute;
@@ -20,11 +20,7 @@ class SafeBackWrapper extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go(fallbackRoute);
-        }
+        context.go(fallbackRoute);
       },
       child: child,
     );

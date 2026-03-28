@@ -364,9 +364,14 @@ class _GoalCard extends ConsumerWidget {
                   }
                   // Need an account to deduct from
                   final accounts = ref.read(accountsProvider).valueOrNull ?? [];
-                  final accountId = goal.accountId ?? (accounts.isNotEmpty ? accounts.first.id : null);
-                  if (accountId == null) {
-                    showAppSnackBar(context, 'No account available to deduct from', isError: true);
+                  if (accounts.isEmpty) {
+                    showAppSnackBar(context, 'Create an account first before adding funds', isError: true);
+                    return;
+                  }
+                  final accountId = goal.accountId ?? accounts.first.id;
+                  final account = accounts.where((a) => a.id == accountId).firstOrNull ?? accounts.first;
+                  if (amount > account.balance) {
+                    showAppSnackBar(context, 'Insufficient balance in ${account.name} (${formatCurrency(account.balance)})', isError: true);
                     return;
                   }
                   Navigator.pop(context);

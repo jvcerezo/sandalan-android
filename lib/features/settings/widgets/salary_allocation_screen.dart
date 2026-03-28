@@ -72,7 +72,50 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
       salary: salary, frequency: _frequency,
       payDates: [_payDate1, _payDate2], rules: _rules,
     ));
-    showSuccessSnackBar(context, 'Allocation rules saved!');
+
+    // Auto-create budgets/goals from rules if they don't exist yet
+    int created = 0;
+    final existingBudgets = ref.read(budgetsProvider).valueOrNull ?? [];
+    final existingGoals = ref.read(goalsProvider).valueOrNull ?? [];
+
+    for (final rule in _rules) {
+      if (rule.type == 'budget') {
+        final exists = existingBudgets.any((b) => b.category == rule.label);
+        if (!exists) {
+          try {
+            await ref.read(budgetRepositoryProvider).createBudget(
+              category: rule.label,
+              amount: rule.amount,
+              month: DateTime(DateTime.now().year, DateTime.now().month),
+              period: 'monthly',
+            );
+            created++;
+          } catch (_) {}
+        }
+      } else if (rule.type == 'goal') {
+        final exists = existingGoals.any((g) => g.name == rule.label);
+        if (!exists) {
+          try {
+            await ref.read(goalRepositoryProvider).createGoal(
+              name: rule.label,
+              targetAmount: rule.amount * 12, // Annual target from monthly allocation
+            );
+            created++;
+          } catch (_) {}
+        }
+      }
+    }
+
+    if (created > 0) {
+      ref.invalidate(budgetsProvider);
+      ref.invalidate(goalsProvider);
+    }
+
+    if (mounted) {
+      showSuccessSnackBar(context, created > 0
+          ? 'Saved! $created new ${created == 1 ? 'item' : 'items'} created.'
+          : 'Allocation rules saved!');
+    }
   }
 
   void _showRuleDialog({int? editIndex}) {
@@ -414,7 +457,40 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
             final i = entry.key;
             final r = entry.value;
             final rulePct = salary > 0 ? (r.amount / salary * 100) : 0.0;
-            return Container(
+            return Dismissible(
+              key: ValueKey('rule-$i-${r.label}'),
+              direction: DismissDirection.endToStart,
+              confirmDismiss: (_) async {
+                return await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Delete Rule?'),
+                    content: Text('Remove "${r.label}" (${formatCurrency(r.amount)}) from your allocation?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                ) ?? false;
+              },
+              onDismissed: (_) => setState(() => _rules.removeAt(i)),
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: cs.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(LucideIcons.trash2, size: 18, color: cs.error),
+              ),
+              child: GestureDetector(
+              onTap: () => _editRule(i),
+              child: Container(
               margin: const EdgeInsets.only(bottom: 6),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
@@ -445,22 +521,9 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
                   Text('${rulePct.toStringAsFixed(1)}%',
                       style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
                 ]),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () => _editRule(i),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(LucideIcons.pencil, size: 14, color: cs.onSurfaceVariant),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => _deleteRule(i),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(LucideIcons.trash2, size: 14, color: cs.error.withOpacity(0.6)),
-                  ),
-                ),
               ]),
+            ),
+            ),
             );
           }),
 

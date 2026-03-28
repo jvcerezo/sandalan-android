@@ -348,7 +348,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 12),
                     Column(children: [
                       FilledButton(
-                        onPressed: () => context.go('/settings/salary-allocation'),
+                        onPressed: () => context.go('/salary-allocation'),
                         child: const Text('Allocate', style: TextStyle(fontSize: 12)),
                       ),
                       const SizedBox(height: 4),
