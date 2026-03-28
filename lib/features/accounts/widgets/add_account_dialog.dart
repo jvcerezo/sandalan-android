@@ -123,7 +123,7 @@ class _AddAccountDialogState extends ConsumerState<AddAccountDialog> {
     final cs = Theme.of(context).colorScheme;
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
-      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.65,
+      initialChildSize: keyboardHeight > 0 ? 0.95 : 0.8,
       maxChildSize: 0.95, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,

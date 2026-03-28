@@ -440,7 +440,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return DraggableScrollableSheet(
-      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.75,
+      initialChildSize: keyboardHeight > 0 ? 0.95 : 0.85,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,

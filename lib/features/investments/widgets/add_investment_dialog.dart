@@ -97,8 +97,8 @@ class _State extends ConsumerState<AddInvestmentDialog> {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return DraggableScrollableSheet(
-      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.85, maxChildSize: 0.95, minChildSize: 0.0,
-      snap: true, snapSizes: const [0.0, 0.85],
+      initialChildSize: keyboardHeight > 0 ? 0.95 : 0.9, maxChildSize: 0.95, minChildSize: 0.0,
+      snap: true, snapSizes: const [0.0, 0.9],
       builder: (_, ctrl) => Container(
         decoration: BoxDecoration(
           color: cs.surface,

@@ -134,7 +134,7 @@ class _AddBudgetDialogState extends ConsumerState<AddBudgetDialog> {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return DraggableScrollableSheet(
-      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.65, maxChildSize: 0.95, minChildSize: 0.3, expand: false,
+      initialChildSize: keyboardHeight > 0 ? 0.95 : 0.8, maxChildSize: 0.95, minChildSize: 0.3, expand: false,
       builder: (context, ctl) => Container(
         decoration: BoxDecoration(color: cs.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20))),

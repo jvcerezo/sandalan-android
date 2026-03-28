@@ -167,7 +167,7 @@ class _RecordDebtPaymentDialogState extends ConsumerState<RecordDebtPaymentDialo
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return DraggableScrollableSheet(
-      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.5,
+      initialChildSize: keyboardHeight > 0 ? 0.95 : 0.6,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,

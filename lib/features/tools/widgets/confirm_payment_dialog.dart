@@ -199,7 +199,7 @@ class _ConfirmPaymentDialogState extends ConsumerState<ConfirmPaymentDialog> {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return DraggableScrollableSheet(
-      initialChildSize: keyboardHeight > 0 ? 0.9 : 0.5,
+      initialChildSize: keyboardHeight > 0 ? 0.95 : 0.6,
       maxChildSize: 0.95,
       minChildSize: 0.3,
       expand: false,
