@@ -334,71 +334,92 @@ class _GoalCard extends ConsumerWidget {
             Text('Remaining: ${formatCurrency(remaining)}',
                 style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
             const SizedBox(height: 16),
-            TextField(
-              controller: amountCtl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              autofocus: true,
-              maxLength: 12,
-              maxLengthEnforcement: MaxLengthEnforcement.enforced,
-              decoration: InputDecoration(
-                prefixText: '₱ ',
-                hintText: '0.00',
-                labelText: 'Amount',
-                counterText: '',
-                helperText: goal.accountId != null ? 'Will be deducted from linked account' : null,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final amount = double.tryParse(amountCtl.text.replaceAll(',', ''));
-                  if (amount == null || amount <= 0) {
-                    showAppSnackBar(context, 'Enter a valid amount', isError: true);
-                    return;
-                  }
-                  if (amount > remaining) {
-                    showAppSnackBar(context, 'Amount exceeds remaining (${formatCurrency(remaining)})', isError: true);
-                    return;
-                  }
-                  // Need an account to deduct from
-                  final accounts = ref.read(accountsProvider).valueOrNull ?? [];
-                  if (accounts.isEmpty) {
-                    showAppSnackBar(context, 'Create an account first before adding funds', isError: true);
-                    return;
-                  }
-                  final accountId = goal.accountId ?? accounts.first.id;
-                  final account = accounts.where((a) => a.id == accountId).firstOrNull ?? accounts.first;
-                  if (amount > account.balance) {
-                    showAppSnackBar(context, 'Insufficient balance in ${account.name} (${formatCurrency(account.balance)})', isError: true);
-                    return;
-                  }
-                  Navigator.pop(context);
-                  try {
-                    await ref.read(goalRepositoryProvider).addFunds(
-                      goalId: goal.id,
-                      accountId: accountId,
-                      amount: amount,
-                    );
-                    ref.invalidate(goalsProvider);
-                    ref.invalidate(goalsSummaryProvider);
-                    ref.invalidate(accountsProvider);
-                    if (context.mounted) {
-                      showSuccessSnackBar(context, 'Added ${formatCurrency(amount)} to ${goal.name}');
-                      // Check goal milestones if this funding completes the goal
-                      final newAmount = goal.currentAmount + amount;
-                      if (newAmount >= goal.targetAmount) {
-                        _checkGoalMilestones(context, ref);
-                      }
-                    }
-                  } catch (e) {
-                    showAppSnackBar(context, 'Failed: $e', isError: true);
-                  }
-                },
-                child: const Text('Add Funds'),
-              ),
-            ),
+            // Account picker
+            Builder(builder: (_) {
+              final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+              if (accounts.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text('No accounts available. Create one first.',
+                      style: TextStyle(fontSize: 13, color: colorScheme.error)),
+                );
+              }
+              String selectedAccountId = goal.accountId ?? accounts.first.id;
+
+              return StatefulBuilder(builder: (ctx, setSt) {
+                final selectedAccount = accounts.where((a) => a.id == selectedAccountId).firstOrNull ?? accounts.first;
+
+                return Column(children: [
+                  Text('Deduct from', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: selectedAccountId,
+                    decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+                    items: accounts.map((a) => DropdownMenuItem(
+                      value: a.id,
+                      child: Text('${a.name} (${formatCurrency(a.balance)})', style: const TextStyle(fontSize: 13)),
+                    )).toList(),
+                    onChanged: (v) => setSt(() => selectedAccountId = v ?? selectedAccountId),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amountCtl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    autofocus: true,
+                    maxLength: 12,
+                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    decoration: const InputDecoration(
+                      prefixText: '₱ ',
+                      hintText: '0.00',
+                      labelText: 'Amount',
+                      counterText: '',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () async {
+                        final amount = double.tryParse(amountCtl.text.replaceAll(',', ''));
+                        if (amount == null || amount <= 0) {
+                          showAppSnackBar(context, 'Enter a valid amount', isError: true);
+                          return;
+                        }
+                        if (amount > remaining) {
+                          showAppSnackBar(context, 'Amount exceeds remaining (${formatCurrency(remaining)})', isError: true);
+                          return;
+                        }
+                        if (amount > selectedAccount.balance) {
+                          showAppSnackBar(context, 'Insufficient balance in ${selectedAccount.name} (${formatCurrency(selectedAccount.balance)})', isError: true);
+                          return;
+                        }
+                        Navigator.pop(context);
+                        try {
+                          await ref.read(goalRepositoryProvider).addFunds(
+                            goalId: goal.id,
+                            accountId: selectedAccountId,
+                            amount: amount,
+                          );
+                          ref.invalidate(goalsProvider);
+                          ref.invalidate(goalsSummaryProvider);
+                          ref.invalidate(accountsProvider);
+                          if (context.mounted) {
+                            showSuccessSnackBar(context, 'Added ${formatCurrency(amount)} to ${goal.name} from ${selectedAccount.name}');
+                            final newAmount = goal.currentAmount + amount;
+                            if (newAmount >= goal.targetAmount) {
+                              _checkGoalMilestones(context, ref);
+                            }
+                          }
+                        } catch (e) {
+                          showAppSnackBar(context, 'Failed: $e', isError: true);
+                        }
+                      },
+                      child: const Text('Add Funds'),
+                    ),
+                  ),
+                ]);
+              });
+            }),
           ]),
         ),
       ),

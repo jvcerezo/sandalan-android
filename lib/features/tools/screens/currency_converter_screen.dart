@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/exchange_rate_service.dart';
 
 /// Currency data: code, flag emoji, name, fallback rate to PHP.
 class _CurrencyInfo {
@@ -41,30 +42,32 @@ Map<String, double> _fallbackRates() {
   return m;
 }
 
-/// Fetches live rates from Supabase market_rates table, caches in SharedPreferences.
+/// Fetches live rates from free exchange rate API, caches locally.
 final marketRatesProvider = FutureProvider<Map<String, double>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
   try {
-    final client = Supabase.instance.client;
-    final response = await client.from('market_rates').select();
-    final rates = <String, double>{'PHP': 1.0};
-    for (final row in response) {
-      rates[row['currency'] as String] = (row['rate_to_php'] as num).toDouble();
+    final rates = await ExchangeRateService.instance.getRates();
+    if (rates != null && rates.isNotEmpty) {
+      // Convert from "1 PHP = X other" to "1 other = X PHP"
+      final phpRates = <String, double>{'PHP': 1.0};
+      for (final entry in rates.entries) {
+        if (entry.value > 0) {
+          phpRates[entry.key] = 1.0 / entry.value;
+        }
+      }
+      return phpRates;
     }
-    // Cache for offline use
-    await prefs.setString('currency_rates', jsonEncode(rates));
-    return rates;
-  } catch (_) {
-    // Offline — try cached rates
-    final cached = prefs.getString('currency_rates');
-    if (cached != null) {
-      try {
-        final decoded = (jsonDecode(cached) as Map<String, dynamic>);
-        return decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
-      } catch (_) {}
-    }
-    return _fallbackRates();
+  } catch (_) {}
+
+  // Fallback — try cached or hardcoded
+  final prefs = await SharedPreferences.getInstance();
+  final cached = prefs.getString('currency_rates');
+  if (cached != null) {
+    try {
+      final decoded = (jsonDecode(cached) as Map<String, dynamic>);
+      return decoded.map((k, v) => MapEntry(k, (v as num).toDouble()));
+    } catch (_) {}
   }
+  return _fallbackRates();
 });
 
 /// Fetches the last updated_at timestamp from market_rates.
