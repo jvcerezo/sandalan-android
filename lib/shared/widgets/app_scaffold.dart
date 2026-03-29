@@ -13,6 +13,7 @@ import 'universal_search.dart';
 import 'tour_overlay.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
 import '../../features/transactions/screens/receipt_scanner_screen.dart';
+import '../../core/services/premium_service.dart';
 
 /// Allows child screens to register a custom back handler.
 /// When set, the AppScaffold will call this before its default back behavior.
@@ -111,9 +112,13 @@ class _AppScaffoldState extends State<AppScaffold> {
                     color: cs.primary,
                     onTap: () {
                       Navigator.pop(sheetCtx);
-                      Navigator.of(ctx).push(MaterialPageRoute(
-                        builder: (_) => const ReceiptScannerScreen(),
-                      ));
+                      if (PremiumService.instance.hasAccess(PremiumFeature.receiptScanner)) {
+                        Navigator.of(ctx).push(MaterialPageRoute(
+                          builder: (_) => const ReceiptScannerScreen(),
+                        ));
+                      } else {
+                        showPremiumGateWithPaywall(ctx, PremiumFeature.receiptScanner);
+                      }
                     },
                   ),
                 ),
