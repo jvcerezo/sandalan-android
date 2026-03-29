@@ -80,9 +80,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await GuestModeService.migrateToAccount(newUserId);
         }
       }
-      // Pull fresh data from Supabase for the newly logged-in user
+      // Set up sync for the newly logged-in user
       final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
+      SyncService.instance = syncService;
+      // Pull fresh data from Supabase
       await syncService.fullSync();
+      // Start ongoing sync (background, on-resume, daily)
+      syncService.startDailySync();
       if (mounted) context.go('/home');
     } catch (e) {
       setState(() {
@@ -110,7 +114,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await GuestModeService.migrateToAccount(response.session!.user.id);
         }
         final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
+        SyncService.instance = syncService;
         await syncService.fullSync();
+        syncService.startDailySync();
         if (mounted) {
           // Check if onboarding is complete
           final profile = await Supabase.instance.client

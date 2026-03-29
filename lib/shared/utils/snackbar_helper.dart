@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Shows a themed snackbar with proper contrast.
-/// Use [isError] for red error messages, otherwise shows neutral theme.
+/// Shows a themed snackbar with guaranteed contrast.
+/// Use [isError] for red error messages, otherwise shows dark background with white text.
 void showAppSnackBar(BuildContext context, String message, {bool isError = false}) {
   if (!context.mounted) return;
-  final cs = Theme.of(context).colorScheme;
 
   ScaffoldMessenger.of(context).removeCurrentSnackBar();
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
         message,
-        style: TextStyle(
-          color: isError ? Colors.white : cs.onInverseSurface,
+        style: const TextStyle(
+          color: Colors.white,
           fontSize: 13,
           fontWeight: FontWeight.w500,
         ),
       ),
-      backgroundColor: isError ? const Color(0xFFDC2626) : cs.inverseSurface,
+      backgroundColor: isError ? const Color(0xFFDC2626) : const Color(0xFF1E293B),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       duration: Duration(seconds: isError ? 4 : 2),
