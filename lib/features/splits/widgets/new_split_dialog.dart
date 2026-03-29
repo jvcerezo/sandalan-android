@@ -1,8 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/id_generator.dart' show IdGenerator;
 import '../../../core/utils/input_validator.dart';
 import '../../../data/models/bill_split.dart';
+
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text.replaceAll(',', '');
+    if (text.isEmpty) return newValue;
+    final parts = text.split('.');
+    final intPart = parts[0];
+    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+    final buffer = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+    final formatted = '$buffer$decPart';
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 /// Shows a full-screen dialog to create a new bill split.
 /// Returns the created BillSplit or null if cancelled.
@@ -58,7 +80,7 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
   }
 
   void _recalculateEqual() {
-    final total = double.tryParse(_amountCtl.text) ?? 0;
+    final total = double.tryParse(_amountCtl.text.replaceAll(',', '')) ?? 0;
     if (total <= 0 || _participants.isEmpty) return;
     final share = total / _participants.length;
     for (final p in _participants) {
@@ -141,6 +163,10 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
               controller: _amountCtl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                _ThousandsSeparatorFormatter(),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Total Amount',
                 prefixText: '\u20b1 ',
@@ -231,6 +257,10 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
                       child: TextField(
                         controller: _participants[i].controller,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')),
+                          _ThousandsSeparatorFormatter(),
+                        ],
                         decoration: const InputDecoration(
                           hintText: 'Amount',
                           prefixText: '\u20b1 ',

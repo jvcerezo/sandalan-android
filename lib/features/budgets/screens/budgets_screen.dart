@@ -345,7 +345,7 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-class _BudgetCard extends StatelessWidget {
+class _BudgetCard extends ConsumerWidget {
   final Budget budget;
   const _BudgetCard({required this.budget});
 
@@ -381,61 +381,96 @@ class _BudgetCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    // Simple display — actual spent data requires cross-referencing transactions
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Flexible(child: Row(children: [
-              Flexible(child: Text(budget.category,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis)),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _periodColor(colorScheme).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(_periodLabel(),
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
-                        color: _periodColor(colorScheme))),
+    return Dismissible(
+      key: ValueKey('budget-${budget.id}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Budget?'),
+            content: Text('Remove the "${budget.category}" budget (${formatCurrency(budget.amount)})?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
               ),
-            ])),
-            Text(formatCurrency(budget.amount),
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.primary),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-          ]),
-          const SizedBox(height: 8),
-          AnimatedProgressBar(
-            value: 0, // Would be spent/budget ratio
-            minHeight: 6,
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            color: colorScheme.primary,
+            ],
           ),
-          const SizedBox(height: 4),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('${formatCurrency(0)} spent',
-                style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text('${formatCurrency(budget.amount)} remaining',
-                style: TextStyle(fontSize: 11, color: AppColors.income),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-          ]),
-          if (budget.rollover) ...[
-            const SizedBox(height: 4),
-            Row(children: [
-              Icon(LucideIcons.refreshCw, size: 10, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text('Rollover enabled',
-                  style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+        ) ?? false;
+      },
+      onDismissed: (_) async {
+        await ref.read(budgetRepositoryProvider).deleteBudget(budget.id);
+        ref.invalidate(budgetsProvider);
+        if (context.mounted) showSuccessSnackBar(context, '"${budget.category}" budget deleted');
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.error.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(LucideIcons.trash2, size: 18, color: colorScheme.error),
+      ),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Flexible(child: Row(children: [
+                Flexible(child: Text(budget.category,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _periodColor(colorScheme).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(_periodLabel(),
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                          color: _periodColor(colorScheme))),
+                ),
+              ])),
+              Text(formatCurrency(budget.amount),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.primary),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
             ]),
-          ],
-        ]),
+            const SizedBox(height: 8),
+            AnimatedProgressBar(
+              value: 0, // Would be spent/budget ratio
+              minHeight: 6,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              color: colorScheme.primary,
+            ),
+            const SizedBox(height: 4),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text('${formatCurrency(0)} spent',
+                  style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text('${formatCurrency(budget.amount)} remaining',
+                  style: TextStyle(fontSize: 11, color: AppColors.income),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+            ]),
+            if (budget.rollover) ...[
+              const SizedBox(height: 4),
+              Row(children: [
+                Icon(LucideIcons.refreshCw, size: 10, color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Text('Rollover enabled',
+                    style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
+              ]),
+            ],
+          ]),
+        ),
       ),
     );
   }

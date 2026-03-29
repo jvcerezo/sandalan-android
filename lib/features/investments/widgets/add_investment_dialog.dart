@@ -10,6 +10,27 @@ import '../../../core/utils/input_validator.dart';
 import '../../../data/repositories/local_investment_repository.dart';
 import '../../../shared/utils/snackbar_helper.dart';
 
+class _ThousandsSeparatorFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text.replaceAll(',', '');
+    if (text.isEmpty) return newValue;
+    final parts = text.split('.');
+    final intPart = parts[0];
+    final decPart = parts.length > 1 ? '.${parts[1]}' : '';
+    final buffer = StringBuffer();
+    for (int i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+    final formatted = '$buffer$decPart';
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 const _types = [
   ('mp2', 'MP2'),
   ('uitf', 'UITF'),
@@ -138,12 +159,12 @@ class _State extends ConsumerState<AddInvestmentDialog> {
           TextField(controller: _amountCtl, decoration: const InputDecoration(labelText: 'Amount Invested (₱)', prefixText: '₱ ', counterText: ''),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               maxLength: 12, maxLengthEnforcement: MaxLengthEnforcement.enforced,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))]),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')), _ThousandsSeparatorFormatter()]),
           const SizedBox(height: 8),
           TextField(controller: _valueCtl, decoration: const InputDecoration(labelText: 'Current Value (₱)', prefixText: '₱ ', hintText: 'Optional', counterText: ''),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               maxLength: 12, maxLengthEnforcement: MaxLengthEnforcement.enforced,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]'))]),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.,]')), _ThousandsSeparatorFormatter()]),
           const SizedBox(height: 8),
 
           // Date started
