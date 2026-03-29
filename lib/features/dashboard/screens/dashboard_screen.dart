@@ -21,6 +21,7 @@ import '../widgets/health_tab.dart';
 import '../widgets/insights_tab.dart';
 import '../widgets/net_worth_chart.dart';
 import '../widgets/ai_insights_section.dart';
+import '../../../core/services/premium_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -558,6 +559,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   button: true,
                   child: InkWell(
                     onTap: () {
+                      if (!PremiumService.instance.hasAccess(PremiumFeature.advancedDashboard)) {
+                        showPremiumGateWithPaywall(context, PremiumFeature.advancedDashboard);
+                        return;
+                      }
                       HapticFeedback.selectionClick();
                       setState(() => _selectedTab = i);
                     },

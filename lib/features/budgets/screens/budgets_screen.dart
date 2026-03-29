@@ -17,6 +17,7 @@ import '../providers/budget_providers.dart';
 import '../widgets/add_budget_dialog.dart';
 import '../widgets/budget_rollover_dialog.dart';
 import '../../../shared/utils/snackbar_helper.dart';
+import '../../../core/services/premium_service.dart';
 
 class BudgetsScreen extends ConsumerStatefulWidget {
   const BudgetsScreen({super.key});
@@ -132,6 +133,11 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   void _showAddBudget(BuildContext context) {
+    final budgets = ref.read(budgetsProvider).valueOrNull ?? [];
+    if (budgets.length >= 3 && !PremiumService.instance.hasAccess(PremiumFeature.unlimitedBudgets)) {
+      showPremiumGateWithPaywall(context, PremiumFeature.unlimitedBudgets);
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

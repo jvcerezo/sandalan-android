@@ -271,14 +271,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 
   static const _features = [
-    ('AI Chat Assistant', 'Ask about your finances in Taglish'),
-    ('Receipt Scanner', 'Scan receipts to auto-log expenses'),
-    ('Advanced Reports', 'Monthly insights with charts and trends'),
-    ('Unlimited Accounts', 'Track all your bank accounts and e-wallets'),
-    ('Document Vault', 'Store IDs, contracts, and important files securely'),
-    ('Bank CSV Import', 'Import from GCash, Maya, BDO, BPI, Metrobank'),
-    ('Live Exchange Rates', 'Real-time PHP conversion for 30+ currencies'),
-    ('Shared Goals', 'Save together with barkada or family'),
+    ('Bills, Debts & Insurance', 'Due dates, payoff strategies, renewal alerts'),
+    ('Advanced Dashboard', 'Health score, spending trends, AI insights'),
+    ('Reports & Analytics', 'Monthly charts and category deep-dives'),
+    ('Investments Portfolio', 'Track MP2, UITF, stocks, bonds, time deposits'),
+    ('All Calculators & Tools', 'Retirement, tax, rent vs buy, FIRE, and more'),
+    ('AI Chat + Receipt Scanner', 'Taglish assistant and auto-log from photos'),
+    ('CSV Import & Currency', 'Import bank statements, live exchange rates'),
+    ('Unlimited Everything', 'No limits on accounts, budgets, or goals'),
+    ('Document Vault', 'Encrypted storage for IDs and contracts'),
+    ('Split Bills & Salary Allocation', 'Share expenses, budget by paycheck %'),
   ];
 }
 

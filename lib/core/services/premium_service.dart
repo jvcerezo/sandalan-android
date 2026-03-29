@@ -6,14 +6,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Premium feature identifiers.
 enum PremiumFeature {
+  // Content & AI
   aiChat,            // AI chat assistant
   receiptScanner,    // Receipt scanner (OCR)
-  advancedReports,   // Monthly/yearly reports with charts
-  unlimitedAccounts, // More than 3 accounts
-  documentVault,     // Document vault storage
   csvImport,         // Import from bank CSV
+  advancedReports,   // Monthly/yearly reports with charts
+  documentVault,     // Document vault storage
   exchangeRates,     // Live exchange rates
   sharedGoals,       // Shared savings goals
+
+  // Finance management (free tier can't access these screens)
+  billsTracker,      // Bills & payments management
+  debtManager,       // Debt payoff strategies
+  insuranceTracker,  // Insurance policy tracking
+  investments,       // Portfolio tracker
+  splitBills,        // Shared expense splitting
+  salaryAllocation,  // Budget by paycheck %
+  panganayMode,      // Family support budgeting
+
+  // Advanced tools & trackers
+  advancedCalculators, // Retirement, rent vs buy, FIRE, loan, compound
+  taxTracker,          // BIR income tax tracking
+  contributionTracker, // SSS/PhilHealth/Pag-IBIG ongoing tracking
+  advancedDashboard,   // Health score, trends, insights tabs
+  recurringTransactions, // Auto-created templates
+
+  // Limits
+  unlimitedAccounts, // Free: 2 accounts max
+  unlimitedBudgets,  // Free: 3 monthly budgets max
+  unlimitedGoals,    // Free: 2 goals max
 }
 
 /// Manages premium feature access.
@@ -63,19 +84,11 @@ class PremiumService {
     if (_isPremium) return true;
     if (hasActiveStreakReward) return true;
 
-    // Free tier features (always available):
-    switch (feature) {
-      case PremiumFeature.aiChat:
-      case PremiumFeature.receiptScanner:
-      case PremiumFeature.advancedReports:
-      case PremiumFeature.documentVault:
-      case PremiumFeature.csvImport:
-      case PremiumFeature.exchangeRates:
-      case PremiumFeature.sharedGoals:
-        return false;
-      case PremiumFeature.unlimitedAccounts:
-        return false; // Free tier: 3 accounts max
-    }
+    // All premium features return false for free users.
+    // Every enum value is premium — free tier only gets basic
+    // transactions, up to 2 accounts, 3 monthly budgets, 2 goals,
+    // and the full life stage guide.
+    return false;
   }
 
   /// Whether the app is currently in free beta mode.
@@ -185,43 +198,55 @@ class PremiumService {
     return null;
   }
 
-  /// Get the list of premium features for display.
+  /// Get the list of premium features for display (paywall & gate UI).
   static List<PremiumFeatureInfo> get featureList => [
+    const PremiumFeatureInfo(
+      feature: PremiumFeature.billsTracker,
+      title: 'Bills, Debts & Insurance',
+      description: 'Track due dates, payoff strategies, renewal alerts',
+      icon: LucideIcons.receipt,
+    ),
+    const PremiumFeatureInfo(
+      feature: PremiumFeature.advancedDashboard,
+      title: 'Advanced Dashboard',
+      description: 'Health score, spending trends, and AI insights',
+      icon: LucideIcons.barChart3,
+    ),
+    const PremiumFeatureInfo(
+      feature: PremiumFeature.advancedReports,
+      title: 'Reports & Analytics',
+      description: 'Monthly reports with charts and category deep-dives',
+      icon: LucideIcons.pieChart,
+    ),
+    const PremiumFeatureInfo(
+      feature: PremiumFeature.investments,
+      title: 'Investment Portfolio',
+      description: 'Track MP2, UITF, stocks, bonds, time deposits',
+      icon: LucideIcons.trendingUp,
+    ),
+    const PremiumFeatureInfo(
+      feature: PremiumFeature.advancedCalculators,
+      title: 'All Calculators & Tools',
+      description: 'Retirement, rent vs buy, FIRE, tax tracker, and more',
+      icon: LucideIcons.calculator,
+    ),
     const PremiumFeatureInfo(
       feature: PremiumFeature.aiChat,
       title: 'AI Chat Assistant',
-      description: 'Ask questions about your finances in Taglish',
+      description: 'Ask about your finances in Taglish',
       icon: LucideIcons.messageCircle,
     ),
     const PremiumFeatureInfo(
       feature: PremiumFeature.receiptScanner,
-      title: 'Receipt Scanner',
-      description: 'Scan receipts to auto-log expenses',
+      title: 'Receipt Scanner & CSV Import',
+      description: 'Scan receipts or import from GCash, Maya, BDO, BPI',
       icon: LucideIcons.scanLine,
     ),
     const PremiumFeatureInfo(
-      feature: PremiumFeature.advancedReports,
-      title: 'Advanced Reports',
-      description: 'Detailed monthly reports with charts and insights',
-      icon: LucideIcons.pieChart,
-    ),
-    const PremiumFeatureInfo(
       feature: PremiumFeature.unlimitedAccounts,
-      title: 'Unlimited Accounts',
-      description: 'Track all your bank accounts, e-wallets, and cash',
-      icon: LucideIcons.landmark,
-    ),
-    const PremiumFeatureInfo(
-      feature: PremiumFeature.documentVault,
-      title: 'Document Vault',
-      description: 'Securely store IDs, contracts, and important files',
-      icon: LucideIcons.folderLock,
-    ),
-    const PremiumFeatureInfo(
-      feature: PremiumFeature.csvImport,
-      title: 'Bank Import',
-      description: 'Import from GCash, Maya, BDO, BPI, Metrobank',
-      icon: LucideIcons.upload,
+      title: 'Unlimited Everything',
+      description: 'No limits on accounts, budgets, or goals',
+      icon: LucideIcons.infinity,
     ),
   ];
 }

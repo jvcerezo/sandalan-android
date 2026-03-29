@@ -14,6 +14,15 @@ import '../../../core/services/invite_service.dart';
 import '../../settings/widgets/feedback_dialog.dart';
 import '../../transactions/screens/receipt_scanner_screen.dart';
 
+/// Navigate to [route] if premium, otherwise show paywall gate.
+void _premiumGo(BuildContext context, PremiumFeature feature, String route) {
+  if (PremiumService.instance.hasAccess(feature)) {
+    context.go(route);
+  } else {
+    showPremiumGateWithPaywall(context, feature);
+  }
+}
+
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
 
@@ -49,7 +58,7 @@ class MoreScreen extends ConsumerWidget {
           subtitle: 'Recurring bills & due dates',
           badge: billsSummary.whenOrNull(data: (bs) => bs.dueSoonCount > 0 ? '${bs.dueSoonCount} due soon' : null),
           badgeColor: AppColors.warning,
-          onTap: () => context.go('/tools/bills'),
+          onTap: () => _premiumGo(context, PremiumFeature.billsTracker, '/tools/bills'),
         ),
       if (show(FeatureKeys.debts))
         _MoreItem(
@@ -58,7 +67,7 @@ class MoreScreen extends ConsumerWidget {
           title: 'Debts',
           subtitle: 'Track and pay off debts',
           badge: debtSummary.whenOrNull(data: (ds) => ds.totalDebt > 0 ? formatCurrency(ds.totalDebt) : null),
-          onTap: () => context.go('/tools/debts'),
+          onTap: () => _premiumGo(context, PremiumFeature.debtManager, '/tools/debts'),
         ),
       if (show(FeatureKeys.insurance))
         _MoreItem(
@@ -68,7 +77,7 @@ class MoreScreen extends ConsumerWidget {
           subtitle: 'Policies & premium tracking',
           badge: insuranceSummary.whenOrNull(data: (is_) => is_.renewalSoonCount > 0 ? '${is_.renewalSoonCount} renewing' : null),
           badgeColor: AppColors.warning,
-          onTap: () => context.go('/tools/insurance'),
+          onTap: () => _premiumGo(context, PremiumFeature.insuranceTracker, '/tools/insurance'),
         ),
       if (show(FeatureKeys.investments))
         _MoreItem(
@@ -76,7 +85,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolGreen,
           title: 'Investments',
           subtitle: 'Portfolio tracker',
-          onTap: () => context.go('/investments'),
+          onTap: () => _premiumGo(context, PremiumFeature.investments, '/tools/investments'),
         ),
       if (show(FeatureKeys.splitBills))
         _MoreItem(
@@ -84,7 +93,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolPink,
           title: 'Split Bills',
           subtitle: 'Shared expenses with friends',
-          onTap: () => context.go('/split-bills'),
+          onTap: () => _premiumGo(context, PremiumFeature.splitBills, '/split-bills'),
         ),
       if (show(FeatureKeys.salaryAllocation))
         _MoreItem(
@@ -92,7 +101,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolAmber,
           title: 'Salary Allocation',
           subtitle: 'Budget by paycheck percentage',
-          onTap: () => context.go('/salary-allocation'),
+          onTap: () => _premiumGo(context, PremiumFeature.salaryAllocation, '/salary-allocation'),
         ),
     ];
 
@@ -104,7 +113,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.sss,
           title: 'Gov\'t Contributions',
           subtitle: 'SSS, PhilHealth & Pag-IBIG',
-          onTap: () => context.go('/tools/contributions'),
+          onTap: () => _premiumGo(context, PremiumFeature.contributionTracker, '/tools/contributions'),
         ),
       if (show(FeatureKeys.taxTracker))
         _MoreItem(
@@ -112,7 +121,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolOrange,
           title: 'Tax Tracker',
           subtitle: 'BIR income tax & filing',
-          onTap: () => context.go('/tools/taxes'),
+          onTap: () => _premiumGo(context, PremiumFeature.taxTracker, '/tools/taxes'),
         ),
       if (show(FeatureKeys.thirteenthMonth))
         _MoreItem(
@@ -120,7 +129,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolGreen,
           title: '13th Month Calculator',
           subtitle: 'Compute your bonus',
-          onTap: () => context.go('/tools/13th-month'),
+          onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/13th-month'),
         ),
       if (show(FeatureKeys.retirement))
         _MoreItem(
@@ -128,7 +137,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolAmber,
           title: 'Retirement Planner',
           subtitle: 'SSS pension & savings gap',
-          onTap: () => context.go('/tools/retirement'),
+          onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/retirement'),
         ),
       if (show(FeatureKeys.rentVsBuy))
         _MoreItem(
@@ -136,7 +145,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolEmerald,
           title: 'Rent vs Buy',
           subtitle: 'Housing cost comparison',
-          onTap: () => context.go('/tools/rent-vs-buy'),
+          onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/rent-vs-buy'),
         ),
       if (show(FeatureKeys.panganay))
         _MoreItem(
@@ -144,7 +153,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolPink,
           title: 'Panganay Mode',
           subtitle: 'Family support budgeting',
-          onTap: () => context.go('/tools/panganay'),
+          onTap: () => _premiumGo(context, PremiumFeature.panganayMode, '/tools/panganay'),
         ),
       if (show(FeatureKeys.calculators))
         _MoreItem(
@@ -152,7 +161,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolPurple,
           title: 'Financial Calculators',
           subtitle: 'Interest, loans & FIRE',
-          onTap: () => context.go('/tools/calculators'),
+          onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/calculators'),
         ),
       if (show(FeatureKeys.currency))
         _MoreItem(

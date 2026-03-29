@@ -69,7 +69,7 @@ class AccountsScreen extends ConsumerWidget {
               label: const Text('Add'),
               onPressed: () {
                 final accounts = ref.read(accountsProvider).valueOrNull ?? [];
-                if (accounts.length >= 3 && !PremiumService.instance.hasAccess(PremiumFeature.unlimitedAccounts)) {
+                if (accounts.length >= 2 && !PremiumService.instance.hasAccess(PremiumFeature.unlimitedAccounts)) {
                   showPremiumGateWithPaywall(context, PremiumFeature.unlimitedAccounts);
                   return;
                 }
