@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../app.dart';
+import '../../../core/services/premium_service.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/tip_service.dart';
 import '../../../core/services/weekly_recap_service.dart';
@@ -1170,14 +1171,26 @@ class _QuickLinksSection extends StatelessWidget {
               icon: LucideIcons.messageCircle,
               label: 'AI Chat',
               color: const Color(0xFF8B5CF6),
-              onTap: () => GoRouter.of(context).go('/chat'),
+              onTap: () {
+                if (PremiumService.instance.hasAccess(PremiumFeature.aiChat)) {
+                  GoRouter.of(context).go('/chat');
+                } else {
+                  showPremiumGateWithPaywall(context, PremiumFeature.aiChat);
+                }
+              },
             ),
             const SizedBox(width: 8),
             _QuickLink(
               icon: LucideIcons.pieChart,
               label: 'Reports',
               color: const Color(0xFF3B82F6),
-              onTap: () => GoRouter.of(context).go('/reports'),
+              onTap: () {
+                if (PremiumService.instance.hasAccess(PremiumFeature.advancedReports)) {
+                  GoRouter.of(context).go('/reports');
+                } else {
+                  showPremiumGateWithPaywall(context, PremiumFeature.advancedReports);
+                }
+              },
             ),
             const SizedBox(width: 8),
             _QuickLink(

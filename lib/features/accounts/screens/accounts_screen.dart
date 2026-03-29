@@ -13,6 +13,7 @@ import '../../../shared/widgets/animated_counter.dart';
 import '../../../shared/widgets/error_retry.dart';
 import '../providers/account_providers.dart';
 import '../../tools/providers/tool_providers.dart';
+import '../../../core/services/premium_service.dart';
 import '../widgets/add_account_dialog.dart';
 import '../widgets/transfer_dialog.dart';
 
@@ -66,12 +67,19 @@ class AccountsScreen extends ConsumerWidget {
             FilledButton.icon(
               icon: const Icon(Icons.add, size: 14),
               label: const Text('Add'),
-              onPressed: () => showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => const AddAccountDialog(),
-              ).then((_) => ref.invalidate(accountsProvider)),
+              onPressed: () {
+                final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+                if (accounts.length >= 3 && !PremiumService.instance.hasAccess(PremiumFeature.unlimitedAccounts)) {
+                  showPremiumGateWithPaywall(context, PremiumFeature.unlimitedAccounts);
+                  return;
+                }
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => const AddAccountDialog(),
+                ).then((_) => ref.invalidate(accountsProvider));
+              },
               style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
             ),
           ]),

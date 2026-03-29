@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/providers/feature_visibility_provider.dart';
+import '../../../core/services/premium_service.dart';
 import '../../goals/providers/goal_providers.dart';
 import '../../tools/providers/tool_providers.dart';
 import '../../../shared/widgets/staggered_fade_in.dart';
@@ -159,7 +160,13 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolBlue,
           title: 'Currency Converter',
           subtitle: 'Convert between currencies',
-          onTap: () => context.go('/tools/currency'),
+          onTap: () {
+            if (PremiumService.instance.hasAccess(PremiumFeature.exchangeRates)) {
+              context.go('/tools/currency');
+            } else {
+              showPremiumGateWithPaywall(context, PremiumFeature.exchangeRates);
+            }
+          },
         ),
     ];
 
@@ -201,7 +208,13 @@ class MoreScreen extends ConsumerWidget {
             color: AppColors.toolIndigo,
             title: 'Reports',
             subtitle: 'Monthly financial summaries',
-            onTap: () => context.go('/reports'),
+            onTap: () {
+              if (PremiumService.instance.hasAccess(PremiumFeature.advancedReports)) {
+                context.go('/reports');
+              } else {
+                showPremiumGateWithPaywall(context, PremiumFeature.advancedReports);
+              }
+            },
           ),
         if (show(FeatureKeys.achievements))
           _MoreItem(
@@ -216,7 +229,13 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolTeal,
           title: 'AI Chat',
           subtitle: 'Financial assistant',
-          onTap: () => context.go('/chat'),
+          onTap: () {
+            if (PremiumService.instance.hasAccess(PremiumFeature.aiChat)) {
+              context.go('/chat');
+            } else {
+              showPremiumGateWithPaywall(context, PremiumFeature.aiChat);
+            }
+          },
         ),
         _MoreItem(
           icon: LucideIcons.scanLine,
@@ -224,10 +243,14 @@ class MoreScreen extends ConsumerWidget {
           title: 'Scan Receipt',
           subtitle: 'OCR transaction import',
           onTap: () {
-            HapticFeedback.lightImpact();
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => const ReceiptScannerScreen(),
-            ));
+            if (PremiumService.instance.hasAccess(PremiumFeature.receiptScanner)) {
+              HapticFeedback.lightImpact();
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const ReceiptScannerScreen(),
+              ));
+            } else {
+              showPremiumGateWithPaywall(context, PremiumFeature.receiptScanner);
+            }
           },
         ),
         _MoreItem(
@@ -235,7 +258,13 @@ class MoreScreen extends ConsumerWidget {
           color: const Color(0xFF6366F1),
           title: 'Document Vault',
           subtitle: 'Store IDs, contracts & important files',
-          onTap: () => context.go('/vault'),
+          onTap: () {
+            if (PremiumService.instance.hasAccess(PremiumFeature.documentVault)) {
+              context.go('/vault');
+            } else {
+              showPremiumGateWithPaywall(context, PremiumFeature.documentVault);
+            }
+          },
         ),
         _MoreItem(
           icon: LucideIcons.messageSquare,

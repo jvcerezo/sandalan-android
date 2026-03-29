@@ -13,6 +13,7 @@ import '../../../shared/widgets/error_retry.dart';
 import '../providers/transaction_providers.dart';
 import '../../../data/models/account.dart';
 import '../../accounts/providers/account_providers.dart';
+import '../../../core/services/premium_service.dart';
 import '../widgets/add_transaction_dialog.dart';
 import '../widgets/transaction_detail_sheet.dart';
 import '../widgets/transaction_filters_panel.dart';
@@ -115,7 +116,13 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
           IconButton(
             icon: Icon(LucideIcons.upload, size: 18, color: colorScheme.onSurfaceVariant),
             tooltip: 'Import CSV',
-            onPressed: () => showImportDialog(context),
+            onPressed: () {
+              if (PremiumService.instance.hasAccess(PremiumFeature.csvImport)) {
+                showImportDialog(context);
+              } else {
+                showPremiumGateWithPaywall(context, PremiumFeature.csvImport);
+              }
+            },
           ),
           IconButton(
             icon: Icon(LucideIcons.download, size: 18, color: colorScheme.onSurfaceVariant),

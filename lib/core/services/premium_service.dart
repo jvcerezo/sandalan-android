@@ -35,7 +35,7 @@ class PremiumService {
   static const streakRewardThreshold = 90;
 
   /// Set to false when ready to enforce premium gates.
-  static const _isBetaPeriod = true;
+  static const _isBetaPeriod = false;
 
   bool _isPremium = false;
   bool _loaded = false;

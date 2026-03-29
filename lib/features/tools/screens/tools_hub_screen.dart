@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/color_tokens.dart';
+import '../../../core/services/premium_service.dart';
 
 class ToolsHubScreen extends StatelessWidget {
   const ToolsHubScreen({super.key});
@@ -80,7 +81,13 @@ class ToolsHubScreen extends StatelessWidget {
             color: AppColors.toolBlue,
             title: 'Currency Converter',
             subtitle: 'Convert between currencies',
-            onTap: () => context.go('/tools/currency'),
+            onTap: () {
+              if (PremiumService.instance.hasAccess(PremiumFeature.exchangeRates)) {
+                context.go('/tools/currency');
+              } else {
+                showPremiumGateWithPaywall(context, PremiumFeature.exchangeRates);
+              }
+            },
           ),
         ]),
       ],
