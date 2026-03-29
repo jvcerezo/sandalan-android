@@ -221,7 +221,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
     } catch (e) {
       setState(() {
         _scanState = _ScanState.idle;
-        _errorMessage = 'Could not read the receipt. Try better lighting or a clearer photo.';
+        _errorMessage = 'Could not read the receipt: ${e.toString().replaceAll('Exception: ', '')}. Try better lighting or a clearer photo.';
       });
     }
   }

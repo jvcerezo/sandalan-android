@@ -784,7 +784,9 @@ class ReceiptParser {
       'vat amount',
       'vat amt',
       '12% vat',
-      'total sales', // gross sales, not payment total
+      'total sales (inclusive', // gross sales, not payment total
+      'total sales (exclusive',
+      'vatable sales',
       'sc disc',
       'sc discount',
       'pwd disc',
@@ -792,11 +794,79 @@ class ReceiptParser {
       'senior citizen',
     ];
 
-    // Match amounts: handles ₱125.00, P 1,234.56, 125.00, 125
-    // Uses rightmost match on the line (amounts are usually right-aligned)
+    // Keywords that indicate reference/ID lines — NOT amounts
+    final refKeywords = [
+      'ref',
+      'reference',
+      'transaction id',
+      'transaction no',
+      'txn id',
+      'txn no',
+      'trace no',
+      'trace #',
+      'approval',
+      'approval code',
+      'terminal',
+      'terminal id',
+      'tid',
+      'mid',
+      'merchant id',
+      'stan',
+      'rrn',
+      'batch',
+      'batch no',
+      'seq',
+      'sequence',
+      'receipt no',
+      'receipt #',
+      'or no',
+      'or #',
+      'invoice no',
+      'invoice #',
+      'control no',
+      'confirmation',
+      'tracking',
+    ];
+
+    // Match amounts: handles ₱125.00, P 1,234.56, 125.00
+    // REQUIRE either a peso sign OR a decimal point to distinguish from ref numbers.
+    // Bare integers like "1234567890" are NOT amounts.
     final amountPattern = RegExp(
-      r'[₱P]?\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)',
+      r'[₱P]\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)',
     );
+    // Also match numbers with decimal point but no peso sign (e.g. "125.00")
+    final decimalAmountPattern = RegExp(
+      r'(\d{1,3}(?:[,\s]\d{3})*\.\d{1,2})',
+    );
+
+    /// Returns true if a line looks like a reference/ID number line.
+    bool isRefLine(String lowerLine) {
+      return refKeywords.any((k) => lowerLine.contains(k));
+    }
+
+    /// Extracts the best amount from a line, preferring peso-prefixed amounts,
+    /// then decimal amounts. Ignores bare integers (likely ref numbers).
+    double? extractAmountFromLine(String line) {
+      double? result;
+      // First try peso-prefixed amounts (highest confidence)
+      for (final match in amountPattern.allMatches(line)) {
+        final amountStr = match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
+        final amount = double.tryParse(amountStr);
+        if (amount != null && amount > 0 && amount < 10000000) {
+          result = amount; // Keep overwriting — last (rightmost) match wins
+        }
+      }
+      if (result != null) return result;
+      // Fall back to decimal amounts without peso sign
+      for (final match in decimalAmountPattern.allMatches(line)) {
+        final amountStr = match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
+        final amount = double.tryParse(amountStr);
+        if (amount != null && amount > 0 && amount < 10000000) {
+          result = amount;
+        }
+      }
+      return result;
+    }
 
     double? bestAmount;
     int bestPriority = 999;
@@ -810,6 +880,8 @@ class ReceiptParser {
       if (changeKeywords.any((k) => lower.contains(k))) continue;
       // Skip VAT breakdown lines (appear before total on BIR receipts)
       if (vatSectionKeywords.any((k) => lower.contains(k))) continue;
+      // Skip reference/ID lines — these contain long numbers that aren't amounts
+      if (isRefLine(lower)) continue;
       // Skip standalone "CASH" or "PAYMENT" lines (tender, not total)
       // but NOT lines like "CASH TOTAL" or "TOTAL CASH" which are totals
       if ((lower.startsWith('cash') || lower.startsWith('payment') || lower.startsWith('paid'))
@@ -820,36 +892,22 @@ class ReceiptParser {
           priority++) {
         if (lower.contains(totalKeywords[priority])) {
           // Clean the line: strip filler dots/dashes between keyword and amount
-          // e.g. "TOTAL.............125.00" -> "TOTAL 125.00"
-          // e.g. "TOTAL-----------125.00" -> "TOTAL 125.00"
           final cleaned = line.replaceAll(RegExp(r'[.]{2,}'), ' ')
                               .replaceAll(RegExp(r'[-]{2,}'), ' ')
                               .replaceAll(RegExp(r'[=]{2,}'), ' ')
                               .replaceAll(RegExp(r'[*]{2,}'), ' ');
 
-          // Use the LAST (rightmost) amount on the line — totals are right-aligned
-          double? lineAmount;
-          for (final match in amountPattern.allMatches(cleaned)) {
-            final amountStr = match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
-            final amount = double.tryParse(amountStr);
-            if (amount != null && amount > 0) {
-              lineAmount = amount; // Keep overwriting — last match wins
-            }
-          }
+          final lineAmount = extractAmountFromLine(cleaned);
 
           if (lineAmount != null && priority < bestPriority) {
             bestAmount = lineAmount;
             bestPriority = priority;
           } else if (lineAmount == null && lineIdx + 1 < lines.length) {
             // Amount might be on the NEXT line (common in grocery receipts)
-            final nextLine = lines[lineIdx + 1];
-            for (final match in amountPattern.allMatches(nextLine)) {
-              final amountStr = match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
-              final amount = double.tryParse(amountStr);
-              if (amount != null && amount > 0 && priority < bestPriority) {
-                bestAmount = amount;
-                bestPriority = priority;
-              }
+            final nextAmount = extractAmountFromLine(lines[lineIdx + 1]);
+            if (nextAmount != null && priority < bestPriority) {
+              bestAmount = nextAmount;
+              bestPriority = priority;
             }
           }
           break;
@@ -858,16 +916,17 @@ class ReceiptParser {
     }
 
     // If no keyword-based match, look for the largest amount with peso prefix
+    // (skip ref lines entirely)
     if (bestAmount == null) {
-      final pesoPattern = RegExp(
-          r'[₱P]\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)');
       double largest = 0;
       for (final line in lines) {
-        for (final match in pesoPattern.allMatches(line)) {
+        final lower = line.toLowerCase().trim();
+        if (isRefLine(lower)) continue;
+        for (final match in amountPattern.allMatches(line)) {
           final amountStr =
               match.group(1)!.replaceAll(RegExp(r'[,\s]'), '');
           final amount = double.tryParse(amountStr) ?? 0;
-          if (amount > largest) largest = amount;
+          if (amount > largest && amount < 10000000) largest = amount;
         }
       }
       if (largest > 0) bestAmount = largest;

@@ -199,7 +199,7 @@ class _PrivacySectionState extends ConsumerState<PrivacySection> {
   }
 
   void _openLegalDocument(String title, String content) {
-    Navigator.of(context).push(MaterialPageRoute(
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       builder: (_) => _LegalDocumentScreen(title: title, content: content),
     ));
   }

@@ -137,6 +137,21 @@ const Map<String, Set<String>> kRecommendedChecklistIds = {
   },
 };
 
+/// Infer a default user type from the life stage slug when the user hasn't
+/// explicitly set their type. This allows "Recommended for you" to work
+/// even without an onboarding selection.
+String? inferUserTypeFromStage(String stageSlug) {
+  switch (stageSlug) {
+    case 'unang-hakbang': return 'student';
+    case 'pundasyon': return 'fresh-grad';
+    case 'tahanan': return 'employee';
+    case 'tugatog': return 'employee';
+    case 'paghahanda': return 'employee';
+    case 'gintong-taon': return 'employee';
+    default: return null;
+  }
+}
+
 /// Check if a guide is recommended for this user type.
 bool isGuideRecommended(String? userType, String guideSlug, String guideCategory) {
   if (userType == null || userType.isEmpty) return false;

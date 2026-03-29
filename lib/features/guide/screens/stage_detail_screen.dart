@@ -356,11 +356,14 @@ class _GuidesTab extends StatelessWidget {
         stage.guides.where((g) => readGuides.contains(g.slug)).length;
 
     // Split into recommended and rest
+    final effectiveUserType = (userType != null && userType!.isNotEmpty)
+        ? userType
+        : inferUserTypeFromStage(stage.slug);
     final recommended = <Guide>[];
     final rest = <Guide>[];
     for (final guide in stage.guides) {
-      if (userType != null && userType!.isNotEmpty &&
-          isGuideRecommended(userType, guide.slug, guide.category)) {
+      if (effectiveUserType != null &&
+          isGuideRecommended(effectiveUserType, guide.slug, guide.category)) {
         recommended.add(guide);
       } else {
         rest.add(guide);

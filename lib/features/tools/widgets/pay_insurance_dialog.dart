@@ -83,6 +83,14 @@ class _PayInsuranceDialogState extends ConsumerState<PayInsuranceDialog> {
       return;
     }
 
+    // Check if account has sufficient balance before deducting.
+    final accounts = ref.read(accountsProvider).valueOrNull ?? [];
+    final account = accounts.where((a) => a.id == _accountId).firstOrNull;
+    if (account != null && account.balance < amount) {
+      _showError('Insufficient balance in ${account.name} (${formatCurrency(account.balance)})');
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final txnRepo = ref.read(transactionRepositoryProvider);

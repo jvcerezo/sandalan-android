@@ -43,6 +43,7 @@ class FeatureKeys {
   static const _defaultVisible = {
     bills, debts, contributions, goals,
     budgets, healthScore, spendingChart,
+    achievements,
   };
 
   /// Returns the default visibility for a given key.

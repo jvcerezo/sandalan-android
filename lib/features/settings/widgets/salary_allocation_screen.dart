@@ -80,7 +80,7 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
 
     for (final rule in _rules) {
       if (rule.type == 'budget') {
-        final exists = existingBudgets.any((b) => b.category == rule.label);
+        final exists = existingBudgets.any((b) => b.category == rule.label.toLowerCase());
         if (!exists) {
           try {
             await ref.read(budgetRepositoryProvider).createBudget(
@@ -472,7 +472,7 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
             final r = entry.value;
             final rulePct = salary > 0 ? (r.amount / salary * 100) : 0.0;
             return Dismissible(
-              key: ValueKey('rule-$i-${r.label}'),
+              key: ValueKey('rule-${r.type}-${r.label}-${r.amount}'),
               direction: DismissDirection.endToStart,
               confirmDismiss: (_) async {
                 return await showDialog<bool>(

@@ -12,6 +12,7 @@ import '../providers/tool_providers.dart';
 import '../widgets/add_bill_dialog.dart';
 import '../widgets/bill_calendar.dart';
 import '../widgets/confirm_payment_dialog.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class BillsScreen extends ConsumerStatefulWidget {
   const BillsScreen({super.key});
@@ -447,9 +448,14 @@ class _BillRow extends StatelessWidget {
         // Mark paid
         IconButton(
           onPressed: () async {
-            await ref.read(billRepositoryProvider).markPaid(bill.id);
-            ref.invalidate(billsProvider);
-            ref.invalidate(billsSummaryProvider);
+            try {
+              await ref.read(billRepositoryProvider).markPaid(bill.id);
+              ref.invalidate(billsProvider);
+              ref.invalidate(billsSummaryProvider);
+              if (context.mounted) showSuccessSnackBar(context, '${bill.name} marked as paid');
+            } catch (e) {
+              if (context.mounted) showAppSnackBar(context, 'Failed to mark bill as paid', isError: true);
+            }
           },
           icon: Icon(LucideIcons.checkCircle2, size: 18, color: cs.onSurfaceVariant),
           padding: EdgeInsets.zero,

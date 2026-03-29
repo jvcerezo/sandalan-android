@@ -8,6 +8,7 @@ import '../../../core/services/milestone_service.dart';
 import '../../../core/services/progress_sync_service.dart';
 import '../../../shared/widgets/milestone_celebration.dart';
 import '../../../data/guide/guide_data.dart';
+import '../../../shared/utils/snackbar_helper.dart';
 
 class ChecklistDetailScreen extends StatefulWidget {
   final String stageSlug;
@@ -57,6 +58,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     await prefs.setStringList('checklist_skipped', skipped);
     setState(() { _isDone = true; _isSkipped = false; });
     ProgressSyncService.instance.pushAfterChange();
+    if (mounted) showSuccessSnackBar(context, 'Marked as done!');
     _checkChecklistMilestones(done.length);
   }
 
@@ -90,6 +92,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
     await prefs.setStringList('checklist_skipped', skipped);
     setState(() { _isDone = false; _isSkipped = true; });
     ProgressSyncService.instance.pushAfterChange();
+    if (mounted) showAppSnackBar(context, 'Skipped for now');
   }
 
   @override
@@ -365,6 +368,7 @@ class _ChecklistDetailScreenState extends State<ChecklistDetailScreen> {
                   await prefs.setStringList('checklist_done', done);
                   setState(() => _isDone = false);
                   ProgressSyncService.instance.pushAfterChange();
+                  if (mounted) showAppSnackBar(context, 'Unmarked');
                 } : _markDone,
                 icon: Icon(_isDone ? LucideIcons.undo2 : LucideIcons.circle, size: 16),
                 label: Text(_isDone ? 'Undo' : 'Mark as Done'),

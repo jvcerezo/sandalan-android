@@ -65,7 +65,8 @@ class HealthTab extends ConsumerWidget {
           for (final t in txnList) {
             if (t.amount >= 0 || t.category.toLowerCase() == 'transfer') continue;
             if (t.date.substring(0, 7) == thisMonth) {
-              expensesByCategory[t.category] = (expensesByCategory[t.category] ?? 0) + t.amount.abs();
+              final cat = t.category.toLowerCase();
+              expensesByCategory[cat] = (expensesByCategory[cat] ?? 0) + t.amount.abs();
             }
           }
           int underLimit = 0;

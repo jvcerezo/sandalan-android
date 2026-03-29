@@ -140,6 +140,9 @@ class _AppScaffoldState extends State<AppScaffold> {
   static const _morePaths = [
     '/more',
     '/tools',
+    '/goals',
+    '/investments',
+    '/salary-allocation',
     '/split-bills',
     '/achievements',
     '/reports',
