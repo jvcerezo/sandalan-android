@@ -93,13 +93,16 @@ class BillingService {
 
   // ─── Purchase Flow ───────────────────────────────────────────────────────
 
-  /// Launch the purchase flow for a specific product.
+  /// Launch the subscription purchase flow for a specific product.
   /// Returns false if the product isn't available.
   Future<bool> purchase(ProductDetails product) async {
     if (!_available) return false;
 
     final purchaseParam = PurchaseParam(productDetails: product);
     try {
+      // Subscriptions must use buyNonConsumable (the in_app_purchase plugin
+      // routes subscriptions correctly on Google Play — the "non-consumable"
+      // name is misleading but is the correct API for subscriptions).
       return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
       debugPrint('[BillingService] Purchase error: $e');

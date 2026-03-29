@@ -318,16 +318,12 @@ void showPremiumGateWithPaywall(BuildContext context, PremiumFeature feature) {
 
 /// Open the paywall screen as a full-screen push.
 void openPaywall(BuildContext context) {
-  // Late import to avoid circular dependency: premium_service -> paywall_screen -> premium_service
-  // Instead we use Navigator.pushNamed or a dynamic import pattern.
+  if (_paywallBuilder == null) {
+    debugPrint('[PremiumService] Paywall builder not registered');
+    return;
+  }
   Navigator.of(context, rootNavigator: true).push(
-    MaterialPageRoute(
-      builder: (_) {
-        // This requires the caller to have access to PaywallScreen.
-        // Since this function is in core/services, we use a registry pattern.
-        return _paywallBuilder?.call() ?? const SizedBox.shrink();
-      },
-    ),
+    MaterialPageRoute(builder: (_) => _paywallBuilder!()),
   );
 }
 
