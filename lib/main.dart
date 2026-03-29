@@ -15,6 +15,8 @@ import 'core/services/sync_service.dart';
 import 'core/services/sync_status_notifier.dart';
 import 'core/services/background_worker.dart';
 import 'core/services/premium_service.dart';
+import 'core/services/billing_service.dart';
+import 'features/settings/screens/paywall_screen.dart';
 import 'data/local/app_database.dart';
 
 Future<void> main() async {
@@ -42,6 +44,12 @@ Future<void> main() async {
 
   // Initialize premium service (check subscription status).
   await PremiumService.instance.init();
+
+  // Initialize billing (Google Play purchases).
+  await BillingService.instance.init();
+
+  // Register paywall screen builder (avoids circular import in premium_service).
+  registerPaywallBuilder(() => const PaywallScreen());
 
   // Schedule background notifications (daily reminder, weekly recap).
   try {

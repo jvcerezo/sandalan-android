@@ -91,6 +91,14 @@ class _AboutSectionState extends State<AboutSection> {
           const SizedBox(height: 24),
         ])),
 
+        // Upgrade to Premium
+        if (!premium.isPremium || premium.isBetaPeriod)
+          _InfoTile(
+            icon: LucideIcons.crown,
+            title: 'Upgrade to Premium',
+            onTap: () => openPaywall(context),
+          ),
+
         // Links
         _InfoTile(
           icon: LucideIcons.shield,

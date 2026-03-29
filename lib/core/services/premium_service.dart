@@ -241,7 +241,9 @@ class PremiumFeatureInfo {
 }
 
 /// Shows a premium upsell bottom sheet when a gated feature is accessed.
-void showPremiumGate(BuildContext context, PremiumFeature feature) {
+/// [onUpgradeTap] is called when the user taps "See Plans & Pricing".
+/// The caller should navigate to the paywall screen.
+void showPremiumGate(BuildContext context, PremiumFeature feature, {VoidCallback? onUpgradeTap}) {
   final info = PremiumService.featureList.where((f) => f.feature == feature).firstOrNull;
   final cs = Theme.of(context).colorScheme;
 
@@ -286,20 +288,54 @@ void showPremiumGate(BuildContext context, PremiumFeature feature) {
           child: FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // TODO: Launch Google Play billing flow
+              onUpgradeTap?.call();
             },
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               backgroundColor: const Color(0xFF6366F1),
             ),
-            child: const Text('Coming Soon — Free During Beta!'),
+            child: const Text('See Plans & Pricing'),
           ),
         ),
-        const SizedBox(height: 8),
-        Text('All premium features are free during the beta period.',
-            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
-            textAlign: TextAlign.center),
+        if (PremiumService.instance.isBetaPeriod) ...[
+          const SizedBox(height: 8),
+          Text('All premium features are free during the beta period.',
+              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center),
+        ],
       ]),
     ),
   );
+}
+
+/// Helper: show the premium gate and navigate to the paywall on upgrade tap.
+/// Use this from anywhere — it handles the Navigator.push internally.
+void showPremiumGateWithPaywall(BuildContext context, PremiumFeature feature) {
+  showPremiumGate(context, feature, onUpgradeTap: () {
+    openPaywall(context);
+  });
+}
+
+/// Open the paywall screen as a full-screen push.
+void openPaywall(BuildContext context) {
+  // Late import to avoid circular dependency: premium_service -> paywall_screen -> premium_service
+  // Instead we use Navigator.pushNamed or a dynamic import pattern.
+  Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute(
+      builder: (_) {
+        // This requires the caller to have access to PaywallScreen.
+        // Since this function is in core/services, we use a registry pattern.
+        return _paywallBuilder?.call() ?? const SizedBox.shrink();
+      },
+    ),
+  );
+}
+
+/// Registry for the paywall screen builder.
+/// Set this in main.dart after imports are resolved.
+Widget Function()? _paywallBuilder;
+
+/// Register the paywall screen builder. Call once during app init.
+void registerPaywallBuilder(Widget Function() builder) {
+  _paywallBuilder = builder;
 }
