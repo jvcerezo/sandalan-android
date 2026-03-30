@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/guest_mode_service.dart';
 import '../services/premium_service.dart';
+import 'premium_route_guard.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/guide/screens/guide_screen.dart';
@@ -58,46 +59,7 @@ Future<void> loadDefaultLandingPage() async {
   _cachedLandingPage = prefs.getString('default_landing_page') ?? '/home';
 }
 
-/// Routes that require premium access. Maps route prefix -> PremiumFeature.
-/// The router redirect checks this before allowing navigation.
-const _premiumRoutes = <String, PremiumFeature>{
-  '/tools/bills': PremiumFeature.billsTracker,
-  '/tools/debts': PremiumFeature.debtManager,
-  '/tools/insurance': PremiumFeature.insuranceTracker,
-  '/tools/contributions': PremiumFeature.contributionTracker,
-  '/tools/taxes': PremiumFeature.taxTracker,
-  '/tools/13th-month': PremiumFeature.advancedCalculators,
-  '/tools/retirement': PremiumFeature.advancedCalculators,
-  '/tools/rent-vs-buy': PremiumFeature.advancedCalculators,
-  '/tools/panganay': PremiumFeature.panganayMode,
-  '/tools/calculators': PremiumFeature.advancedCalculators,
-  '/tools/currency': PremiumFeature.exchangeRates,
-  '/tools': PremiumFeature.advancedCalculators,
-  '/investments': PremiumFeature.investments,
-  '/split-bills': PremiumFeature.splitBills,
-  '/salary-allocation': PremiumFeature.salaryAllocation,
-  '/vault': PremiumFeature.documentVault,
-  '/chat': PremiumFeature.aiChat,
-  '/reports': PremiumFeature.advancedReports,
-};
-
-/// Check if a path requires premium and the user doesn't have access.
-/// Returns the PremiumFeature that's blocking, or null if allowed.
-PremiumFeature? _blockedByPremium(String path) {
-  final premium = PremiumService.instance;
-  for (final entry in _premiumRoutes.entries) {
-    if (path == entry.key || path.startsWith('${entry.key}/')) {
-      if (!premium.hasAccess(entry.value)) {
-        debugPrint('[Router] BLOCKED: $path requires ${entry.value}, '
-            'isPremium=${premium.isPremium}, trial=${premium.hasActiveSignupTrial}, '
-            'streak=${premium.hasActiveStreakReward}');
-        return entry.value;
-      }
-      return null; // Has access — allow through
-    }
-  }
-  return null; // Not a premium route
-}
+// Premium route map and guard logic extracted to premium_route_guard.dart
 
 final appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -127,7 +89,7 @@ final appRouter = GoRouter(
     // The UI-level gates (showPremiumGateWithPaywall) handle showing
     // the paywall; this redirect is a safety net for deep links,
     // search results, guide links, and any other bypass.
-    final blocked = _blockedByPremium(state.uri.path);
+    final blocked = blockedByPremium(state.uri.path, PremiumService.instance);
     if (blocked != null) {
       return '/home';
     }
