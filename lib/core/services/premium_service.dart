@@ -65,6 +65,16 @@ class PremiumService {
   DateTime? _signupTrialExpiry;
   DateTime? _lastVerifiedServerTime;
 
+  /// Reset all state for testing. Call in setUp() to prevent state leaking.
+  @visibleForTesting
+  void resetForTesting() {
+    _isPremium = false;
+    _loaded = false;
+    _streakRewardExpiry = null;
+    _signupTrialExpiry = null;
+    _lastVerifiedServerTime = null;
+  }
+
   /// Initialize premium state from SharedPreferences.
   Future<void> init() async {
     if (_loaded) return;

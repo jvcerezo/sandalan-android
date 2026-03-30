@@ -7,7 +7,8 @@ void main() {
   late PremiumService service;
 
   setUp(() async {
-    // Free user — no premium, no trial, no streak
+    // Reset singleton + fresh SharedPreferences for each test
+    PremiumService.instance.resetForTesting();
     SharedPreferences.setMockInitialValues({});
     service = PremiumService.instance;
     await service.init();
@@ -37,26 +38,19 @@ void main() {
 
     for (final route in routes) {
       test('blocks $route', () {
-        // Only test if user is NOT premium
-        if (!service.isPremium) {
-          final blocked = blockedByPremium(route, service);
-          expect(blocked, isNotNull, reason: '$route should be blocked for free user');
-        }
+        final blocked = blockedByPremium(route, service);
+        expect(blocked, isNotNull, reason: '$route should be blocked for free user');
       });
     }
 
     test('blocks nested route /reports/2026/3', () {
-      if (!service.isPremium) {
-        final blocked = blockedByPremium('/reports/2026/3', service);
-        expect(blocked, isNotNull);
-      }
+      final blocked = blockedByPremium('/reports/2026/3', service);
+      expect(blocked, isNotNull);
     });
 
     test('blocks nested route /tools/bills/123', () {
-      if (!service.isPremium) {
-        final blocked = blockedByPremium('/tools/bills/123', service);
-        expect(blocked, isNotNull);
-      }
+      final blocked = blockedByPremium('/tools/bills/123', service);
+      expect(blocked, isNotNull);
     });
   });
 
@@ -111,21 +105,15 @@ void main() {
 
   group('Correct PremiumFeature returned', () {
     test('/tools/bills returns billsTracker', () {
-      if (!service.isPremium) {
-        expect(blockedByPremium('/tools/bills', service), PremiumFeature.billsTracker);
-      }
+      expect(blockedByPremium('/tools/bills', service), PremiumFeature.billsTracker);
     });
 
     test('/chat returns aiChat', () {
-      if (!service.isPremium) {
-        expect(blockedByPremium('/chat', service), PremiumFeature.aiChat);
-      }
+      expect(blockedByPremium('/chat', service), PremiumFeature.aiChat);
     });
 
     test('/investments returns investments', () {
-      if (!service.isPremium) {
-        expect(blockedByPremium('/investments', service), PremiumFeature.investments);
-      }
+      expect(blockedByPremium('/investments', service), PremiumFeature.investments);
     });
   });
 }
