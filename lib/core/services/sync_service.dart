@@ -283,7 +283,7 @@ class SyncService with WidgetsBindingObserver {
           }
         }
 
-        final localRow = _remoteToLocal(row, remoteTable);
+        final localRow = remoteToLocal(row, remoteTable);
         await _upsertToLocal(localTable, localRow);
       }
 
@@ -353,7 +353,8 @@ class SyncService with WidgetsBindingObserver {
   }
 
   /// Map remote column names to local column names.
-  Map<String, dynamic> _remoteToLocal(Map<String, dynamic> row, String remoteTable) {
+  @visibleForTesting
+  Map<String, dynamic> remoteToLocal(Map<String, dynamic> row, String remoteTable) {
     final local = Map<String, dynamic>.from(row);
     local['sync_status'] = 'synced';
     if (!local.containsKey('updated_at')) {
@@ -411,7 +412,7 @@ class SyncService with WidgetsBindingObserver {
 
         // Track retry count via failure_reason prefix
         final failureReason = row['failure_reason'] as String? ?? '';
-        final retryCount = _parseRetryCount(failureReason);
+        final retryCount = parseRetryCount(failureReason);
         if (retryCount >= _maxRetryCount) {
           // Mark as permanently failed — stop retrying
           await _db.markFailedPermanent(localTable, row['id'] as String,
@@ -420,7 +421,7 @@ class SyncService with WidgetsBindingObserver {
         }
 
         try {
-          final remoteRow = _localToRemote(row, localTable);
+          final remoteRow = localToRemote(row, localTable);
           await _client.from(remoteTable).upsert(remoteRow);
           await _db.markSynced(localTable, row['id'] as String);
         } catch (e) {
@@ -456,7 +457,8 @@ class SyncService with WidgetsBindingObserver {
   }
 
   /// Parse the retry count from a failure_reason string that starts with "retry:N ".
-  static int _parseRetryCount(String failureReason) {
+  @visibleForTesting
+  static int parseRetryCount(String failureReason) {
     final match = RegExp(r'^retry:(\d+)\s').firstMatch(failureReason);
     return match != null ? int.tryParse(match.group(1)!) ?? 0 : 0;
   }
@@ -474,7 +476,8 @@ class SyncService with WidgetsBindingObserver {
   }
 
   /// Map local column names back to remote, removing local-only fields.
-  Map<String, dynamic> _localToRemote(Map<String, dynamic> row, String localTable) {
+  @visibleForTesting
+  Map<String, dynamic> localToRemote(Map<String, dynamic> row, String localTable) {
     final remote = Map<String, dynamic>.from(row);
     // Remove local-only columns that don't exist on Supabase
     remote.remove('sync_status');
