@@ -85,7 +85,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolGreen,
           title: 'Investments',
           subtitle: 'Portfolio tracker',
-          onTap: () => _premiumGo(context, PremiumFeature.investments, '/tools/investments'),
+          onTap: () => _premiumGo(context, PremiumFeature.investments, '/investments'),
         ),
       if (show(FeatureKeys.splitBills))
         _MoreItem(

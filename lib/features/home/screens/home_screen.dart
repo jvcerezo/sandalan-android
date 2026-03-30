@@ -55,6 +55,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _paydayDismissed = false;
   double _salaryAmount = 0;
 
+  /// Routes that require premium — map route prefix to feature gate.
+  static const _premiumRoutes = <String, PremiumFeature>{
+    '/tools/bills': PremiumFeature.billsTracker,
+    '/tools/debts': PremiumFeature.debtManager,
+    '/tools/insurance': PremiumFeature.insuranceTracker,
+    '/tools/contributions': PremiumFeature.contributionTracker,
+    '/tools/taxes': PremiumFeature.taxTracker,
+    '/tools/13th-month': PremiumFeature.advancedCalculators,
+    '/tools/retirement': PremiumFeature.advancedCalculators,
+    '/tools/rent-vs-buy': PremiumFeature.advancedCalculators,
+    '/tools/panganay': PremiumFeature.panganayMode,
+    '/tools/calculators': PremiumFeature.advancedCalculators,
+    '/tools/currency': PremiumFeature.exchangeRates,
+    '/investments': PremiumFeature.investments,
+    '/split-bills': PremiumFeature.splitBills,
+    '/salary-allocation': PremiumFeature.salaryAllocation,
+    '/vault': PremiumFeature.documentVault,
+    '/chat': PremiumFeature.aiChat,
+    '/reports': PremiumFeature.advancedReports,
+  };
+
+  void _navigateWithGate(BuildContext context, String route) {
+    for (final entry in _premiumRoutes.entries) {
+      if (route.startsWith(entry.key)) {
+        if (!PremiumService.instance.hasAccess(entry.value)) {
+          showPremiumGateWithPaywall(context, entry.value);
+          return;
+        }
+        break;
+      }
+    }
+    GoRouter.of(context).go(route);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -349,7 +383,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 12),
                     Column(children: [
                       FilledButton(
-                        onPressed: () => context.go('/salary-allocation'),
+                        onPressed: () {
+                          if (PremiumService.instance.hasAccess(PremiumFeature.salaryAllocation)) {
+                            context.go('/salary-allocation');
+                          } else {
+                            showPremiumGateWithPaywall(context, PremiumFeature.salaryAllocation);
+                          }
+                        },
                         child: const Text('Allocate', style: TextStyle(fontSize: 12)),
                       ),
                       const SizedBox(height: 4),
@@ -818,15 +858,32 @@ class _UpcomingPaymentsSection extends StatelessWidget {
                     showDivider: !isLast,
                     hideAmount: hideBalances,
                     onTap: () {
+                      final premium = PremiumService.instance;
                       switch (item.type) {
                         case PaymentType.bill:
-                          context.go('/tools/bills');
+                          if (premium.hasAccess(PremiumFeature.billsTracker)) {
+                            context.go('/tools/bills');
+                          } else {
+                            showPremiumGateWithPaywall(context, PremiumFeature.billsTracker);
+                          }
                         case PaymentType.debt:
-                          context.go('/tools/debts');
+                          if (premium.hasAccess(PremiumFeature.debtManager)) {
+                            context.go('/tools/debts');
+                          } else {
+                            showPremiumGateWithPaywall(context, PremiumFeature.debtManager);
+                          }
                         case PaymentType.insurance:
-                          context.go('/tools/insurance');
+                          if (premium.hasAccess(PremiumFeature.insuranceTracker)) {
+                            context.go('/tools/insurance');
+                          } else {
+                            showPremiumGateWithPaywall(context, PremiumFeature.insuranceTracker);
+                          }
                         case PaymentType.contribution:
-                          context.go('/tools/contributions');
+                          if (premium.hasAccess(PremiumFeature.contributionTracker)) {
+                            context.go('/tools/contributions');
+                          } else {
+                            showPremiumGateWithPaywall(context, PremiumFeature.contributionTracker);
+                          }
                       }
                     },
                   );
@@ -999,7 +1056,7 @@ class _SmartSuggestionsSection extends StatelessWidget {
             children: items.map((s) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: InkWell(
-                onTap: s.route != null ? () => GoRouter.of(context).go(s.route!) : null,
+                onTap: s.route != null ? () => _navigateWithGate(context, s.route!) : null,
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.all(12),

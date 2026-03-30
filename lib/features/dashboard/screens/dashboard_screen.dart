@@ -259,7 +259,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => context.go('/tools/debts'),
+                    onTap: () {
+                      if (PremiumService.instance.hasAccess(PremiumFeature.debtManager)) {
+                        context.go('/tools/debts');
+                      } else {
+                        showPremiumGateWithPaywall(context, PremiumFeature.debtManager);
+                      }
+                    },
                     child: _QuickStatContent(icon: LucideIcons.creditCard,
                         label: 'Debts',
                         value: fc(totalDebt),
@@ -270,7 +276,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               if (investmentCount > 0) ...[
                 const SizedBox(height: 8),
                 GestureDetector(
-                  onTap: () => context.go('/investments'),
+                  onTap: () {
+                    if (PremiumService.instance.hasAccess(PremiumFeature.investments)) {
+                      context.go('/investments');
+                    } else {
+                      showPremiumGateWithPaywall(context, PremiumFeature.investments);
+                    }
+                  },
                   child: _QuickStatContent(icon: LucideIcons.barChart3,
                       label: 'Portfolio',
                       value: fc(investmentTotal),
