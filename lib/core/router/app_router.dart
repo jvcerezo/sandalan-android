@@ -87,11 +87,16 @@ PremiumFeature? _blockedByPremium(String path) {
   final premium = PremiumService.instance;
   for (final entry in _premiumRoutes.entries) {
     if (path == entry.key || path.startsWith('${entry.key}/')) {
-      if (!premium.hasAccess(entry.value)) return entry.value;
-      break;
+      if (!premium.hasAccess(entry.value)) {
+        debugPrint('[Router] BLOCKED: $path requires ${entry.value}, '
+            'isPremium=${premium.isPremium}, trial=${premium.hasActiveSignupTrial}, '
+            'streak=${premium.hasActiveStreakReward}');
+        return entry.value;
+      }
+      return null; // Has access — allow through
     }
   }
-  return null;
+  return null; // Not a premium route
 }
 
 final appRouter = GoRouter(
@@ -118,13 +123,13 @@ final appRouter = GoRouter(
       return '/home';
     }
 
-    // Premium route guard — redirect to /more if user lacks access.
+    // Premium route guard — redirect to /home if user lacks access.
     // The UI-level gates (showPremiumGateWithPaywall) handle showing
     // the paywall; this redirect is a safety net for deep links,
     // search results, guide links, and any other bypass.
     final blocked = _blockedByPremium(state.uri.path);
     if (blocked != null) {
-      return '/more';
+      return '/home';
     }
 
     return null;
