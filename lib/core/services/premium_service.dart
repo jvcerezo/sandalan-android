@@ -51,6 +51,7 @@ class PremiumService {
   static const _streakRewardExpiryKey = 'streak_reward_expiry';
   static const _streakRewardClaimedKey = 'streak_reward_claimed_count';
   static const _lastServerTimeKey = 'last_verified_server_time';
+  static const _signupTrialExpiryKey = 'signup_trial_expiry';
 
   /// Streak days required to unlock 1 month of free premium.
   static const streakRewardThreshold = 90;
@@ -61,6 +62,7 @@ class PremiumService {
   bool _isPremium = false;
   bool _loaded = false;
   DateTime? _streakRewardExpiry;
+  DateTime? _signupTrialExpiry;
 
   /// Initialize premium state from SharedPreferences.
   Future<void> init() async {
@@ -74,6 +76,12 @@ class PremiumService {
       _streakRewardExpiry = DateTime.tryParse(expiryStr);
     }
 
+    // Check signup trial expiry
+    final trialStr = prefs.getString(_signupTrialExpiryKey);
+    if (trialStr != null) {
+      _signupTrialExpiry = DateTime.tryParse(trialStr);
+    }
+
     _loaded = true;
   }
 
@@ -82,6 +90,7 @@ class PremiumService {
   bool hasAccess(PremiumFeature feature) {
     if (_isBetaPeriod) return true;
     if (_isPremium) return true;
+    if (hasActiveSignupTrial) return true;
     if (hasActiveStreakReward) return true;
 
     // All premium features return false for free users.
@@ -95,7 +104,20 @@ class PremiumService {
   bool get isBetaPeriod => _isBetaPeriod;
 
   /// Whether the user has an active premium subscription.
-  bool get isPremium => _isPremium || _isBetaPeriod || hasActiveStreakReward;
+  bool get isPremium => _isPremium || _isBetaPeriod || hasActiveSignupTrial || hasActiveStreakReward;
+
+  /// Whether the user has an active signup trial (1 month free on account creation).
+  bool get hasActiveSignupTrial {
+    if (_signupTrialExpiry == null) return false;
+    return DateTime.now().isBefore(_signupTrialExpiry!);
+  }
+
+  /// Days remaining on signup trial, or 0 if expired/none.
+  int get signupTrialDaysLeft {
+    if (_signupTrialExpiry == null) return 0;
+    final diff = _signupTrialExpiry!.difference(DateTime.now()).inDays;
+    return diff > 0 ? diff : 0;
+  }
 
   /// Whether the user has an active streak reward (free premium from 90-day streak).
   bool get hasActiveStreakReward {
@@ -114,6 +136,18 @@ class PremiumService {
   Future<int> getStreakRewardClaimCount() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_streakRewardClaimedKey) ?? 0;
+  }
+
+  /// Activate 30-day free trial for new account signups.
+  /// Only grants once — if a trial was already activated, this is a no-op.
+  Future<bool> activateSignupTrial() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Only grant once
+    if (prefs.getString(_signupTrialExpiryKey) != null) return false;
+
+    _signupTrialExpiry = DateTime.now().add(const Duration(days: 30));
+    await prefs.setString(_signupTrialExpiryKey, _signupTrialExpiry!.toIso8601String());
+    return true;
   }
 
   /// Set premium status (called after successful purchase verification).

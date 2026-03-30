@@ -10,6 +10,7 @@ import '../../../data/local/app_database.dart';
 import '../../../core/utils/email_validator.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
+import '../../../core/services/premium_service.dart';
 import '../providers/auth_provider.dart';
 import 'forgot_password_screen.dart';
 
@@ -110,6 +111,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
       final response = await ref.read(authRepositoryProvider).signInWithGoogle();
       if (response.session != null) {
+        // Activate 30-day free premium trial for new signups
+        await PremiumService.instance.activateSignupTrial();
+
         if (_wasGuest) {
           await GuestModeService.migrateToAccount(response.session!.user.id);
         }

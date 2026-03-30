@@ -81,9 +81,11 @@ class _AboutSectionState extends State<AboutSection> {
             ),
             child: Text(
               premium.isBetaPeriod ? 'Beta — All Features Free'
+                  : premium.hasActiveSignupTrial ? 'Free Trial — ${premium.signupTrialDaysLeft} day${premium.signupTrialDaysLeft == 1 ? '' : 's'} left'
                   : premium.isPremium ? 'Premium' : 'Free Tier',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
                   color: premium.isBetaPeriod ? const Color(0xFF10B981)
+                      : premium.hasActiveSignupTrial ? const Color(0xFFEAB308)
                       : premium.isPremium ? const Color(0xFF6366F1)
                       : cs.onSurfaceVariant),
             ),

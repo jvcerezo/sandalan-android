@@ -87,8 +87,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final premium = PremiumService.instance;
 
     // Use store prices if loaded, otherwise show default
-    final monthlyPrice = billing.monthlyProduct?.price ?? '₱49';
-    final lifetimePrice = billing.lifetimeProduct?.price ?? '₱549';
+    final monthlyPrice = billing.monthlyProduct?.price ?? '₱79';
+    final lifetimePrice = billing.lifetimeProduct?.price ?? '₱649';
 
     return Scaffold(
       body: SafeArea(
