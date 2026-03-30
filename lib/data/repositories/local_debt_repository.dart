@@ -4,6 +4,7 @@ import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/debt.dart';
 import 'debt_repository.dart';
+import '../../core/services/sync_service.dart';
 
 /// Local-first debt repository.
 class LocalDebtRepository {
@@ -71,6 +72,7 @@ class LocalDebtRepository {
       'updated_at': now,
     };
     await _db.upsertDebt(row);
+    SyncService.instance?.pushAfterWrite();
     return _rowToDebt(row);
   }
 
@@ -89,10 +91,12 @@ class LocalDebtRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertDebt(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteDebt(String id) async {
     await _db.deleteDebt(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/contribution.dart';
 import 'contribution_repository.dart';
+import '../../core/services/sync_service.dart';
 
 /// Local-first contribution repository.
 class LocalContributionRepository {
@@ -76,6 +77,7 @@ class LocalContributionRepository {
         'updated_at': now,
       };
       await _db.upsertContribution(updated);
+      SyncService.instance?.pushAfterWrite();
       return _rowToContribution(updated);
     }
 
@@ -97,6 +99,7 @@ class LocalContributionRepository {
       'updated_at': now,
     };
     await _db.upsertContribution(row);
+    SyncService.instance?.pushAfterWrite();
     return _rowToContribution(row);
   }
 
@@ -154,6 +157,7 @@ class LocalContributionRepository {
       'created_at': now,
       'updated_at': now,
     });
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Simple mark as paid (legacy, no account deduction).
@@ -166,10 +170,12 @@ class LocalContributionRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertContribution(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteContribution(String id) async {
     await _db.deleteContribution(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/sync_service.dart';
 import '../../core/utils/id_generator.dart';
 import '../../core/utils/input_validator.dart';
 import '../local/app_database.dart';
@@ -204,6 +205,9 @@ class LocalTransactionRepository {
     if (amount < 0 && status == 'confirmed' && category.toLowerCase() != 'transfer' && category.toLowerCase() != 'goal funding') {
       Future.microtask(() => _checkBudgetThresholds(category));
     }
+
+    // Push to Supabase immediately for cross-device sync
+    SyncService.instance?.pushAfterWrite();
 
     return _rowToTransaction(row);
   }

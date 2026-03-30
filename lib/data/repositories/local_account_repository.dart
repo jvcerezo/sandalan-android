@@ -5,6 +5,7 @@ import '../../core/utils/id_generator.dart';
 import '../../core/utils/input_validator.dart';
 import '../local/app_database.dart';
 import '../models/account.dart';
+import '../../core/services/sync_service.dart';
 
 /// Local-first account repository. All reads from SQLite, writes go local first.
 class LocalAccountRepository {
@@ -92,6 +93,7 @@ class LocalAccountRepository {
       });
     }
 
+    SyncService.instance?.pushAfterWrite();
     return _rowToAccount(row);
   }
 
@@ -110,6 +112,7 @@ class LocalAccountRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertAccount(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Permanently delete an account and ALL its associated transactions.
@@ -118,6 +121,7 @@ class LocalAccountRepository {
     await _db.deleteTransactionsByAccountId(id);
     // Then delete the account itself
     await _db.deleteAccount(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Count transactions associated with this account.
@@ -134,6 +138,7 @@ class LocalAccountRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertAccount(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Reconciliation check: compares each account's stored balance against

@@ -4,6 +4,7 @@ import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/bill.dart';
 import 'bill_repository.dart';
+import '../../core/services/sync_service.dart';
 
 /// Local-first bill repository.
 class LocalBillRepository {
@@ -76,6 +77,7 @@ class LocalBillRepository {
     if (data['is_active'] is bool) data['is_active'] = (data['is_active'] as bool) ? 1 : 0;
     if (!data.containsKey('is_active')) data['is_active'] = 1;
     await _db.upsertBill(data);
+    SyncService.instance?.pushAfterWrite();
     return _rowToBill(data);
   }
 
@@ -94,10 +96,12 @@ class LocalBillRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertBill(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteBill(String id) async {
     await _db.deleteBill(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Mark bill as paid: update last_paid_date.
@@ -112,6 +116,7 @@ class LocalBillRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertBill(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

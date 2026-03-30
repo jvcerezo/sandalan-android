@@ -5,6 +5,7 @@ import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/goal.dart';
 import 'goal_repository.dart';
+import '../../core/services/sync_service.dart';
 
 /// Local-first goal repository.
 class LocalGoalRepository {
@@ -64,6 +65,7 @@ class LocalGoalRepository {
       'updated_at': now,
     };
     await _db.upsertGoal(row);
+    SyncService.instance?.pushAfterWrite();
     return _rowToGoal(row);
   }
 
@@ -90,6 +92,7 @@ class LocalGoalRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertGoal(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Add funds to a goal from the linked account.
@@ -152,6 +155,7 @@ class LocalGoalRepository {
       'created_at': now,
       'updated_at': now,
     });
+    SyncService.instance?.pushAfterWrite();
   }
 
   /// Release funds from a goal back to the linked account.
@@ -208,10 +212,12 @@ class LocalGoalRepository {
       'created_at': now,
       'updated_at': now,
     });
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteGoal(String id) async {
     await _db.deleteGoal(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

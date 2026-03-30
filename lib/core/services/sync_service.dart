@@ -34,7 +34,7 @@ class SyncService with WidgetsBindingObserver {
   DateTime? _lastSyncAttempt;
   static const _lastSyncKey = 'last_sync_date';
   static const _lastFullSyncKey = 'last_full_sync_date';
-  static const _minSyncInterval = Duration(seconds: 60);
+  static const _minSyncInterval = Duration(seconds: 15);
   static const _fullSyncInterval = Duration(days: 7);
 
   SyncService(this._client, this._db, {SyncStatusNotifier? syncStatus})
@@ -79,15 +79,43 @@ class SyncService with WidgetsBindingObserver {
     }
   }
 
-  /// Pull from remote if last sync was more than 5 minutes ago.
+  /// Pull from remote if last sync was more than 30 seconds ago.
   /// This catches changes made on other devices while this one was backgrounded.
   Future<void> _pullIfStale() async {
     if (_lastSyncAttempt != null &&
-        DateTime.now().difference(_lastSyncAttempt!) < const Duration(minutes: 5)) {
+        DateTime.now().difference(_lastSyncAttempt!) < const Duration(seconds: 30)) {
       return; // Recently synced, skip
     }
     await fullSync();
   }
+
+  /// Push pending local changes to Supabase immediately.
+  /// Call this after creating/updating/deleting data to ensure
+  /// cross-device sync works without waiting for background sync.
+  /// Rate-limited to avoid hammering the server.
+  Future<void> pushAfterWrite() async {
+    if (_isSyncing || _userId == null) return;
+    if (!await _isOnline()) return;
+
+    // Lighter rate limit for pushes (5 seconds debounce)
+    if (_lastPushAttempt != null &&
+        DateTime.now().difference(_lastPushAttempt!) < const Duration(seconds: 5)) {
+      // Schedule a delayed push to catch batched writes
+      _pendingPushTimer?.cancel();
+      _pendingPushTimer = Timer(const Duration(seconds: 5), () => pushAfterWrite());
+      return;
+    }
+    _lastPushAttempt = DateTime.now();
+
+    try {
+      await pushToSupabase();
+    } catch (e) {
+      if (kDebugMode) debugPrint('SyncService: pushAfterWrite failed: $e');
+    }
+  }
+
+  DateTime? _lastPushAttempt;
+  Timer? _pendingPushTimer;
 
   /// Check if we should sync today (once per day).
   Future<void> _syncIfDailyDue() async {

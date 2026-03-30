@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/legal.dart';
 import '../../../core/services/premium_service.dart';
 
@@ -93,13 +94,20 @@ class _AboutSectionState extends State<AboutSection> {
           const SizedBox(height: 24),
         ])),
 
-        // Upgrade to Premium
-        if (!premium.isPremium || premium.isBetaPeriod)
+        // Subscription management
+        if (premium.isPremium && !premium.isBetaPeriod) ...[
+          _InfoTile(
+            icon: LucideIcons.crown,
+            title: 'Subscription',
+            onTap: () => _showSubscriptionStatus(context, premium),
+          ),
+        ] else ...[
           _InfoTile(
             icon: LucideIcons.crown,
             title: 'Upgrade to Premium',
             onTap: () => openPaywall(context),
           ),
+        ],
 
         // Links
         _InfoTile(
@@ -147,6 +155,87 @@ class _AboutSectionState extends State<AboutSection> {
         ),
       ),
     ));
+  }
+
+  void _showSubscriptionStatus(BuildContext context, PremiumService premium) {
+    final cs = Theme.of(context).colorScheme;
+
+    String statusText;
+    String detailText;
+    Color statusColor;
+
+    if (premium.hasActiveSignupTrial) {
+      final days = premium.signupTrialDaysLeft;
+      statusText = 'Free Trial';
+      detailText = '$days day${days == 1 ? '' : 's'} remaining. After the trial ends, '
+          'you\'ll be moved to the free tier unless you subscribe.';
+      statusColor = const Color(0xFFEAB308);
+    } else if (premium.hasActiveStreakReward) {
+      final days = premium.streakRewardDaysLeft;
+      statusText = 'Streak Reward';
+      detailText = '$days day${days == 1 ? '' : 's'} remaining. Earned from your 90-day streak! '
+          'You can earn this again after it expires.';
+      statusColor = const Color(0xFFF97316);
+    } else {
+      statusText = 'Premium Subscriber';
+      detailText = 'You have full access to all Sandalan features. '
+          'Manage your subscription in Google Play Store → Subscriptions.';
+      statusColor = const Color(0xFF6366F1);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(ctx).padding.bottom),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(LucideIcons.crown, size: 28, color: statusColor),
+          ),
+          const SizedBox(height: 12),
+          Text(statusText, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: statusColor)),
+          const SizedBox(height: 8),
+          Text(detailText,
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          if (!premium.hasActiveSignupTrial && !premium.hasActiveStreakReward)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  // Open Google Play subscription management
+                  launchUrl(Uri.parse('https://play.google.com/store/account/subscriptions'));
+                },
+                child: const Text('Manage in Google Play'),
+              ),
+            ),
+          if (premium.hasActiveSignupTrial || premium.hasActiveStreakReward)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  openPaywall(context);
+                },
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xFF6366F1)),
+                child: const Text('Subscribe to Keep Premium'),
+              ),
+            ),
+        ]),
+      ),
+    );
   }
 
   void _showCredits(BuildContext context) {

@@ -3,6 +3,7 @@ import '../../core/services/guest_mode_service.dart';
 import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/budget.dart';
+import '../../core/services/sync_service.dart';
 
 /// Local-first budget repository.
 class LocalBudgetRepository {
@@ -49,6 +50,7 @@ class LocalBudgetRepository {
       'updated_at': now,
     };
     await _db.upsertBudget(row);
+    SyncService.instance?.pushAfterWrite();
     return _rowToBudget(row);
   }
 
@@ -67,10 +69,12 @@ class LocalBudgetRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertBudget(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteBudget(String id) async {
     await _db.deleteBudget(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> copyBudgetsFromMonth(DateTime fromMonth, DateTime toMonth, String period) async {

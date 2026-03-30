@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
 import '../local/app_database.dart';
 import '../models/investment.dart';
+import '../../core/services/sync_service.dart';
 
 class LocalInvestmentRepository {
   final AppDatabase _db;
@@ -19,6 +20,7 @@ class LocalInvestmentRepository {
 
   Future<void> createInvestment(Investment inv) async {
     await _db.upsertInvestment(inv.toJson());
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> updateValue(String id, double currentValue, {String? navpu, double? units}) async {
@@ -31,10 +33,12 @@ class LocalInvestmentRepository {
     if (navpu != null) updated['navpu'] = navpu;
     if (units != null) updated['units'] = units;
     await _db.upsertInvestment(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteInvestment(String id) async {
     await _db.deleteInvestment(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<double> getTotalInvested() async {
