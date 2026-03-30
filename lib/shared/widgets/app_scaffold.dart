@@ -138,14 +138,11 @@ class _AppScaffoldState extends State<AppScaffold> {
     '/accounts',
     '/budgets',
     '/goals',
-    '/investments',
-    '/salary-allocation',
   ];
 
   static const _morePaths = [
     '/more',
     '/tools',
-    '/goals',
     '/investments',
     '/salary-allocation',
     '/split-bills',
@@ -184,10 +181,15 @@ class _AppScaffoldState extends State<AppScaffold> {
             _lastBackPress = now;
             showAppSnackBar(context, 'Press back again to exit');
           }
+        } else if (location == '/dashboard') {
+          context.go('/home');
+        } else if (_moneyPaths.any((p) => p != '/dashboard' && location.startsWith(p))) {
+          // Money children (goals, transactions, accounts, budgets) go back to dashboard
+          context.go('/dashboard');
         } else if (location == '/more') {
           context.go('/home');
         } else if (_morePaths.any((p) => p != '/more' && location.startsWith(p))) {
-          // Child screens of More tab go back to More
+          // More children go back to More
           context.go('/more');
         } else {
           context.go('/home');
