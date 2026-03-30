@@ -8,8 +8,8 @@ import 'premium_service.dart';
 /// Google Play product IDs — must match Play Console in-app products.
 class BillingProducts {
   static const monthlyId = 'sandalan_premium_monthly';
-  static const lifetimeId = 'sandalan_premium_lifetime';
-  static const allIds = {monthlyId, lifetimeId};
+  static const yearlyId = 'sandalan_premium_yearly';
+  static const allIds = {monthlyId, yearlyId};
 }
 
 /// Wraps the Google Play billing API for Sandalan premium subscriptions.
@@ -42,9 +42,9 @@ class BillingService {
   ProductDetails? get monthlyProduct =>
       _products.where((p) => p.id == BillingProducts.monthlyId).firstOrNull;
 
-  /// Get the lifetime product, if loaded.
-  ProductDetails? get lifetimeProduct =>
-      _products.where((p) => p.id == BillingProducts.lifetimeId).firstOrNull;
+  /// Get the yearly product, if loaded.
+  ProductDetails? get yearlyProduct =>
+      _products.where((p) => p.id == BillingProducts.yearlyId).firstOrNull;
 
   /// Callback fired when premium status changes (UI can listen to rebuild).
   VoidCallback? onPremiumStatusChanged;
@@ -117,9 +117,9 @@ class BillingService {
     return purchase(product);
   }
 
-  /// Convenience: purchase lifetime unlock.
-  Future<bool> purchaseLifetime() async {
-    final product = lifetimeProduct;
+  /// Convenience: purchase yearly plan.
+  Future<bool> purchaseYearly() async {
+    final product = yearlyProduct;
     if (product == null) return false;
     return purchase(product);
   }

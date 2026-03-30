@@ -63,6 +63,7 @@ class PremiumService {
   bool _loaded = false;
   DateTime? _streakRewardExpiry;
   DateTime? _signupTrialExpiry;
+  DateTime? _lastVerifiedServerTime;
 
   /// Initialize premium state from SharedPreferences.
   Future<void> init() async {
@@ -82,7 +83,28 @@ class PremiumService {
       _signupTrialExpiry = DateTime.tryParse(trialStr);
     }
 
+    // Load last verified server time for anti-tamper checks
+    final serverStr = prefs.getString(_lastServerTimeKey);
+    if (serverStr != null) {
+      _lastVerifiedServerTime = DateTime.tryParse(serverStr);
+    }
+
     _loaded = true;
+
+    // Refresh server time in background for next access check
+    _refreshServerTime();
+  }
+
+  /// Refresh server time in background to keep anti-tamper checks current.
+  Future<void> _refreshServerTime() async {
+    try {
+      final serverTime = await getServerTime();
+      if (serverTime != null) {
+        _lastVerifiedServerTime = serverTime;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_lastServerTimeKey, serverTime.toIso8601String());
+      }
+    } catch (_) {}
   }
 
   /// Check if the user has access to a premium feature.
@@ -107,28 +129,35 @@ class PremiumService {
   bool get isPremium => _isPremium || _isBetaPeriod || hasActiveSignupTrial || hasActiveStreakReward;
 
   /// Whether the user has an active signup trial (1 month free on account creation).
+  /// Uses server time when available to prevent clock manipulation.
   bool get hasActiveSignupTrial {
     if (_signupTrialExpiry == null) return false;
-    return DateTime.now().isBefore(_signupTrialExpiry!);
+    // Use last verified server time if available, else device time
+    final now = _lastVerifiedServerTime ?? DateTime.now();
+    return now.isBefore(_signupTrialExpiry!);
   }
 
   /// Days remaining on signup trial, or 0 if expired/none.
   int get signupTrialDaysLeft {
     if (_signupTrialExpiry == null) return 0;
-    final diff = _signupTrialExpiry!.difference(DateTime.now()).inDays;
+    final now = _lastVerifiedServerTime ?? DateTime.now();
+    final diff = _signupTrialExpiry!.difference(now).inDays;
     return diff > 0 ? diff : 0;
   }
 
   /// Whether the user has an active streak reward (free premium from 90-day streak).
+  /// Uses server time when available to prevent clock manipulation.
   bool get hasActiveStreakReward {
     if (_streakRewardExpiry == null) return false;
-    return DateTime.now().isBefore(_streakRewardExpiry!);
+    final now = _lastVerifiedServerTime ?? DateTime.now();
+    return now.isBefore(_streakRewardExpiry!);
   }
 
   /// Days remaining on streak reward, or 0 if expired/none.
   int get streakRewardDaysLeft {
     if (_streakRewardExpiry == null) return 0;
-    final diff = _streakRewardExpiry!.difference(DateTime.now()).inDays;
+    final now = _lastVerifiedServerTime ?? DateTime.now();
+    final diff = _streakRewardExpiry!.difference(now).inDays;
     return diff > 0 ? diff : 0;
   }
 

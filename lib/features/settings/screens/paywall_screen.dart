@@ -18,7 +18,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
-  bool _selectedLifetime = true;
+  bool _selectedYearly = true;
   bool _purchasing = false;
 
   @override
@@ -43,8 +43,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     setState(() => _purchasing = true);
     try {
       final billing = BillingService.instance;
-      final success = _selectedLifetime
-          ? await billing.purchaseLifetime()
+      final success = _selectedYearly
+          ? await billing.purchaseYearly()
           : await billing.purchaseMonthly();
 
       if (!success && mounted) {
@@ -88,7 +88,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
     // Use store prices if loaded, otherwise show default
     final monthlyPrice = billing.monthlyProduct?.price ?? '₱79';
-    final lifetimePrice = billing.lifetimeProduct?.price ?? '₱649';
+    final yearlyPrice = billing.yearlyProduct?.price ?? '₱649';
 
     return Scaffold(
       body: SafeArea(
@@ -157,24 +157,24 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     title: 'Monthly',
                     price: monthlyPrice,
                     period: '/month',
-                    selected: !_selectedLifetime,
-                    onTap: () => setState(() => _selectedLifetime = false),
+                    selected: !_selectedYearly,
+                    onTap: () => setState(() => _selectedYearly = false),
                   )),
                   const SizedBox(width: 10),
-                  // Lifetime
+                  // Yearly
                   Expanded(child: _PlanCard(
-                    title: 'Lifetime',
-                    price: lifetimePrice,
-                    period: 'one-time',
-                    badge: 'Best Value',
-                    selected: _selectedLifetime,
-                    onTap: () => setState(() => _selectedLifetime = true),
+                    title: 'Yearly',
+                    price: yearlyPrice,
+                    period: '/year',
+                    badge: 'Save 32%',
+                    selected: _selectedYearly,
+                    onTap: () => setState(() => _selectedYearly = true),
                   )),
                 ]),
                 const SizedBox(height: 8),
 
-                if (_selectedLifetime)
-                  Text('Pay once, own forever. Less than 12 months of monthly.',
+                if (_selectedYearly)
+                  Text('Just ~₱54/month, less than one milk tea',
                       style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 20),
 
@@ -245,7 +245,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ? const SizedBox(height: 20, width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : Text(
-                            _selectedLifetime ? 'Unlock Forever — $lifetimePrice' : 'Subscribe Monthly — $monthlyPrice',
+                            _selectedYearly ? 'Subscribe Yearly — $yearlyPrice' : 'Subscribe Monthly — $monthlyPrice',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),
@@ -257,10 +257,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       style: TextStyle(fontSize: 13, color: cs.primary, fontWeight: FontWeight.w500)),
                 ),
                 const SizedBox(height: 4),
-                Text(_selectedLifetime
-                    ? 'One-time payment charged to your Google Play account.'
-                    : 'Payment will be charged to your Google Play account. '
-                      'Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.',
+                Text('Payment will be charged to your Google Play account. '
+                    'Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.',
                     style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant, height: 1.3),
                     textAlign: TextAlign.center),
               ]),

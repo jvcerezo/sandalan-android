@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../router/app_router.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
 import '../../features/transactions/screens/receipt_scanner_screen.dart';
+import 'premium_service.dart';
 
 class DeepLinkService {
   DeepLinkService._();
@@ -42,12 +43,16 @@ class DeepLinkService {
         _showModal(const AddTransactionDialog(isIncome: true));
       });
     } else if (path.contains('scan-receipt')) {
-      appRouter.go('/home');
-      Future.delayed(const Duration(milliseconds: 400), () {
-        _showModal(const ReceiptScannerScreen());
-      });
+      if (PremiumService.instance.hasAccess(PremiumFeature.receiptScanner)) {
+        appRouter.go('/home');
+        Future.delayed(const Duration(milliseconds: 400), () {
+          _showModal(const ReceiptScannerScreen());
+        });
+      } else {
+        appRouter.go('/more');
+      }
     } else if (path.contains('chat')) {
-      appRouter.go('/chat');
+      appRouter.go('/chat'); // Router redirect handles premium gate
     }
   }
 
