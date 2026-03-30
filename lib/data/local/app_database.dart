@@ -34,8 +34,9 @@ class AppDatabase {
   }
 
   /// For testing with an in-memory database.
-  static void initWith(DatabaseConnection connection) {
+  static Future<void> initWith(DatabaseConnection connection) async {
     _instance = AppDatabase._(connection);
+    await _instance!._createTables();
   }
 
   DatabaseConnection get connection => _connection;

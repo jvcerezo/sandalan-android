@@ -12,12 +12,10 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    // In-memory SQLite database for testing
+    // In-memory SQLite database for testing — creates all tables
     final connection = DatabaseConnection(NativeDatabase.memory());
-    AppDatabase.initWith(connection);
+    await AppDatabase.initWith(connection);
     db = AppDatabase.instance;
-    // Create tables
-    await db.connection.executor.ensureOpen(DriftDatabaseUser());
 
     // Seed an account
     await db.upsertAccount({
@@ -330,11 +328,3 @@ void main() {
   });
 }
 
-/// Minimal implementation to satisfy Drift's ensureOpen requirement.
-class DriftDatabaseUser extends QueryExecutorUser {
-  @override
-  int get schemaVersion => 1;
-
-  @override
-  Future<void> beforeOpen(QueryExecutor executor, OpeningDetails details) async {}
-}
