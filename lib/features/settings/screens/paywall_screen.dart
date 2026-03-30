@@ -18,7 +18,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
-  bool _selectedYearly = true;
+  bool _selectedLifetime = true;
   bool _purchasing = false;
 
   @override
@@ -43,8 +43,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     setState(() => _purchasing = true);
     try {
       final billing = BillingService.instance;
-      final success = _selectedYearly
-          ? await billing.purchaseYearly()
+      final success = _selectedLifetime
+          ? await billing.purchaseLifetime()
           : await billing.purchaseMonthly();
 
       if (!success && mounted) {
@@ -87,8 +87,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final premium = PremiumService.instance;
 
     // Use store prices if loaded, otherwise show default
-    final monthlyPrice = billing.monthlyProduct?.price ?? '₱79';
-    final yearlyPrice = billing.yearlyProduct?.price ?? '₱649';
+    final monthlyPrice = billing.monthlyProduct?.price ?? '₱49';
+    final lifetimePrice = billing.lifetimeProduct?.price ?? '₱549';
 
     return Scaffold(
       body: SafeArea(
@@ -123,7 +123,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 const Text('Sandalan Premium',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
-                Text('Unlock all features. Cancel anytime.',
+                Text('Unlock all features. No ads, ever.',
                     style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 24),
 
@@ -157,25 +157,24 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     title: 'Monthly',
                     price: monthlyPrice,
                     period: '/month',
-                    selected: !_selectedYearly,
-                    onTap: () => setState(() => _selectedYearly = false),
+                    selected: !_selectedLifetime,
+                    onTap: () => setState(() => _selectedLifetime = false),
                   )),
                   const SizedBox(width: 10),
-                  // Yearly
+                  // Lifetime
                   Expanded(child: _PlanCard(
-                    title: 'Yearly',
-                    price: yearlyPrice,
-                    period: '/year',
-                    badge: 'Save 32%',
-                    selected: _selectedYearly,
-                    onTap: () => setState(() => _selectedYearly = true),
+                    title: 'Lifetime',
+                    price: lifetimePrice,
+                    period: 'one-time',
+                    badge: 'Best Value',
+                    selected: _selectedLifetime,
+                    onTap: () => setState(() => _selectedLifetime = true),
                   )),
                 ]),
                 const SizedBox(height: 8),
 
-                // Per-month breakdown for yearly
-                if (_selectedYearly)
-                  Text('Just ~₱54/month, less than one milk tea',
+                if (_selectedLifetime)
+                  Text('Pay once, own forever. Less than 12 months of monthly.',
                       style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 20),
 
@@ -246,7 +245,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ? const SizedBox(height: 20, width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : Text(
-                            _selectedYearly ? 'Subscribe Yearly — $yearlyPrice' : 'Subscribe Monthly — $monthlyPrice',
+                            _selectedLifetime ? 'Unlock Forever — $lifetimePrice' : 'Subscribe Monthly — $monthlyPrice',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),
@@ -258,8 +257,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       style: TextStyle(fontSize: 13, color: cs.primary, fontWeight: FontWeight.w500)),
                 ),
                 const SizedBox(height: 4),
-                Text('Payment will be charged to your Google Play account. '
-                    'Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.',
+                Text(_selectedLifetime
+                    ? 'One-time payment charged to your Google Play account.'
+                    : 'Payment will be charged to your Google Play account. '
+                      'Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.',
                     style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant, height: 1.3),
                     textAlign: TextAlign.center),
               ]),
