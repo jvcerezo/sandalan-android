@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../app.dart';
 import '../../../core/services/premium_service.dart';
+import '../../../core/router/premium_route_guard.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/tip_service.dart';
 import '../../../core/services/weekly_recap_service.dart';
@@ -36,6 +37,17 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
+/// Navigate to a route with premium gate check. Used by home screen widgets.
+void _navigateWithGate(BuildContext context, String route) {
+  // Reuse the premium route guard from the router
+  final blocked = blockedByPremium(route, PremiumService.instance);
+  if (blocked != null) {
+    showPremiumGateWithPaywall(context, blocked);
+  } else {
+    GoRouter.of(context).go(route);
+  }
+}
+
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Streak state
   int _streak = 0;
@@ -54,40 +66,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _paydayDetected = false;
   bool _paydayDismissed = false;
   double _salaryAmount = 0;
-
-  /// Routes that require premium — map route prefix to feature gate.
-  static const _premiumRoutes = <String, PremiumFeature>{
-    '/tools/bills': PremiumFeature.billsTracker,
-    '/tools/debts': PremiumFeature.debtManager,
-    '/tools/insurance': PremiumFeature.insuranceTracker,
-    '/tools/contributions': PremiumFeature.contributionTracker,
-    '/tools/taxes': PremiumFeature.taxTracker,
-    '/tools/13th-month': PremiumFeature.advancedCalculators,
-    '/tools/retirement': PremiumFeature.advancedCalculators,
-    '/tools/rent-vs-buy': PremiumFeature.advancedCalculators,
-    '/tools/panganay': PremiumFeature.panganayMode,
-    '/tools/calculators': PremiumFeature.advancedCalculators,
-    '/tools/currency': PremiumFeature.exchangeRates,
-    '/investments': PremiumFeature.investments,
-    '/split-bills': PremiumFeature.splitBills,
-    '/salary-allocation': PremiumFeature.salaryAllocation,
-    '/vault': PremiumFeature.documentVault,
-    '/chat': PremiumFeature.aiChat,
-    '/reports': PremiumFeature.advancedReports,
-  };
-
-  void _navigateWithGate(BuildContext context, String route) {
-    for (final entry in _premiumRoutes.entries) {
-      if (route.startsWith(entry.key)) {
-        if (!PremiumService.instance.hasAccess(entry.value)) {
-          showPremiumGateWithPaywall(context, entry.value);
-          return;
-        }
-        break;
-      }
-    }
-    GoRouter.of(context).go(route);
-  }
 
   @override
   void initState() {
