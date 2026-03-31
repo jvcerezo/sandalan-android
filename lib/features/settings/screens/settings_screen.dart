@@ -9,7 +9,7 @@ import '../widgets/appearance_section.dart';
 import '../widgets/automation_section.dart';
 import '../widgets/notifications_section.dart';
 import '../widgets/privacy_section.dart';
-import '../widgets/bug_report_section.dart';
+import '../widgets/feedback_dialog.dart';
 import '../widgets/account_section.dart';
 import '../widgets/feature_visibility_section.dart';
 import '../widgets/about_section.dart';
@@ -128,10 +128,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               sub: 'Export, delete, legal',
               onTap: () => _goToSection('privacy')),
         _MenuItem(
-            icon: LucideIcons.bug,
-            title: 'Report Bug',
-            sub: 'Report issues',
-            onTap: () => _goToSection('bug')),
+            icon: LucideIcons.messageSquare,
+            title: 'Send Feedback',
+            sub: 'Bugs, suggestions, praise',
+            onTap: () => showFeedbackDialog(context)),
         _MenuItem(
             icon: LucideIcons.logOut,
             title: 'Account',
@@ -190,8 +190,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return FeatureVisibilitySection(back: back);
       case 'privacy':
         return PrivacySection(back: back);
-      case 'bug':
-        return BugReportSection(back: back);
       case 'account':
         return AccountSection(back: back);
       case 'about':
