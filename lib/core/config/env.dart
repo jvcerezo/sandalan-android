@@ -17,4 +17,7 @@ abstract class Env {
 
   @EnviedField(varName: 'GROQ_API_KEY')
   static const String groqApiKey = _Env.groqApiKey;
+
+  @EnviedField(varName: 'DISCORD_WEBHOOK_URL', defaultValue: '')
+  static const String discordWebhookUrl = _Env.discordWebhookUrl;
 }

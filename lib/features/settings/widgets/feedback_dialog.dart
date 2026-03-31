@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
+import '../../../core/config/env.dart';
 import '../../../shared/utils/snackbar_helper.dart';
 
 /// Shows a feedback collection dialog.
@@ -49,6 +52,14 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
         'status': 'new',
       });
 
+      // Fire-and-forget Discord notification
+      _sendDiscordNotification(
+        type: _type,
+        rating: _rating,
+        message: _controller.text.trim(),
+        userName: user?.userMetadata?['full_name'] as String? ?? 'Unknown',
+      );
+
       if (mounted) {
         showSuccessSnackBar(context, 'Salamat sa feedback!');
         Navigator.of(context).pop();
@@ -57,6 +68,43 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
       if (mounted) showAppSnackBar(context, 'Failed to submit: $e', isError: true);
     }
     setState(() => _sending = false);
+  }
+
+  /// Send a Discord webhook notification. Fire-and-forget — never blocks UI.
+  static Future<void> _sendDiscordNotification({
+    required String type,
+    required int rating,
+    required String message,
+    required String userName,
+  }) async {
+    final webhookUrl = Env.discordWebhookUrl;
+    if (webhookUrl.isEmpty) return;
+
+    try {
+      final emoji = type == 'bug' ? '🐛' : type == 'suggestion' ? '💡' : type == 'praise' ? '💜' : '📋';
+      final color = type == 'bug' ? 0xDC2626 : type == 'suggestion' ? 0x3B82F6 : type == 'praise' ? 0x10B981 : 0x6B7280;
+      final stars = rating > 0 ? ' ${'⭐' * rating}' : '';
+
+      await http.post(
+        Uri.parse(webhookUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'embeds': [{
+            'title': '$emoji New ${type[0].toUpperCase()}${type.substring(1)}$stars',
+            'description': message.length > 1000 ? '${message.substring(0, 1000)}...' : message,
+            'color': color,
+            'fields': [
+              {'name': 'From', 'value': userName, 'inline': true},
+              {'name': 'Type', 'value': type, 'inline': true},
+            ],
+            'footer': {'text': 'Sandalan Feedback'},
+            'timestamp': DateTime.now().toUtc().toIso8601String(),
+          }],
+        }),
+      ).timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Silent fail — Discord notification is non-critical
+    }
   }
 
   @override
