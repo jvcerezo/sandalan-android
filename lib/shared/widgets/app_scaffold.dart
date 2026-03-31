@@ -225,6 +225,7 @@ class _AppScaffoldState extends State<AppScaffold> {
                           ),
                         ),
                         const Spacer(),
+                        _PremiumBadge(),
                         const SyncIndicator(),
                         IconButton(
                           onPressed: () {
@@ -513,4 +514,94 @@ class _NativeBackHandlerState extends State<_NativeBackHandler> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+class _PremiumBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final premium = PremiumService.instance;
+
+    // Premium subscriber — show crown
+    if (premium.isPremium && !premium.isBetaPeriod && !premium.hasActiveSignupTrial && !premium.hasActiveStreakReward) {
+      return _badge(
+        context,
+        icon: LucideIcons.crown,
+        color: const Color(0xFF6366F1),
+        label: 'PRO',
+      );
+    }
+
+    // Active trial — show timer with days left
+    if (premium.hasActiveSignupTrial) {
+      final days = premium.signupTrialDaysLeft;
+      return _badge(
+        context,
+        icon: LucideIcons.clock,
+        color: const Color(0xFFEAB308),
+        label: '${days}d',
+        onTap: () => openPaywall(context),
+      );
+    }
+
+    // Active streak reward
+    if (premium.hasActiveStreakReward) {
+      final days = premium.streakRewardDaysLeft;
+      return _badge(
+        context,
+        icon: LucideIcons.flame,
+        color: const Color(0xFFF97316),
+        label: '${days}d',
+        onTap: () => openPaywall(context),
+      );
+    }
+
+    // Free user — show upgrade nudge
+    if (!premium.isPremium) {
+      return GestureDetector(
+        onTap: () => openPaywall(context),
+        child: Container(
+          margin: const EdgeInsets.only(right: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(LucideIcons.crown, size: 12, color: Colors.white),
+            SizedBox(width: 4),
+            Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+          ]),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _badge(BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+        ]),
+      ),
+    );
+  }
 }
