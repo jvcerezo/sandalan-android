@@ -563,9 +563,7 @@ class _PremiumBadge extends StatelessWidget {
           margin: const EdgeInsets.only(right: 4),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-            ),
+            color: const Color(0xFF6366F1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Row(mainAxisSize: MainAxisSize.min, children: [
