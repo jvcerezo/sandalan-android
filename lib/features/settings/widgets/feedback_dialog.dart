@@ -49,7 +49,7 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
         'user_id': userId,
         'title': '[$_type] ${_rating > 0 ? '${'⭐' * _rating} ' : ''}App Feedback',
         'description': _controller.text.trim(),
-        'status': 'new',
+        'status': 'open',
       });
 
       // Fire-and-forget Discord notification
