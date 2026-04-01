@@ -58,6 +58,7 @@ class MoreScreen extends ConsumerWidget {
           subtitle: 'Recurring bills & due dates',
           badge: billsSummary.whenOrNull(data: (bs) => bs.dueSoonCount > 0 ? '${bs.dueSoonCount} due soon' : null),
           badgeColor: AppColors.warning,
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.billsTracker, '/tools/bills'),
         ),
       if (show(FeatureKeys.debts))
@@ -67,6 +68,7 @@ class MoreScreen extends ConsumerWidget {
           title: 'Debts',
           subtitle: 'Track and pay off debts',
           badge: debtSummary.whenOrNull(data: (ds) => ds.totalDebt > 0 ? formatCurrency(ds.totalDebt) : null),
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.debtManager, '/tools/debts'),
         ),
       if (show(FeatureKeys.insurance))
@@ -77,6 +79,7 @@ class MoreScreen extends ConsumerWidget {
           subtitle: 'Policies & premium tracking',
           badge: insuranceSummary.whenOrNull(data: (is_) => is_.renewalSoonCount > 0 ? '${is_.renewalSoonCount} renewing' : null),
           badgeColor: AppColors.warning,
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.insuranceTracker, '/tools/insurance'),
         ),
       if (show(FeatureKeys.investments))
@@ -85,6 +88,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolGreen,
           title: 'Investments',
           subtitle: 'Portfolio tracker',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.investments, '/investments'),
         ),
       if (show(FeatureKeys.splitBills))
@@ -93,6 +97,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolPink,
           title: 'Split Bills',
           subtitle: 'Shared expenses with friends',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.splitBills, '/split-bills'),
         ),
       if (show(FeatureKeys.salaryAllocation))
@@ -101,6 +106,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolAmber,
           title: 'Salary Allocation',
           subtitle: 'Budget by paycheck percentage',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.salaryAllocation, '/salary-allocation'),
         ),
     ];
@@ -113,6 +119,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.sss,
           title: 'Gov\'t Contributions',
           subtitle: 'SSS, PhilHealth & Pag-IBIG',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.contributionTracker, '/tools/contributions'),
         ),
       if (show(FeatureKeys.taxTracker))
@@ -121,6 +128,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolOrange,
           title: 'Tax Tracker',
           subtitle: 'BIR income tax & filing',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.taxTracker, '/tools/taxes'),
         ),
       if (show(FeatureKeys.thirteenthMonth))
@@ -129,6 +137,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolGreen,
           title: '13th Month Calculator',
           subtitle: 'Compute your bonus',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/13th-month'),
         ),
       if (show(FeatureKeys.retirement))
@@ -137,6 +146,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolAmber,
           title: 'Retirement Planner',
           subtitle: 'SSS pension & savings gap',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/retirement'),
         ),
       if (show(FeatureKeys.rentVsBuy))
@@ -145,6 +155,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolEmerald,
           title: 'Rent vs Buy',
           subtitle: 'Housing cost comparison',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/rent-vs-buy'),
         ),
       if (show(FeatureKeys.panganay))
@@ -153,6 +164,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolPink,
           title: 'Panganay Mode',
           subtitle: 'Family support budgeting',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.panganayMode, '/tools/panganay'),
         ),
       if (show(FeatureKeys.calculators))
@@ -161,6 +173,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolPurple,
           title: 'Financial Calculators',
           subtitle: 'Interest, loans & FIRE',
+          isPremium: true,
           onTap: () => _premiumGo(context, PremiumFeature.advancedCalculators, '/tools/calculators'),
         ),
       if (show(FeatureKeys.currency))
@@ -184,7 +197,7 @@ class MoreScreen extends ConsumerWidget {
     final hiddenCount = FeatureKeys.allKeys.where((k) => !show(k)).length;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       children: [
         const Text('More',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
@@ -217,6 +230,7 @@ class MoreScreen extends ConsumerWidget {
             color: AppColors.toolIndigo,
             title: 'Reports',
             subtitle: 'Monthly financial summaries',
+            isPremium: true,
             onTap: () {
               if (PremiumService.instance.hasAccess(PremiumFeature.advancedReports)) {
                 context.go('/reports');
@@ -238,6 +252,7 @@ class MoreScreen extends ConsumerWidget {
           color: AppColors.toolTeal,
           title: 'AI Chat',
           subtitle: 'Financial assistant',
+          isPremium: true,
           onTap: () {
             if (PremiumService.instance.hasAccess(PremiumFeature.aiChat)) {
               context.go('/chat');
@@ -251,6 +266,7 @@ class MoreScreen extends ConsumerWidget {
           color: cs.onSurfaceVariant,
           title: 'Scan Receipt',
           subtitle: 'OCR transaction import',
+          isPremium: true,
           onTap: () {
             if (PremiumService.instance.hasAccess(PremiumFeature.receiptScanner)) {
               HapticFeedback.lightImpact();
@@ -267,6 +283,7 @@ class MoreScreen extends ConsumerWidget {
           color: const Color(0xFF6366F1),
           title: 'Document Vault',
           subtitle: 'Store IDs, contracts & important files',
+          isPremium: true,
           onTap: () {
             if (PremiumService.instance.hasAccess(PremiumFeature.documentVault)) {
               context.go('/vault');
@@ -361,6 +378,7 @@ class _MoreItem extends StatelessWidget {
   final String subtitle;
   final String? badge;
   final Color? badgeColor;
+  final bool isPremium;
   final VoidCallback onTap;
 
   const _MoreItem({
@@ -370,12 +388,14 @@ class _MoreItem extends StatelessWidget {
     required this.subtitle,
     this.badge,
     this.badgeColor,
+    this.isPremium = false,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final locked = isPremium && !PremiumService.instance.isPremium;
     return InkWell(
       onTap: () {
         HapticFeedback.selectionClick();
@@ -383,17 +403,17 @@ class _MoreItem extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withOpacity(locked ? 0.05 : 0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 18, color: color),
+              child: Icon(icon, size: 18, color: locked ? cs.onSurfaceVariant.withOpacity(0.4) : color),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -401,9 +421,23 @@ class _MoreItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(children: [
-                    Text(title,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                    if (badge != null) ...[
+                    Flexible(child: Text(title,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
+                            color: locked ? cs.onSurfaceVariant.withOpacity(0.6) : cs.onSurface))),
+                    if (locked) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('PRO',
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700,
+                                color: Color(0xFF6366F1))),
+                      ),
+                    ],
+                    if (badge != null && !locked) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -417,14 +451,16 @@ class _MoreItem extends StatelessWidget {
                       ),
                     ],
                   ]),
+                  const SizedBox(height: 2),
                   Text(subtitle,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                      style: TextStyle(fontSize: 12,
+                          color: locked ? cs.onSurfaceVariant.withOpacity(0.4) : cs.onSurfaceVariant)),
                 ],
               ),
             ),
-            Icon(LucideIcons.chevronRight,
-                size: 16,
-                color: cs.onSurfaceVariant.withOpacity(0.4)),
+            Icon(locked ? LucideIcons.lock : LucideIcons.chevronRight,
+                size: 14,
+                color: locked ? const Color(0xFF6366F1).withOpacity(0.4) : cs.onSurfaceVariant.withOpacity(0.4)),
           ],
         ),
       ),

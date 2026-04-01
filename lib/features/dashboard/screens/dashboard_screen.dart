@@ -84,7 +84,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onRefresh: _onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
           // ── Header ──────────────────────────────────────────────
           Row(children: [
@@ -217,7 +217,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             );
           }),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // ── Section 2: Quick Stats Row — Accounts, Goals, Debts ──
           Builder(builder: (_) {
@@ -291,7 +291,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ]);
           }),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // ── Section 3: This Month Bar — savings vs expenses ──
           summary.when(
@@ -366,7 +366,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ]),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // ── Safe to Spend ──────────────────────────────────────
           summary.when(
@@ -465,7 +465,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               )),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // Helper text
           if (_selectedTab == 0) ...[
