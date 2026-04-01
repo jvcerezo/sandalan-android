@@ -12,6 +12,7 @@ import '../../../core/utils/input_validator.dart';
 import '../../../core/constants/legal.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../core/services/premium_service.dart';
+import '../../../shared/widgets/trial_welcome_dialog.dart';
 import '../providers/auth_provider.dart';
 
 // ─── Password strength ────────────────────────────────────────────────────────
@@ -152,7 +153,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
       if (response.session != null && mounted) {
         // Activate 30-day free premium trial for new signups
-        await PremiumService.instance.activateSignupTrial();
+        final trialGranted = await PremiumService.instance.activateSignupTrial();
+        if (trialGranted && mounted) {
+          await showTrialWelcomeDialog(context);
+        }
 
         // If was previously a guest, migrate local data to the new account
         if (_wasGuest) {
