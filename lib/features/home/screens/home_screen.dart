@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../app.dart';
 import '../../../core/services/premium_service.dart';
 import '../../../core/router/premium_route_guard.dart';
@@ -29,6 +30,7 @@ import '../../../core/services/salary_allocation_service.dart';
 import '../../../data/repositories/transaction_repository.dart';
 import '../../transactions/widgets/quick_add_strip.dart';
 import '../widgets/insight_card.dart';
+import '../../../shared/widgets/trial_welcome_dialog.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -72,6 +74,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _initRetentionFeatures();
     _updateHomeWidget();
+    _checkPendingTrialWelcome();
+  }
+
+  /// Show trial welcome dialog if pending (set during signup, deferred past onboarding).
+  Future<void> _checkPendingTrialWelcome() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getBool('pending_trial_welcome') ?? false;
+    if (pending && mounted) {
+      await prefs.remove('pending_trial_welcome');
+      // Small delay so the home screen renders first
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) await showTrialWelcomeDialog(context);
+    }
   }
 
   @override
