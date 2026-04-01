@@ -19,46 +19,6 @@ void main() {
     });
   });
 
-  group('Signup Trial', () {
-    test('activateSignupTrial grants 30 days', () async {
-      await service.init();
-      final granted = await service.activateSignupTrial();
-      expect(granted, true);
-
-      final prefs = await SharedPreferences.getInstance();
-      final expiryStr = prefs.getString('signup_trial_expiry');
-      expect(expiryStr, isNotNull);
-
-      final expiry = DateTime.parse(expiryStr!);
-      expect(expiry.difference(DateTime.now()).inDays, closeTo(30, 1));
-    });
-
-    test('activateSignupTrial second call returns false (one-time)', () async {
-      SharedPreferences.setMockInitialValues({
-        'signup_trial_expiry': DateTime.now().add(const Duration(days: 25)).toIso8601String(),
-      });
-      await service.init();
-      final granted = await service.activateSignupTrial();
-      expect(granted, false);
-    });
-
-    test('hasActiveSignupTrial true when expiry in future', () async {
-      SharedPreferences.setMockInitialValues({
-        'signup_trial_expiry': DateTime.now().add(const Duration(days: 10)).toIso8601String(),
-      });
-      await service.init();
-      expect(service.hasActiveSignupTrial, true);
-    });
-
-    test('signupTrialDaysLeft returns correct count', () async {
-      SharedPreferences.setMockInitialValues({
-        'signup_trial_expiry': DateTime.now().add(const Duration(days: 15)).toIso8601String(),
-      });
-      await service.init();
-      expect(service.signupTrialDaysLeft, inInclusiveRange(14, 15));
-    });
-  });
-
   group('setPremium', () {
     test('persists to SharedPreferences', () async {
       await service.init();

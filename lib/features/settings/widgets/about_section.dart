@@ -82,11 +82,9 @@ class _AboutSectionState extends State<AboutSection> {
             ),
             child: Text(
               premium.isBetaPeriod ? 'Beta — All Features Free'
-                  : premium.hasActiveSignupTrial ? 'Free Trial — ${premium.signupTrialDaysLeft} day${premium.signupTrialDaysLeft == 1 ? '' : 's'} left'
                   : premium.isPremium ? 'Premium' : 'Free Tier',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
                   color: premium.isBetaPeriod ? const Color(0xFF10B981)
-                      : premium.hasActiveSignupTrial ? const Color(0xFFEAB308)
                       : premium.isPremium ? const Color(0xFF6366F1)
                       : cs.onSurfaceVariant),
             ),
@@ -164,13 +162,7 @@ class _AboutSectionState extends State<AboutSection> {
     String detailText;
     Color statusColor;
 
-    if (premium.hasActiveSignupTrial) {
-      final days = premium.signupTrialDaysLeft;
-      statusText = 'Free Trial';
-      detailText = '$days day${days == 1 ? '' : 's'} remaining. After the trial ends, '
-          'you\'ll be moved to the free tier unless you subscribe.';
-      statusColor = const Color(0xFFEAB308);
-    } else if (premium.hasActiveStreakReward) {
+    if (premium.hasActiveStreakReward) {
       final days = premium.streakRewardDaysLeft;
       statusText = 'Streak Reward';
       detailText = '$days day${days == 1 ? '' : 's'} remaining. Earned from your 90-day streak! '
@@ -209,7 +201,7 @@ class _AboutSectionState extends State<AboutSection> {
               style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
               textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          if (!premium.hasActiveSignupTrial && !premium.hasActiveStreakReward)
+          if (!premium.hasActiveStreakReward)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -221,7 +213,7 @@ class _AboutSectionState extends State<AboutSection> {
                 child: const Text('Manage in Google Play'),
               ),
             ),
-          if (premium.hasActiveSignupTrial || premium.hasActiveStreakReward)
+          if (premium.hasActiveStreakReward)
             SizedBox(
               width: double.infinity,
               child: FilledButton(

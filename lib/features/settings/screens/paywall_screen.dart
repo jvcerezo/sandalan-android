@@ -123,7 +123,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 const Text('Sandalan Premium',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
-                Text('Unlock all features. No ads, ever.',
+                Text('Try free for 1 month. Cancel anytime.',
                     style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 24),
 
@@ -178,46 +178,23 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                       style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 20),
 
-                // Streak reward callout
-                if (!premium.isPremium || premium.isBetaPeriod)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.toolAmber.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.toolAmber.withOpacity(0.2)),
-                    ),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Icon(LucideIcons.flame, size: 16, color: AppColors.toolAmber),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(
-                        'Free alternative: maintain a 90-day streak to unlock 1 month of Premium for free!',
-                        style: TextStyle(fontSize: 12, color: cs.onSurface, height: 1.4),
-                      )),
-                    ]),
+                // Free trial callout
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
                   ),
-
-                // Beta callout
-                if (premium.isBetaPeriod) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
-                    ),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Icon(LucideIcons.sparkles, size: 16, color: Color(0xFF6366F1)),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(
-                        'All premium features are free during the beta period. '
-                        'Subscribe now to lock in the launch price!',
-                        style: TextStyle(fontSize: 12, color: cs.onSurface, height: 1.4),
-                      )),
-                    ]),
-                  ),
-                ],
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Icon(LucideIcons.gift, size: 16, color: Color(0xFF10B981)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(
+                      'First month is free. You won\'t be charged until your trial ends. Cancel anytime.',
+                      style: TextStyle(fontSize: 12, color: cs.onSurface, height: 1.4),
+                    )),
+                  ]),
+                ),
               ]),
             ),
           ),
@@ -245,7 +222,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         ? const SizedBox(height: 20, width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : Text(
-                            _selectedYearly ? 'Subscribe Yearly — $yearlyPrice' : 'Subscribe Monthly — $monthlyPrice',
+                            _selectedYearly ? 'Start Free Trial — then $yearlyPrice/yr' : 'Start Free Trial — then $monthlyPrice/mo',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),

@@ -92,17 +92,6 @@ void main() {
     });
   });
 
-  group('Trial user passes all routes', () {
-    test('all premium routes return null during active trial', () async {
-      await service.activateSignupTrial();
-
-      for (final route in premiumRoutes.keys) {
-        final blocked = blockedByPremium(route, service);
-        expect(blocked, isNull, reason: '$route should be allowed during trial');
-      }
-    });
-  });
-
   group('Correct PremiumFeature returned', () {
     test('/tools/bills returns billsTracker', () {
       expect(blockedByPremium('/tools/bills', service), PremiumFeature.billsTracker);

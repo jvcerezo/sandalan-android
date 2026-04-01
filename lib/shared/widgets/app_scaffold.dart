@@ -522,24 +522,12 @@ class _PremiumBadge extends StatelessWidget {
     final premium = PremiumService.instance;
 
     // Premium subscriber — show crown
-    if (premium.isPremium && !premium.isBetaPeriod && !premium.hasActiveSignupTrial && !premium.hasActiveStreakReward) {
+    if (premium.isPremium && !premium.isBetaPeriod && !premium.hasActiveStreakReward) {
       return _badge(
         context,
         icon: LucideIcons.crown,
         color: const Color(0xFF6366F1),
         label: 'PRO',
-      );
-    }
-
-    // Active trial — show timer with days left
-    if (premium.hasActiveSignupTrial) {
-      final days = premium.signupTrialDaysLeft;
-      return _badge(
-        context,
-        icon: LucideIcons.clock,
-        color: const Color(0xFFEAB308),
-        label: '${days}d',
-        onTap: () => openPaywall(context),
       );
     }
 
