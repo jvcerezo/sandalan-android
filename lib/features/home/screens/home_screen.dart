@@ -1314,8 +1314,7 @@ class _DevNotesSectionState extends State<_DevNotesSection> {
           .from('roadmap_items')
           .select()
           .eq('is_visible', true)
-          .order('sort_order')
-          .order('created_at', ascending: false);
+          .order('sort_order', ascending: true);
 
       if (mounted) {
         setState(() {
@@ -1406,7 +1405,14 @@ class _DevNotesSectionState extends State<_DevNotesSection> {
               itemCount: _roadmap.where((r) => r['status'] != 'completed').length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
-                final upcoming = _roadmap.where((r) => r['status'] != 'completed').toList();
+                final upcoming = _roadmap.where((r) => r['status'] != 'completed').toList()
+                  ..sort((a, b) {
+                    // in_progress first, then planned, by sort_order
+                    final aProgress = a['status'] == 'in_progress' ? 0 : 1;
+                    final bProgress = b['status'] == 'in_progress' ? 0 : 1;
+                    if (aProgress != bProgress) return aProgress - bProgress;
+                    return ((a['sort_order'] as int?) ?? 0) - ((b['sort_order'] as int?) ?? 0);
+                  });
                 final item = upcoming[index];
                 final status = item['status'] as String? ?? 'planned';
                 final isInProgress = status == 'in_progress';

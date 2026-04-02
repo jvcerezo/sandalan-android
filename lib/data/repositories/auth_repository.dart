@@ -51,7 +51,7 @@ class AuthRepository {
   /// Sign out — flushes pending data, clears local data and preferences
   /// to prevent cross-user data leakage.
   Future<void> signOut() async {
-    // 1. Flush any pending changes to server before clearing local data
+    // 1. Flush any pending changes to server before signing out
     final sync = SyncService.instance;
     if (sync != null) {
       sync.stopSync();
@@ -59,13 +59,11 @@ class AuthRepository {
       SyncService.instance = null;
     }
 
-    // 2. Clear local database
-    final userId = _client.auth.currentUser?.id;
-    if (userId != null) {
-      await AppDatabase.instance.clearAllData(userId);
-    }
+    // 2. Do NOT clear local database on sign out.
+    // Data stays so it's available immediately on re-login.
+    // When a DIFFERENT user logs in, forceFullPull overwrites with their data.
 
-    // 3. Clear sync timestamps (prevents cross-user stale data)
+    // 3. Clear sync timestamps so next login does a full pull
     await SyncService.clearSyncTimestamps();
 
     // 4. Clear user-specific SharedPreferences

@@ -1206,24 +1206,34 @@ class AppDatabase {
   // ─── Clear all data ──────────────────────────────────────────────────────
 
   Future<void> clearAllData(String userId) async {
-    for (final table in [
-      'local_transactions',
-      'local_accounts',
-      'local_budgets',
-      'local_goals',
-      'local_contributions',
-      'local_bills',
-      'local_debts',
-      'local_insurance',
-      'local_investments',
-      'local_bill_splits',
-      'net_worth_snapshots',
-      'learned_keywords',
-      'chat_report_queue',
-    ]) {
+    for (final table in _userTables) {
       await _db.customStatement('DELETE FROM $table WHERE user_id = ?', [userId]);
     }
   }
+
+  /// Clear all data that does NOT belong to [keepUserId].
+  /// Used when a different user logs in to remove the previous user's data.
+  Future<void> clearAllDataExcept(String keepUserId) async {
+    for (final table in _userTables) {
+      await _db.customStatement('DELETE FROM $table WHERE user_id != ?', [keepUserId]);
+    }
+  }
+
+  static const _userTables = [
+    'local_transactions',
+    'local_accounts',
+    'local_budgets',
+    'local_goals',
+    'local_contributions',
+    'local_bills',
+    'local_debts',
+    'local_insurance',
+    'local_investments',
+    'local_bill_splits',
+    'net_worth_snapshots',
+    'learned_keywords',
+    'chat_report_queue',
+  ];
 
   /// Update user_id for all rows in [table] from [oldUserId] to [newUserId]
   /// and mark them as pending for sync.

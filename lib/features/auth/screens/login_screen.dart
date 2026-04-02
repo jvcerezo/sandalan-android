@@ -81,6 +81,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await GuestModeService.migrateToAccount(newUserId);
         }
       }
+      // Clear previous user's local data so we start fresh for this account
+      final newUserId = Supabase.instance.client.auth.currentUser?.id;
+      if (newUserId != null && !_wasGuest) {
+        await AppDatabase.instance.clearAllDataExcept(newUserId);
+      }
       // Clear stale sync timestamps from previous session/user — forces full pull
       await SyncService.clearSyncTimestamps();
       // Set up sync for the newly logged-in user
@@ -117,6 +122,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (response.session != null) {
         if (_wasGuest) {
           await GuestModeService.migrateToAccount(response.session!.user.id);
+        }
+        // Clear previous user's local data
+        if (!_wasGuest) {
+          await AppDatabase.instance.clearAllDataExcept(response.session!.user.id);
         }
         // Clear stale sync timestamps — forces full pull on new device
         await SyncService.clearSyncTimestamps();
