@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/animated_counter.dart';
 import '../../../data/guide/guide_data.dart';
@@ -65,13 +66,34 @@ class _GuideScreenState extends State<GuideScreen> {
 
   Future<void> _loadProgress() async {
     final prefs = await SharedPreferences.getInstance();
+    var lifeStage = prefs.getString('life_stage');
+
+    // Fallback: if not in SharedPreferences, pull from Supabase profile
+    // (covers existing accounts created before the local persistence fix)
+    if (lifeStage == null || lifeStage.isEmpty) {
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          final data = await Supabase.instance.client
+              .from('profiles')
+              .select('life_stage')
+              .eq('id', user.id)
+              .maybeSingle();
+          final cloudStage = data?['life_stage'] as String?;
+          if (cloudStage != null && cloudStage.isNotEmpty) {
+            lifeStage = cloudStage;
+            await prefs.setString('life_stage', cloudStage);
+          }
+        }
+      } catch (_) {}
+    }
+
     if (mounted) {
       setState(() {
-        _userLifeStage = prefs.getString('life_stage');
+        _userLifeStage = lifeStage;
         _completedItems = (prefs.getStringList('checklist_done') ?? []).toSet();
         _readGuides = (prefs.getStringList('guides_read') ?? []).toSet();
       });
-      // Auto-advance: if current stage is 100% complete, move to next stage
       _checkAutoAdvance(prefs);
     }
   }

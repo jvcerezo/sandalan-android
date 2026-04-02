@@ -1371,54 +1371,104 @@ class _DevNotesSectionState extends State<_DevNotesSection> {
           const SizedBox(height: 8),
         ],
 
-        // Roadmap
+        // Roadmap — horizontal scroll cards
         if (_roadmap.isNotEmpty) ...[
           Row(children: [
             Icon(LucideIcons.map, size: 14, color: cs.onSurfaceVariant),
             const SizedBox(width: 6),
-            Text("Roadmap",
+            Text("What's Coming",
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+            const Spacer(),
+            Text('${_roadmap.where((r) => r['status'] == 'completed').length}/${_roadmap.length} shipped',
+                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant.withOpacity(0.6))),
           ]),
-          const SizedBox(height: 8),
-          ..._roadmap.map((item) {
-            final status = item['status'] as String? ?? 'planned';
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(children: [
-                Container(
-                  width: 20, height: 20,
+          const SizedBox(height: 10),
+
+          // Progress bar showing overall roadmap completion
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: SizedBox(
+              height: 4,
+              child: LinearProgressIndicator(
+                value: _roadmap.isEmpty ? 0 : _roadmap.where((r) => r['status'] == 'completed').length / _roadmap.length,
+                backgroundColor: cs.surfaceContainerHighest,
+                color: const Color(0xFF10B981),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Horizontal scroll cards — only show non-completed (upcoming) items
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _roadmap.where((r) => r['status'] != 'completed').length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final upcoming = _roadmap.where((r) => r['status'] != 'completed').toList();
+                final item = upcoming[index];
+                final status = item['status'] as String? ?? 'planned';
+                final isInProgress = status == 'in_progress';
+
+                return Container(
+                  width: 160,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _statusColor(status).withOpacity(0.1),
-                    shape: BoxShape.circle,
+                    color: isInProgress
+                        ? const Color(0xFF3B82F6).withOpacity(0.06)
+                        : cs.surface,
+                    border: Border.all(
+                      color: isInProgress
+                          ? const Color(0xFF3B82F6).withOpacity(0.3)
+                          : cs.outline.withOpacity(0.1),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(_statusIcon(status), size: 10, color: _statusColor(status)),
-                ),
-                const SizedBox(width: 8),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(child: Text(item['title'] as String? ?? '',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                            decoration: status == 'completed' ? TextDecoration.lineThrough : null))),
-                    if (item['target_version'] != null) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    // Version + status
+                    Row(children: [
+                      if (item['target_version'] != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isInProgress
+                                ? const Color(0xFF3B82F6).withOpacity(0.1)
+                                : cs.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(item['target_version'] as String,
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                                  color: isInProgress ? const Color(0xFF3B82F6) : cs.onSurfaceVariant)),
                         ),
-                        child: Text(item['target_version'] as String,
-                            style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
-                      ),
-                    ],
+                      const SizedBox(width: 4),
+                      if (isInProgress)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3B82F6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('Building',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF3B82F6))),
+                        ),
+                    ]),
+                    const SizedBox(height: 8),
+                    // Title
+                    Text(item['title'] as String? ?? '',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    // Description
+                    if (item['description'] != null)
+                      Expanded(child: Text(item['description'] as String,
+                          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, height: 1.3),
+                          maxLines: 2, overflow: TextOverflow.ellipsis)),
                   ]),
-                  if (item['description'] != null && (item['description'] as String).isNotEmpty)
-                    Text(item['description'] as String,
-                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-                ])),
-              ]),
-            );
-          }),
+                );
+              },
+            ),
+          ),
         ],
       ]),
     );
