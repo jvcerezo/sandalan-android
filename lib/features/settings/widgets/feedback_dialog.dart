@@ -42,11 +42,15 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
 
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      final userId = user?.id ?? GuestModeService.getGuestIdSync() ?? 'guest';
+      if (user == null) {
+        if (mounted) showAppSnackBar(context, 'Please sign in to send feedback.', isError: true);
+        setState(() => _sending = false);
+        return;
+      }
 
       // Store feedback directly in Supabase bug_reports table
       await Supabase.instance.client.from('bug_reports').insert({
-        'user_id': userId,
+        'user_id': user.id,
         'title': '[$_type] ${_rating > 0 ? '${'⭐' * _rating} ' : ''}App Feedback',
         'description': _controller.text.trim(),
         'status': 'open',
