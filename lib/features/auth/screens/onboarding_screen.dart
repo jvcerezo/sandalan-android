@@ -215,13 +215,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;
 
-      // Save profile personalization
+      // Save profile personalization to Supabase AND SharedPreferences
       final authRepo = ref.read(authRepositoryProvider);
       await authRepo.updateProfile(
         lifeStage: _selectedStage.isNotEmpty ? _selectedStage : null,
         userType: _selectedUserType.isNotEmpty ? _selectedUserType : null,
         focusAreas: _selectedFocusAreas.isNotEmpty ? _selectedFocusAreas.toList() : null,
       );
+      // Also persist locally for guide screen and recommendations
+      final prefs = await SharedPreferences.getInstance();
+      if (_selectedStage.isNotEmpty) await prefs.setString('life_stage', _selectedStage);
+      if (_selectedUserType.isNotEmpty) await prefs.setString('user_type', _selectedUserType);
 
       // Create accounts (uses local repo which also creates opening balance transactions)
       final accountRepo = LocalAccountRepository(AppDatabase.instance, client);

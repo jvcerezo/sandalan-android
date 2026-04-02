@@ -71,6 +71,31 @@ class _GuideScreenState extends State<GuideScreen> {
         _completedItems = (prefs.getStringList('checklist_done') ?? []).toSet();
         _readGuides = (prefs.getStringList('guides_read') ?? []).toSet();
       });
+      // Auto-advance: if current stage is 100% complete, move to next stage
+      _checkAutoAdvance(prefs);
+    }
+  }
+
+  Future<void> _checkAutoAdvance(SharedPreferences prefs) async {
+    if (_userLifeStage == null) return;
+
+    final stageIndex = kLifeStages.indexWhere((s) => s.slug == _userLifeStage);
+    if (stageIndex < 0 || stageIndex >= kLifeStages.length - 1) return;
+
+    final stage = kLifeStages[stageIndex];
+    final total = stage.guides.length + stage.checklist.length;
+    if (total == 0) return;
+
+    final done = stage.guides.where((g) => _readGuides.contains(g.slug)).length +
+        stage.checklist.where((c) => _completedItems.contains(c.id)).length;
+
+    if (done >= total) {
+      // Stage complete — advance to next
+      final nextStage = kLifeStages[stageIndex + 1];
+      await prefs.setString('life_stage', nextStage.slug);
+      if (mounted) {
+        setState(() => _userLifeStage = nextStage.slug);
+      }
     }
   }
 

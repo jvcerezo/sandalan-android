@@ -543,7 +543,7 @@ class _PremiumBadge extends StatelessWidget {
       );
     }
 
-    // Free user — show upgrade nudge
+    // Free user — show "Free" badge that opens paywall
     if (!premium.isPremium) {
       return GestureDetector(
         onTap: () => openPaywall(context),
@@ -551,14 +551,12 @@ class _PremiumBadge extends StatelessWidget {
           margin: const EdgeInsets.only(right: 4),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF6366F1),
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(LucideIcons.crown, size: 12, color: Colors.white),
-            SizedBox(width: 4),
-            Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
-          ]),
+          child: Text('Free',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ),
       );
     }
