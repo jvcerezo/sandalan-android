@@ -31,6 +31,7 @@ class BillingService {
   bool _available = false;
   List<ProductDetails> _products = [];
   bool _initialized = false;
+  bool _userInitiatedPurchase = false;
 
   /// Whether the store is available.
   bool get isAvailable => _available;
@@ -103,9 +104,7 @@ class BillingService {
 
     final purchaseParam = PurchaseParam(productDetails: product);
     try {
-      // Subscriptions must use buyNonConsumable (the in_app_purchase plugin
-      // routes subscriptions correctly on Google Play — the "non-consumable"
-      // name is misleading but is the correct API for subscriptions).
+      _userInitiatedPurchase = true;
       return await _iap.buyNonConsumable(purchaseParam: purchaseParam);
     } catch (e) {
       debugPrint('[BillingService] Purchase error: $e');
@@ -130,6 +129,7 @@ class BillingService {
   /// Restore previous purchases (e.g. after reinstall).
   Future<void> restorePurchases() async {
     if (!_available) return;
+    _userInitiatedPurchase = true;
     await _iap.restorePurchases();
   }
 
@@ -138,7 +138,17 @@ class BillingService {
   Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchaseList) async {
     for (final purchase in purchaseList) {
       debugPrint('[BillingService] Purchase update: ${purchase.productID} '
-          'status=${purchase.status}');
+          'status=${purchase.status} userInitiated=$_userInitiatedPurchase');
+
+      // Ignore purchase events that the user didn't initiate.
+      // Google Play automatically fires events for existing subscriptions
+      // when the stream connects — we must not auto-grant premium from those.
+      if (!_userInitiatedPurchase) {
+        if (purchase.pendingCompletePurchase) {
+          await _iap.completePurchase(purchase);
+        }
+        continue;
+      }
 
       switch (purchase.status) {
         case PurchaseStatus.purchased:
