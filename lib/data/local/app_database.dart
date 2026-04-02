@@ -669,6 +669,29 @@ class AppDatabase {
     };
   }
 
+  /// Get today's summary (income, expenses, count) for daily notification.
+  Future<Map<String, dynamic>> getDailySummary(String userId, String dateStr) async {
+    final results = await _db.customSelect(
+      '''SELECT
+            COALESCE(SUM(CASE WHEN amount > 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') THEN amount ELSE 0 END), 0) as income,
+            COALESCE(SUM(CASE WHEN amount < 0 AND LOWER(category) NOT IN ('transfer', 'goal funding') THEN ABS(amount) ELSE 0 END), 0) as expenses,
+            COUNT(*) as count
+         FROM local_transactions
+         WHERE user_id = ? AND date = ? AND status = 'confirmed'
+           AND LOWER(category) NOT IN ('transfer', 'goal funding')''',
+      variables: [
+        Variable.withString(userId),
+        Variable.withString(dateStr),
+      ],
+    ).get();
+    final row = results.first.data;
+    return {
+      'income': (row['income'] as num).toDouble(),
+      'expenses': (row['expenses'] as num).toDouble(),
+      'count': (row['count'] as num).toInt(),
+    };
+  }
+
   /// Get monthly net amounts (income + expense combined) for net worth calculation.
   /// Returns rows with {month, net} where net = SUM(amount) excluding transfers.
   Future<List<Map<String, dynamic>>> getMonthlyNetTotals(String userId, int months) async {
