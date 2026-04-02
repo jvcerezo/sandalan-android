@@ -31,10 +31,7 @@ class SyncService with WidgetsBindingObserver {
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _isSyncing = false;
-  DateTime? _lastSyncAttempt;
-  static const _lastSyncKey = 'last_sync_date';
   static const _lastFullSyncKey = 'last_full_sync_date';
-  static const _minSyncInterval = Duration(seconds: 15);
   static const _fullSyncInterval = Duration(days: 7);
 
   SyncService(this._client, this._db, {SyncStatusNotifier? syncStatus})
@@ -44,23 +41,12 @@ class SyncService with WidgetsBindingObserver {
 
   // ─── Public API ──────────────────────────────────────────────────────────
 
-  /// Start daily sync: listen for app lifecycle changes and connectivity.
-  /// Replaces the old 5-minute periodic timer.
+  /// Start listening for app lifecycle to push on background and pull on resume.
   void startDailySync() {
-    // Listen for app lifecycle (sync when app goes to background).
     WidgetsBinding.instance.addObserver(this);
-
-    // Sync when connectivity is restored.
-    _connectivitySub?.cancel();
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
-      final isOnline = results.any((r) => r != ConnectivityResult.none);
-      if (isOnline) {
-        _syncIfDailyDue();
-      }
-    });
   }
 
-  /// Stop sync listener and lifecycle observer.
+  /// Stop lifecycle observer.
   void stopSync() {
     WidgetsBinding.instance.removeObserver(this);
     _connectivitySub?.cancel();
@@ -71,65 +57,28 @@ class SyncService with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      // Push pending changes when app goes to background.
-      fullSync();
+      // Push any remaining pending changes when app goes to background.
+      pushAfterWrite();
     } else if (state == AppLifecycleState.resumed) {
-      // Pull fresh data when app resumes (multi-device: another device may have synced).
-      _pullIfStale();
+      // Pull fresh data when app comes back (another device may have synced).
+      fullSync();
     }
-  }
-
-  /// Pull from remote if last sync was more than 30 seconds ago.
-  /// This catches changes made on other devices while this one was backgrounded.
-  Future<void> _pullIfStale() async {
-    if (_lastSyncAttempt != null &&
-        DateTime.now().difference(_lastSyncAttempt!) < const Duration(seconds: 30)) {
-      return; // Recently synced, skip
-    }
-    await fullSync();
   }
 
   /// Push pending local changes to Supabase immediately.
-  /// Call this after creating/updating/deleting data to ensure
-  /// cross-device sync works without waiting for background sync.
-  /// Rate-limited to avoid hammering the server.
+  /// Called after every write (create/update/delete) in repositories.
   Future<void> pushAfterWrite() async {
     if (_isSyncing || _userId == null) return;
     if (!await _isOnline()) return;
 
-    // Lighter rate limit for pushes (5 seconds debounce)
-    if (_lastPushAttempt != null &&
-        DateTime.now().difference(_lastPushAttempt!) < const Duration(seconds: 5)) {
-      // Schedule a delayed push to catch batched writes
-      _pendingPushTimer?.cancel();
-      _pendingPushTimer = Timer(const Duration(seconds: 5), () => pushAfterWrite());
-      return;
-    }
-    _lastPushAttempt = DateTime.now();
-
     try {
       await pushToSupabase();
     } catch (e) {
-      if (kDebugMode) debugPrint('SyncService: pushAfterWrite failed: $e');
-    }
-  }
-
-  DateTime? _lastPushAttempt;
-  Timer? _pendingPushTimer;
-
-  /// Check if we should sync today (once per day).
-  Future<void> _syncIfDailyDue() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastSync = prefs.getString(_lastSyncKey);
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    if (lastSync != today) {
-      await fullSync();
-      await prefs.setString(_lastSyncKey, today);
+      debugPrint('[SyncService] pushAfterWrite failed: $e');
     }
   }
 
   /// Sync: pull from remote, then push local pending changes.
-  /// Rate-limited to at most once per 60 seconds.
   ///
   /// Uses incremental pull by default (only rows changed since last pull).
   /// Pass [forceFullPull] = true to fetch everything and detect deletes.
@@ -142,23 +91,25 @@ class SyncService with WidgetsBindingObserver {
     if (userId == null) {
       await Future.delayed(const Duration(milliseconds: 500));
       userId = _userId;
-      if (userId == null) return; // Still null — not authenticated
+      if (userId == null) {
+        debugPrint('[SyncService] fullSync aborted — no userId');
+        return;
+      }
     }
 
-    if (!await _isOnline()) return;
-
-    // Rate limit: don't sync more than once per minute
-    if (_lastSyncAttempt != null &&
-        DateTime.now().difference(_lastSyncAttempt!) < _minSyncInterval) {
+    if (!await _isOnline()) {
+      debugPrint('[SyncService] fullSync aborted — offline');
       return;
     }
-    _lastSyncAttempt = DateTime.now();
 
     _isSyncing = true;
     _syncStatus?.markSyncing();
+    debugPrint('[SyncService] fullSync started — userId=$userId, forceFullPull=$forceFullPull');
     try {
       final needsFullPull = forceFullPull || await _isFullPullDue();
+      debugPrint('[SyncService] pulling (fullPull=$needsFullPull)...');
       await pullFromSupabase(fullPull: needsFullPull);
+      debugPrint('[SyncService] pushing...');
       await pushToSupabase();
       // Sync chat error reports
       try {
@@ -210,7 +161,6 @@ class SyncService with WidgetsBindingObserver {
     for (final key in keys) {
       await prefs.remove(key);
     }
-    await prefs.remove(_lastSyncKey);
     await prefs.remove(_lastFullSyncKey);
   }
 
@@ -269,6 +219,7 @@ class SyncService with WidgetsBindingObserver {
       }
 
       final data = await query;
+      debugPrint('[SyncService] pulled ${data.length} rows from $remoteTable (incremental=$isIncremental)');
 
       // Batch: collect all pending IDs upfront (1 query instead of N)
       final pendingIds = (await _db.getPendingRows(localTable))
@@ -414,6 +365,9 @@ class SyncService with WidgetsBindingObserver {
   Future<void> _pushTable(String localTable, String remoteTable) async {
     try {
       final pending = await _db.getPendingRows(localTable);
+      if (pending.isNotEmpty) {
+        debugPrint('[SyncService] pushing ${pending.length} rows from $localTable');
+      }
       for (final row in pending) {
         // Skip rows that have permanently failed
         final syncStatus = row['sync_status'] as String? ?? '';
@@ -433,6 +387,7 @@ class SyncService with WidgetsBindingObserver {
           final remoteRow = localToRemote(row, localTable);
           await _client.from(remoteTable).upsert(remoteRow);
           await _db.markSynced(localTable, row['id'] as String);
+          debugPrint('[SyncService] pushed ${row['id']} to $remoteTable OK');
         } catch (e) {
           final errorMsg = e.toString();
           debugPrint('SyncService: push $remoteTable row ${row['id']} failed (attempt ${retryCount + 1}): $errorMsg');
