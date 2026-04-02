@@ -71,6 +71,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
   String _category = 'Other';
   DateTime _date = DateTime.now();
   bool _saving = false;
+  bool _isIncome = false;
   bool _autoSelected = false;
   String? _originalCategory; // Track for learned merchants
 
@@ -194,6 +195,12 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       // Set date
       _date = receipt.date ?? DateTime.now();
 
+      // Auto-detect income: cash-in, salary, refund receipts are income
+      if (receipt.receiptType == ReceiptType.digitalWallet &&
+          receipt.walletAction == DigitalWalletAction.cashIn) {
+        _isIncome = true;
+      }
+
       // Match category from merchant database (for purchases/bills)
       if (receipt.receiptType == ReceiptType.purchase ||
           receipt.receiptType == ReceiptType.unknown) {
@@ -298,17 +305,21 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           Navigator.of(context).pop(true);
         }
       } else {
-        // Regular expense
-        // Insufficient balance check (non-credit-card)
-        final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
-        if (selectedAccount != null && selectedAccount.type != 'credit_card' && amount > selectedAccount.balance) {
-          setState(() => _saving = false);
-          _showError('Insufficient balance in ${selectedAccount.name}');
-          return;
+        // Regular expense or income
+        final signedAmount = _isIncome ? amount : -amount;
+
+        // Insufficient balance check for expenses (non-credit-card)
+        if (!_isIncome) {
+          final selectedAccount = accounts.where((a) => a.id == _selectedAccountId).firstOrNull;
+          if (selectedAccount != null && selectedAccount.type != 'credit_card' && amount > selectedAccount.balance) {
+            setState(() => _saving = false);
+            _showError('Insufficient balance in ${selectedAccount.name}');
+            return;
+          }
         }
 
         await repo.createTransaction(
-          amount: -amount,
+          amount: signedAmount,
           category: _category,
           description: InputSanitizer.sanitize(_noteController.text),
           date: _date,
@@ -322,7 +333,7 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         }
 
         if (mounted) {
-          showSuccessSnackBar(context, 'Expense added from receipt!');
+          showSuccessSnackBar(context, '${_isIncome ? 'Income' : 'Expense'} added from receipt!');
           Navigator.of(context).pop(true);
         }
       }
@@ -629,6 +640,53 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
           ),
         ])),
       ] else ...[
+
+      // Income / Expense toggle
+      if (!_isTransferReceipt) ...[
+        Row(children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _isIncome = false),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: !_isIncome ? AppColors.expense.withOpacity(0.1) : Colors.transparent,
+                  border: Border.all(color: !_isIncome ? AppColors.expense : cs.outline.withOpacity(0.15)),
+                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(LucideIcons.arrowUpRight, size: 14,
+                      color: !_isIncome ? AppColors.expense : cs.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text('Expense', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                      color: !_isIncome ? AppColors.expense : cs.onSurfaceVariant)),
+                ]),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _isIncome = true),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _isIncome ? AppColors.income.withOpacity(0.1) : Colors.transparent,
+                  border: Border.all(color: _isIncome ? AppColors.income : cs.outline.withOpacity(0.15)),
+                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(LucideIcons.arrowDownLeft, size: 14,
+                      color: _isIncome ? AppColors.income : cs.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text('Income', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                      color: _isIncome ? AppColors.income : cs.onSurfaceVariant)),
+                ]),
+              ),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 12),
+      ],
 
       // Store name (for purchases)
       if (!_isTransferReceipt) ...[
