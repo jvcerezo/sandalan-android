@@ -249,15 +249,26 @@ class _JourneyNode extends StatelessWidget {
                     ),
                     if (isUserStage)
                       Positioned(
-                        top: -8,
+                        top: -14,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: stage.color,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: stage.color.withOpacity(0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: const Text('You',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(LucideIcons.mapPin, size: 10, color: Colors.white),
+                            const SizedBox(width: 3),
+                            const Text('You are here',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                          ]),
                         ),
                       ),
                   ],
