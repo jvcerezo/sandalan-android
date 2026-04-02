@@ -12,6 +12,7 @@ import '../utils/snackbar_helper.dart';
 import 'universal_search.dart';
 import 'tour_overlay.dart';
 import '../../features/transactions/widgets/add_transaction_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../features/transactions/screens/receipt_scanner_screen.dart';
 import '../../core/services/premium_service.dart';
 
@@ -521,13 +522,14 @@ class _PremiumBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final premium = PremiumService.instance;
 
-    // Premium subscriber — show crown
+    // Premium subscriber — show crown, tap to see perks
     if (premium.isPremium && !premium.isBetaPeriod && !premium.hasActiveStreakReward) {
       return _badge(
         context,
         icon: LucideIcons.crown,
         color: const Color(0xFF6366F1),
         label: 'PRO',
+        onTap: () => _showProStatus(context),
       );
     }
 
@@ -539,7 +541,7 @@ class _PremiumBadge extends StatelessWidget {
         icon: LucideIcons.flame,
         color: const Color(0xFFF97316),
         label: '${days}d',
-        onTap: () => openPaywall(context),
+        onTap: () => _showProStatus(context),
       );
     }
 
@@ -588,4 +590,101 @@ class _PremiumBadge extends StatelessWidget {
       ),
     );
   }
+
+  void _showProStatus(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final premium = PremiumService.instance;
+
+    String statusTitle;
+    String statusSubtitle;
+    Color statusColor;
+    IconData statusIcon;
+
+    if (premium.hasActiveStreakReward) {
+      final days = premium.streakRewardDaysLeft;
+      statusTitle = 'Streak Reward Active';
+      statusSubtitle = '$days day${days == 1 ? '' : 's'} remaining — earned from your 90-day streak';
+      statusColor = const Color(0xFFF97316);
+      statusIcon = LucideIcons.flame;
+    } else {
+      statusTitle = 'Premium Subscriber';
+      statusSubtitle = 'You have full access to all Sandalan features';
+      statusColor = const Color(0xFF6366F1);
+      statusIcon = LucideIcons.crown;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.of(ctx).padding.bottom),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Status icon
+          Container(
+            width: 64, height: 64,
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(statusIcon, size: 32, color: statusColor),
+          ),
+          const SizedBox(height: 12),
+          Text(statusTitle, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: statusColor)),
+          const SizedBox(height: 4),
+          Text(statusSubtitle,
+              style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
+              textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+
+          // Perks list
+          ..._proPerks.map((perk) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(children: [
+              Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(perk.$2, size: 14, color: const Color(0xFF10B981)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(perk.$1,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+            ]),
+          )),
+          const SizedBox(height: 16),
+
+          // Manage subscription
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                launchUrl(Uri.parse('https://play.google.com/store/account/subscriptions'));
+              },
+              icon: const Icon(LucideIcons.externalLink, size: 14),
+              label: const Text('Manage Subscription'),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  static const _proPerks = [
+    ('Bills, debts & insurance tracking', LucideIcons.receipt),
+    ('Advanced dashboard & reports', LucideIcons.barChart3),
+    ('AI chat & receipt scanner', LucideIcons.sparkles),
+    ('All calculators & tools', LucideIcons.calculator),
+    ('Investment portfolio tracker', LucideIcons.trendingUp),
+    ('Unlimited accounts, budgets & goals', LucideIcons.infinity),
+    ('Document vault', LucideIcons.folderLock),
+    ('CSV import & currency converter', LucideIcons.upload),
+  ];
 }
