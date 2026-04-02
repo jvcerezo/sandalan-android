@@ -128,11 +128,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               sub: 'Export, delete, legal',
               onTap: () => _goToSection('privacy')),
         _MenuItem(
-            icon: LucideIcons.messageSquare,
-            title: 'Send Feedback',
-            sub: 'Bugs, suggestions, praise',
-            onTap: () => showFeedbackDialog(context)),
-        _MenuItem(
             icon: LucideIcons.logOut,
             title: 'Account',
             sub: isGuest ? 'Tour, create account' : 'Sign out, tour, sync',
