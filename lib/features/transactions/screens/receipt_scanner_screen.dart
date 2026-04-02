@@ -195,12 +195,6 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
       // Set date
       _date = receipt.date ?? DateTime.now();
 
-      // Auto-detect income: cash-in, salary, refund receipts are income
-      if (receipt.receiptType == ReceiptType.digitalWallet &&
-          receipt.walletAction == DigitalWalletAction.cashIn) {
-        _isIncome = true;
-      }
-
       // Match category from merchant database (for purchases/bills)
       if (receipt.receiptType == ReceiptType.purchase ||
           receipt.receiptType == ReceiptType.unknown) {
@@ -214,11 +208,34 @@ class _ReceiptScannerScreenState extends ConsumerState<ReceiptScannerScreen> {
         _category = matchedCategory;
         _originalCategory = matchedCategory;
       } else if (receipt.receiptType == ReceiptType.billPayment) {
-        _category = 'Housing'; // Utilities are under Housing
+        _category = 'Housing';
         _originalCategory = 'Housing';
-      } else {
+      } else if (receipt.receiptType == ReceiptType.digitalWallet) {
+        // Digital wallet receipts get categorized based on action
+        switch (receipt.walletAction) {
+          case DigitalWalletAction.cashIn:
+            _category = 'Other';
+            _isIncome = true;
+          case DigitalWalletAction.cashOut:
+            _category = 'Other';
+          case DigitalWalletAction.sendMoney:
+            _category = 'Other';
+          case DigitalWalletAction.payQr:
+            _category = 'Food'; // Most QR payments are food/retail
+          default:
+            _category = 'Other';
+        }
+        _originalCategory = _category;
+      } else if (receipt.receiptType == ReceiptType.atmWithdrawal) {
+        _category = 'Other';
+        _originalCategory = 'Other';
+      } else if (receipt.receiptType == ReceiptType.bankTransfer) {
+        // Only actual bank transfers get Transfer category
         _category = 'Transfer';
         _originalCategory = 'Transfer';
+      } else {
+        _category = 'Other';
+        _originalCategory = 'Other';
       }
 
       setState(() {
