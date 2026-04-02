@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/theme/color_tokens.dart';
 import '../../../shared/widgets/error_retry.dart';
@@ -13,6 +14,9 @@ class PanganayModeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final txns = ref.watch(transactionsProvider);
+
+    // Fire-and-forget: trigger achievement on first visit
+    MilestoneService.checkAndTrigger('panganay_proud');
 
     return txns.when(
       data: (list) {

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/utils/id_generator.dart' show IdGenerator;
 import '../../../core/utils/input_validator.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../data/models/bill_split.dart';
 
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
@@ -121,6 +122,7 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
       updatedAt: DateTime.now(),
     );
 
+    MilestoneService.checkAndTrigger('first_split');
     Navigator.of(context).pop(split);
   }
 

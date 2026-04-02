@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'milestone_service.dart';
 import 'premium_service.dart';
 
 /// Google Play product IDs — must match Play Console in-app products.
@@ -182,6 +183,9 @@ class BillingService {
   Future<void> _verifyAndDeliver(PurchaseDetails purchase) async {
     // Grant premium access
     await PremiumService.instance.setPremium(true);
+
+    // Trigger premium achievement
+    MilestoneService.checkAndTrigger('premium_subscriber');
 
     // Persist purchase token for server-side verification later
     final prefs = await SharedPreferences.getInstance();

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'milestone_service.dart';
 import 'premium_service.dart';
 
 /// Tracks daily app usage streaks using SharedPreferences.
@@ -108,6 +109,7 @@ class StreakService {
     if (streak == PremiumService.streakRewardThreshold &&
         !PremiumService.instance.hasActiveStreakReward) {
       justUnlockedStreakReward = true;
+      MilestoneService.checkAndTrigger('streak_reward_earned');
     }
 
     await prefs.setInt(_keyPahinhaTokens, pahinhaTokens);

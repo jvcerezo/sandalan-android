@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/services/salary_allocation_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../budgets/providers/budget_providers.dart';
@@ -111,6 +112,7 @@ class _State extends ConsumerState<SalaryAllocationScreen> {
       ref.invalidate(goalsProvider);
     }
 
+    MilestoneService.checkAndTrigger('salary_allocated');
     if (mounted) {
       showSuccessSnackBar(context, created > 0
           ? 'Saved! $created new ${created == 1 ? 'item' : 'items'} created.'

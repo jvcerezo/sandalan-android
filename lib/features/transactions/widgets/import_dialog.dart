@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/services/csv_import_service.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/provider_utils.dart';
 import '../../../data/repositories/local_transaction_repository.dart';
@@ -84,6 +85,7 @@ class _ImportSheetState extends ConsumerState<_ImportSheet> {
 
       if (mounted) {
         showSuccessSnackBar(context, '$imported transactions imported!');
+        MilestoneService.checkAndTrigger('first_csv_import');
         Navigator.of(context).pop();
       }
     } catch (e) {

@@ -8,6 +8,7 @@ import '../../../data/local/app_database.dart';
 import '../../../data/models/investment.dart';
 import '../../../core/utils/input_validator.dart';
 import '../../../data/repositories/local_investment_repository.dart';
+import '../../../core/services/milestone_service.dart';
 import '../../../shared/utils/snackbar_helper.dart';
 
 class _ThousandsSeparatorFormatter extends TextInputFormatter {
@@ -105,6 +106,7 @@ class _State extends ConsumerState<AddInvestmentDialog> {
         createdAt: now, updatedAt: now,
       ));
       widget.onSaved();
+      MilestoneService.checkAndTrigger('first_investment');
       if (mounted) Navigator.pop(context);
     } catch (e) {
       setState(() => _saving = false);

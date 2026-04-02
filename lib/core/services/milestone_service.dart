@@ -358,6 +358,32 @@ class MilestoneService {
         icon: LucideIcons.calendar, category: MilestoneCategory.special, tier: MilestoneTier.c),
     const Milestone(id: 'payday_saver', title: 'Payday Discipline', description: 'Saved on payday instead of splurging',
         icon: LucideIcons.wallet, category: MilestoneCategory.special, tier: MilestoneTier.b),
+
+    // ── PREMIUM ────────────────────────────────────────────────────────
+    const Milestone(id: 'premium_subscriber', title: 'Premium Member', description: 'Nag-invest ka sa sarili mo!',
+        icon: LucideIcons.crown, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'premium_3_months', title: 'Loyal Supporter', description: '3 months Premium! Salamat!',
+        icon: LucideIcons.heart, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'premium_6_months', title: 'Half Year Pro', description: '6 months of Premium! Dedicated!',
+        icon: LucideIcons.award, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'premium_1_year', title: 'Annual Champion', description: '1 year Premium! True adulting pro!',
+        icon: LucideIcons.gem, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'streak_reward_earned', title: 'Earned It', description: 'Got free Premium from 90-day streak!',
+        icon: LucideIcons.flame, category: MilestoneCategory.special, tier: MilestoneTier.a),
+    const Milestone(id: 'first_csv_import', title: 'Data Importer', description: 'Imported bank CSV — efficient!',
+        icon: LucideIcons.upload, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'first_split', title: 'Fair Share', description: 'First bill split with friends!',
+        icon: LucideIcons.users, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'vault_10', title: 'Document Hoarder', description: '10 files in vault — organized!',
+        icon: LucideIcons.folderLock, category: MilestoneCategory.toolsFeatures, tier: MilestoneTier.b),
+    const Milestone(id: 'first_investment', title: 'Investor', description: 'First investment tracked!',
+        icon: LucideIcons.trendingUp, category: MilestoneCategory.financial, tier: MilestoneTier.b),
+    const Milestone(id: 'portfolio_100k', title: 'Portfolio ₱100K', description: 'Investments hit six figures!',
+        icon: LucideIcons.gem, category: MilestoneCategory.financial, tier: MilestoneTier.a),
+    const Milestone(id: 'panganay_proud', title: 'Panganay & Proud', description: 'Used Panganay Mode — respect!',
+        icon: LucideIcons.heart, category: MilestoneCategory.special, tier: MilestoneTier.b),
+    const Milestone(id: 'salary_allocated', title: 'Paycheck Planner', description: 'First salary allocation done!',
+        icon: LucideIcons.banknote, category: MilestoneCategory.financial, tier: MilestoneTier.b),
   ];
 
   /// Check and trigger a milestone. Returns the milestone if newly earned, null otherwise.
