@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'milestone_service.dart';
 
 /// Premium feature identifiers.
 enum PremiumFeature {
@@ -97,6 +98,9 @@ class PremiumService {
 
     // Refresh server time in background for next access check
     _refreshServerTime();
+
+    // Check premium loyalty milestones (fire-and-forget)
+    if (_isPremium) _checkLoyaltyMilestones(prefs);
   }
 
   /// Refresh server time in background to keep anti-tamper checks current.
@@ -109,6 +113,19 @@ class PremiumService {
         await prefs.setString(_lastServerTimeKey, serverTime.toIso8601String());
       }
     } catch (_) {}
+  }
+
+  /// Check and trigger premium loyalty milestones based on purchase date.
+  Future<void> _checkLoyaltyMilestones(SharedPreferences prefs) async {
+    final purchaseDateStr = prefs.getString(_purchaseDateKey);
+    if (purchaseDateStr == null) return;
+    final purchaseDate = DateTime.tryParse(purchaseDateStr);
+    if (purchaseDate == null) return;
+
+    final daysSincePurchase = DateTime.now().difference(purchaseDate).inDays;
+    if (daysSincePurchase >= 90) MilestoneService.checkAndTrigger('premium_3_months');
+    if (daysSincePurchase >= 180) MilestoneService.checkAndTrigger('premium_6_months');
+    if (daysSincePurchase >= 365) MilestoneService.checkAndTrigger('premium_1_year');
   }
 
   /// Check if the user has access to a premium feature.

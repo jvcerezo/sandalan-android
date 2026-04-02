@@ -127,27 +127,46 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 24),
 
-                // Feature list
-                ..._features.map((f) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                // Free vs Premium comparison table
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withOpacity(0.15)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(children: [
+                    // Header
                     Container(
-                      width: 24, height: 24,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
+                        color: cs.surfaceContainerHighest.withOpacity(0.3),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                       ),
-                      child: const Icon(LucideIcons.check, size: 14, color: Color(0xFF10B981)),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(f.$1, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                        Text(f.$2, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                      child: Row(children: [
+                        const Expanded(flex: 3, child: Text('Feature',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600))),
+                        Expanded(flex: 2, child: Text('Free',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant),
+                            textAlign: TextAlign.center)),
+                        const Expanded(flex: 2, child: Text('Premium',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6366F1)),
+                            textAlign: TextAlign.center)),
                       ]),
                     ),
+                    // Rows
+                    ..._comparisonRows.map((row) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: cs.outline.withOpacity(0.08))),
+                      ),
+                      child: Row(children: [
+                        Expanded(flex: 3, child: Text(row.$1,
+                            style: const TextStyle(fontSize: 12))),
+                        Expanded(flex: 2, child: _ComparisonCell(value: row.$2)),
+                        Expanded(flex: 2, child: _ComparisonCell(value: row.$3, isPremium: true)),
+                      ]),
+                    )),
                   ]),
-                )),
+                ),
                 const SizedBox(height: 20),
 
                 // Plan selector
@@ -246,18 +265,52 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  static const _features = [
-    ('Bills, Debts & Insurance', 'Due dates, payoff strategies, renewal alerts'),
-    ('Advanced Dashboard', 'Health score, spending trends, AI insights'),
-    ('Reports & Analytics', 'Monthly charts and category deep-dives'),
-    ('Investments Portfolio', 'Track MP2, UITF, stocks, bonds, time deposits'),
-    ('All Calculators & Tools', 'Retirement, tax, rent vs buy, FIRE, and more'),
-    ('AI Chat + Receipt Scanner', 'Taglish assistant and auto-log from photos'),
-    ('CSV Import & Currency', 'Import bank statements, live exchange rates'),
-    ('Unlimited Everything', 'No limits on accounts, budgets, or goals'),
-    ('Document Vault', 'Encrypted storage for IDs and contracts'),
-    ('Split Bills & Salary Allocation', 'Share expenses, budget by paycheck %'),
+  // (Feature, Free value, Premium value)
+  // Values: '✓' = included, '✗' = not included, or a specific limit string
+  static const _comparisonRows = [
+    ('Transactions', '✓', '✓'),
+    ('Accounts', '2', 'Unlimited'),
+    ('Budgets', '3 monthly', 'Unlimited'),
+    ('Goals', '2', 'Unlimited'),
+    ('Adulting Guide', '✓', '✓'),
+    ('Streak & Achievements', '✓', '✓'),
+    ('Bills & Debts', '✗', '✓'),
+    ('Insurance Tracker', '✗', '✓'),
+    ('Investments', '✗', '✓'),
+    ('Dashboard Analytics', 'Basic', 'Full'),
+    ('Reports', '✗', '✓'),
+    ('AI Chat', '✗', '✓'),
+    ('Receipt Scanner', '✗', '✓'),
+    ('CSV Import', '✗', '✓'),
+    ('Calculators & Tools', '✗', '✓'),
+    ('Document Vault', '✗', '✓'),
+    ('Currency Converter', '✗', '✓'),
+    ('Split Bills', '✗', '✓'),
+    ('Salary Allocation', '✗', '✓'),
+    ('Panganay Mode', '✗', '✓'),
   ];
+}
+
+class _ComparisonCell extends StatelessWidget {
+  final String value;
+  final bool isPremium;
+  const _ComparisonCell({required this.value, this.isPremium = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (value == '✓') {
+      return Icon(LucideIcons.check, size: 16,
+          color: isPremium ? const Color(0xFF6366F1) : const Color(0xFF10B981));
+    }
+    if (value == '✗') {
+      return Icon(LucideIcons.x, size: 14,
+          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3));
+    }
+    return Text(value,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+            color: isPremium ? const Color(0xFF6366F1) : Theme.of(context).colorScheme.onSurfaceVariant),
+        textAlign: TextAlign.center);
+  }
 }
 
 class _PlanCard extends StatelessWidget {
