@@ -76,6 +76,10 @@ class PremiumService {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
     _isPremium = prefs.getBool(_premiumKey) ?? false;
+    debugPrint('[PremiumService] init: isPremium=$_isPremium, '
+        'betaPeriod=$_isBetaPeriod, '
+        'streakReward=${prefs.getString(_streakRewardExpiryKey)}, '
+        'premiumKey=${prefs.getBool(_premiumKey)}');
 
     // Check streak reward expiry
     final expiryStr = prefs.getString(_streakRewardExpiryKey);

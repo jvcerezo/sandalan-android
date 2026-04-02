@@ -72,8 +72,11 @@ class BillingService {
     // Load available products.
     await _loadProducts();
 
-    // Restore any existing purchases (e.g. reinstall, new device).
-    await restorePurchases();
+    // NOTE: Do NOT auto-restore purchases here. The Google Play purchase
+    // is tied to the device's Google account, not the Sandalan user account.
+    // Auto-restoring would grant premium to ANY Sandalan account on a device
+    // where a different account previously purchased. Restore only when the
+    // user explicitly taps "Restore Purchase" in the paywall.
   }
 
   /// Load product details from the store.
