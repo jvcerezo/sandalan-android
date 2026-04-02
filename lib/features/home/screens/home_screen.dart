@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../app.dart';
 import '../../../core/services/premium_service.dart';
 import '../../../core/router/premium_route_guard.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/streak_service.dart';
 import '../../../core/services/tip_service.dart';
 import '../../../core/services/weekly_recap_service.dart';
@@ -492,6 +493,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             index: 6,
             child: _UpcomingPaymentsSection(ref: ref, hideBalances: hideBalances),
           ),
+
+          // ─── Developer Notes & Roadmap ─────────────────────────────
+          const _DevNotesSection(),
 
           // ─── Quick Links ──────────────────────────────────────────
           StaggeredFadeIn(
@@ -1274,5 +1278,181 @@ class _QuickLink extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ─── Developer Notes & Roadmap ──────────────────────────────────────────────
+
+class _DevNotesSection extends StatefulWidget {
+  const _DevNotesSection();
+
+  @override
+  State<_DevNotesSection> createState() => _DevNotesSectionState();
+}
+
+class _DevNotesSectionState extends State<_DevNotesSection> {
+  List<Map<String, dynamic>> _notes = [];
+  List<Map<String, dynamic>> _roadmap = [];
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    try {
+      final client = Supabase.instance.client;
+      final notesRes = await client
+          .from('dev_notes')
+          .select()
+          .eq('is_active', true)
+          .order('sort_order')
+          .order('created_at', ascending: false);
+      final roadmapRes = await client
+          .from('roadmap_items')
+          .select()
+          .eq('is_visible', true)
+          .order('sort_order')
+          .order('created_at', ascending: false);
+
+      if (mounted) {
+        setState(() {
+          _notes = List<Map<String, dynamic>>.from(notesRes);
+          _roadmap = List<Map<String, dynamic>>.from(roadmapRes);
+          _loaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || (_notes.isEmpty && _roadmap.isEmpty)) return const SizedBox.shrink();
+
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Dev notes
+        if (_notes.isNotEmpty) ...[
+          Row(children: [
+            Icon(LucideIcons.megaphone, size: 14, color: cs.primary),
+            const SizedBox(width: 6),
+            Text("From the Developer",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.primary)),
+          ]),
+          const SizedBox(height: 8),
+          ..._notes.map((note) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _noteColor(note['type'] as String? ?? 'note', cs).withOpacity(0.06),
+              border: Border.all(color: _noteColor(note['type'] as String? ?? 'note', cs).withOpacity(0.15)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Icon(_noteIcon(note['type'] as String? ?? 'note'), size: 14,
+                    color: _noteColor(note['type'] as String? ?? 'note', cs)),
+                const SizedBox(width: 6),
+                Expanded(child: Text(note['title'] as String? ?? '',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+              ]),
+              const SizedBox(height: 4),
+              Text(note['body'] as String? ?? '',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, height: 1.4)),
+            ]),
+          )),
+          const SizedBox(height: 8),
+        ],
+
+        // Roadmap
+        if (_roadmap.isNotEmpty) ...[
+          Row(children: [
+            Icon(LucideIcons.map, size: 14, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text("Roadmap",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+          ]),
+          const SizedBox(height: 8),
+          ..._roadmap.map((item) {
+            final status = item['status'] as String? ?? 'planned';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(children: [
+                Container(
+                  width: 20, height: 20,
+                  decoration: BoxDecoration(
+                    color: _statusColor(status).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(_statusIcon(status), size: 10, color: _statusColor(status)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Flexible(child: Text(item['title'] as String? ?? '',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                            decoration: status == 'completed' ? TextDecoration.lineThrough : null))),
+                    if (item['target_version'] != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(item['target_version'] as String,
+                            style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+                      ),
+                    ],
+                  ]),
+                  if (item['description'] != null && (item['description'] as String).isNotEmpty)
+                    Text(item['description'] as String,
+                        style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                ])),
+              ]),
+            );
+          }),
+        ],
+      ]),
+    );
+  }
+
+  Color _noteColor(String type, ColorScheme cs) {
+    switch (type) {
+      case 'announcement': return const Color(0xFFEAB308);
+      case 'update': return const Color(0xFF3B82F6);
+      default: return cs.primary;
+    }
+  }
+
+  IconData _noteIcon(String type) {
+    switch (type) {
+      case 'announcement': return LucideIcons.megaphone;
+      case 'update': return LucideIcons.sparkles;
+      default: return LucideIcons.messageCircle;
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'completed': return const Color(0xFF10B981);
+      case 'in_progress': return const Color(0xFF3B82F6);
+      default: return const Color(0xFF6B7280);
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'completed': return LucideIcons.check;
+      case 'in_progress': return LucideIcons.loader;
+      default: return LucideIcons.circle;
+    }
   }
 }
