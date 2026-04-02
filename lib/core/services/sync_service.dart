@@ -351,9 +351,12 @@ class SyncService with WidgetsBindingObserver {
   /// Each table push is wrapped in try-catch so one failing table
   /// doesn't break all sync (e.g. if a Supabase table doesn't exist yet).
   Future<void> pushToSupabase() async {
+    // IMPORTANT: accounts MUST be pushed before transactions/goals/debts/bills
+    // because those tables have foreign keys referencing accounts(id).
+    // If a transaction is pushed before its account exists, FK violation = permanent failure.
     final pushes = <(String, String)>[
+      ('local_accounts', 'accounts'),       // Push accounts FIRST (FK parent)
       ('local_transactions', 'transactions'),
-      ('local_accounts', 'accounts'),
       ('local_budgets', 'budgets'),
       ('local_goals', 'goals'),
       ('local_contributions', 'contributions'),
@@ -404,10 +407,11 @@ class SyncService with WidgetsBindingObserver {
           final errorMsg = e.toString();
           debugPrint('SyncService: push $remoteTable row ${row['id']} failed (attempt ${retryCount + 1}): $errorMsg');
 
-          // Distinguish validation errors (non-retryable) from network errors.
+          // Distinguish permanent validation errors from retryable errors.
+          // FK violations (23503) are retryable — parent row may be pushed next.
+          // Check constraint violations (23514) and null violations are permanent.
           final isValidationError = errorMsg.contains('violates check constraint') ||
-              errorMsg.contains('23') ||
-              errorMsg.contains('400') ||
+              errorMsg.contains('23514') ||
               errorMsg.contains('not-null') ||
               errorMsg.contains('invalid input');
 
