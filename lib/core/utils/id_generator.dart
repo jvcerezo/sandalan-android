@@ -1,21 +1,29 @@
-/// Centralized ID generator for local-first entities.
-/// Produces collision-resistant IDs in the format: `{prefix}-{timestamp}-{counter}`.
-class IdGenerator {
-  static int _counter = 0;
+import 'package:uuid/uuid.dart';
 
-  /// Generate a unique local ID with the given prefix.
-  /// Example: `local-txn-1711234567890-0`
-  static String generate(String prefix) =>
-      '$prefix-${DateTime.now().millisecondsSinceEpoch}-${_counter++}';
+/// Centralized ID generator for local-first entities.
+/// Produces standard v4 UUIDs compatible with Supabase's uuid column type.
+class IdGenerator {
+  static const _uuid = Uuid();
+
+  /// Generate a unique UUID v4.
+  static String generate() => _uuid.v4();
 
   // Convenience methods for each entity type
-  static String transaction() => generate('local-txn');
-  static String account() => generate('local-acct');
-  static String budget() => generate('local-bgt');
-  static String goal() => generate('local-goal');
-  static String bill() => generate('local-bill');
-  static String debt() => generate('local-debt');
-  static String insurance() => generate('local-ins');
-  static String contribution() => generate('local-contrib');
-  static String netWorth() => generate('local-nw');
+  static String transaction() => generate();
+  static String account() => generate();
+  static String budget() => generate();
+  static String goal() => generate();
+  static String bill() => generate();
+  static String debt() => generate();
+  static String insurance() => generate();
+  static String contribution() => generate();
+  static String netWorth() => generate();
+
+  /// Check if a string is a valid UUID format.
+  static bool isValidUuid(String id) {
+    return RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    ).hasMatch(id);
+  }
 }

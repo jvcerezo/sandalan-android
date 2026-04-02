@@ -64,7 +64,7 @@ class _ManageTemplatesSheetState extends State<_ManageTemplatesSheet> {
       ));
     } else {
       notifier.addTemplate(ExpenseTemplate(
-        id: IdGenerator.generate('local-tpl'),
+        id: IdGenerator.generate(),
         name: name,
         amount: amount,
         category: _category,

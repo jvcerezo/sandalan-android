@@ -112,7 +112,7 @@ class _NewSplitSheetState extends State<_NewSplitSheet> {
     if (participants.length < 2) return;
 
     final split = BillSplit(
-      id: IdGenerator.generate('local-split'),
+      id: IdGenerator.generate(),
       userId: widget.userId,
       description: desc,
       totalAmount: total,

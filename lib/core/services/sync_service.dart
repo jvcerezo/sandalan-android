@@ -479,12 +479,6 @@ class SyncService with WidgetsBindingObserver {
     return remote;
   }
 
-  void _convertIntToBool(Map<String, dynamic> map, String key) {
-    if (map.containsKey(key) && map[key] is int) {
-      map[key] = (map[key] as int) == 1;
-    }
-  }
-
   // ─── Connectivity ───────────────────────────────────────────────────────
 
   Future<bool> _isOnline() async {

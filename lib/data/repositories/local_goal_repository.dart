@@ -142,7 +142,7 @@ class LocalGoalRepository {
     final now = AppDatabase.now();
     final dateStr = (fundingDate ?? DateTime.now()).toIso8601String().substring(0, 10);
     await _db.upsertTransaction({
-      'id': 'local-fund-${DateTime.now().millisecondsSinceEpoch}',
+      'id': IdGenerator.transaction(),
       'user_id': _userId,
       'amount': -amount,
       'category': 'Goal Funding',
@@ -199,7 +199,7 @@ class LocalGoalRepository {
     final now = AppDatabase.now();
     final dateStr = DateTime.now().toIso8601String().substring(0, 10);
     await _db.upsertTransaction({
-      'id': 'local-release-${DateTime.now().millisecondsSinceEpoch}',
+      'id': IdGenerator.transaction(),
       'user_id': _userId,
       'amount': amount,
       'category': 'Goal Funding',

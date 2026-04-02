@@ -144,7 +144,7 @@ class LocalContributionRepository {
     // Create a Transfer-type transaction (NOT expense)
     final now = AppDatabase.now();
     await _db.upsertTransaction({
-      'id': 'local-contrib-pay-${DateTime.now().millisecondsSinceEpoch}',
+      'id': IdGenerator.transaction(),
       'user_id': _userId,
       'amount': -employeeShare,
       'category': 'Transfer',

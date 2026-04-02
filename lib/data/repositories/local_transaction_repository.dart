@@ -227,6 +227,7 @@ class LocalTransactionRepository {
     // Deduct from account
     final amount = (existing['amount'] as num).toDouble();
     await _updateAccountBalance(accountId, amount);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> updateTransaction({
@@ -272,6 +273,7 @@ class LocalTransactionRepository {
     updated['updated_at'] = now;
 
     await _db.upsertTransaction(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deleteTransaction(String id) async {
@@ -288,6 +290,7 @@ class LocalTransactionRepository {
       }
     }
     await _db.deleteTransaction(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> importTransactions(List<Map<String, dynamic>> transactions) async {
@@ -305,6 +308,7 @@ class LocalTransactionRepository {
       }
       await _db.upsertTransaction(t);
     }
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> createTransfer({
@@ -358,6 +362,7 @@ class LocalTransactionRepository {
       await _updateAccountBalance(fromAccountId, -amount);
       await _updateAccountBalance(toAccountId, amount);
     });
+    SyncService.instance?.pushAfterWrite();
   }
 
   // ─── Budget threshold checks ───────────────────────────────────────────

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/guest_mode_service.dart';
+import '../../core/services/sync_service.dart';
 import '../../core/utils/id_generator.dart';
 import '../local/app_database.dart';
 import '../models/insurance_policy.dart';
@@ -69,6 +70,7 @@ class LocalInsuranceRepository {
     if (data['is_active'] is bool) data['is_active'] = (data['is_active'] as bool) ? 1 : 0;
     if (!data.containsKey('is_active')) data['is_active'] = 1;
     await _db.upsertInsurance(data);
+    SyncService.instance?.pushAfterWrite();
     return _rowToPolicy(data);
   }
 
@@ -87,10 +89,12 @@ class LocalInsuranceRepository {
     updated['sync_status'] = 'pending';
     updated['updated_at'] = AppDatabase.now();
     await _db.upsertInsurance(updated);
+    SyncService.instance?.pushAfterWrite();
   }
 
   Future<void> deletePolicy(String id) async {
     await _db.deleteInsurance(id);
+    SyncService.instance?.pushAfterWrite();
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

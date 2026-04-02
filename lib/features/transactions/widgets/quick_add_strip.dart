@@ -215,7 +215,7 @@ Future<void> checkTemplateSuggestion({
           label: 'Save',
           onPressed: () {
             ref.read(templatesProvider.notifier).addTemplate(ExpenseTemplate(
-              id: IdGenerator.generate('local-tpl'),
+              id: IdGenerator.generate(),
               name: description,
               amount: amount,
               category: category,

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
 
 /// Offline-first local SQLite database using Drift's raw SQL approach.
 /// No code generation needed — all queries use customSelect / customInsert.
@@ -345,6 +346,116 @@ class AppDatabase {
         )
       ''');
     } catch (_) {}
+
+    // v11: Migrate non-UUID IDs to proper UUIDs for Supabase compatibility.
+    // Old IdGenerator produced "local-acct-123456-0" style IDs which fail
+    // on Supabase's uuid columns.
+    await _migrateToUuids();
+  }
+
+  /// One-time migration: convert local-prefixed IDs to proper UUIDs.
+  /// Updates FK references (account_id, transfer_id, split_group_id) in child tables.
+  Future<void> _migrateToUuids() async {
+    const uuid = Uuid();
+    final uuidRegex = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+
+    // Build old→new ID mapping for all tables so we can fix cross-references
+    final idMap = <String, String>{};
+
+    // Tables with account_id FK referencing local_accounts
+    const childTablesWithAccountId = [
+      'local_transactions',
+      'local_goals',
+      'local_bills',
+      'local_debts',
+      'local_insurance',
+      'local_investments',
+    ];
+
+    // 1. Migrate account IDs first (FK parent)
+    final accounts = await _db.customSelect(
+      "SELECT id FROM local_accounts WHERE id NOT LIKE '________-____-____-____-____________'",
+    ).get();
+
+    for (final row in accounts) {
+      final oldId = row.data['id'] as String;
+      if (uuidRegex.hasMatch(oldId)) continue;
+      final newId = uuid.v4();
+      idMap[oldId] = newId;
+
+      // Update FK references in child tables
+      for (final child in childTablesWithAccountId) {
+        await _db.customStatement(
+          'UPDATE $child SET account_id = ? WHERE account_id = ?',
+          [newId, oldId],
+        );
+      }
+
+      await _db.customStatement(
+        "UPDATE local_accounts SET id = ?, sync_status = 'pending' WHERE id = ?",
+        [newId, oldId],
+      );
+    }
+
+    // 2. Migrate transaction IDs (needed for transfer_id / split_group_id refs)
+    final txns = await _db.customSelect(
+      "SELECT id FROM local_transactions WHERE id NOT LIKE '________-____-____-____-____________'",
+    ).get();
+
+    for (final row in txns) {
+      final oldId = row.data['id'] as String;
+      if (uuidRegex.hasMatch(oldId)) continue;
+      final newId = uuid.v4();
+      idMap[oldId] = newId;
+      await _db.customStatement(
+        "UPDATE local_transactions SET id = ?, sync_status = 'pending' WHERE id = ?",
+        [newId, oldId],
+      );
+    }
+
+    // Fix transfer_id and split_group_id references in transactions
+    if (idMap.isNotEmpty) {
+      for (final entry in idMap.entries) {
+        await _db.customStatement(
+          'UPDATE local_transactions SET transfer_id = ? WHERE transfer_id = ?',
+          [entry.value, entry.key],
+        );
+        await _db.customStatement(
+          'UPDATE local_transactions SET split_group_id = ? WHERE split_group_id = ?',
+          [entry.value, entry.key],
+        );
+      }
+    }
+
+    // 3. Migrate remaining tables
+    const otherTables = [
+      'local_budgets',
+      'local_goals',
+      'local_contributions',
+      'local_bills',
+      'local_debts',
+      'local_insurance',
+      'local_investments',
+    ];
+
+    for (final table in otherTables) {
+      final rows = await _db.customSelect(
+        "SELECT id FROM $table WHERE id NOT LIKE '________-____-____-____-____________'",
+      ).get();
+
+      for (final row in rows) {
+        final oldId = row.data['id'] as String;
+        if (uuidRegex.hasMatch(oldId)) continue;
+        final newId = uuid.v4();
+        await _db.customStatement(
+          "UPDATE $table SET id = ?, sync_status = 'pending' WHERE id = ?",
+          [newId, oldId],
+        );
+      }
+    }
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
