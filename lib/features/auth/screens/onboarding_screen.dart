@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/guest_mode_service.dart';
+import '../../../core/services/sync_service.dart';
 import '../../../shared/widgets/brand_mark.dart';
 import '../../../shared/widgets/tour_overlay.dart';
 import '../../../core/constants/account_types.dart';
@@ -246,6 +247,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
       // Complete onboarding
       await authRepo.completeOnboarding();
+
+      // Push all data created during onboarding to Supabase
+      SyncService.instance?.pushAfterWrite();
 
       // Schedule the tour to auto-start on the home screen.
       await scheduleTour();

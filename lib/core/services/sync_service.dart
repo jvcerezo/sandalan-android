@@ -70,16 +70,23 @@ class SyncService with WidgetsBindingObserver {
   /// Capped at 1 push per 2 seconds to prevent accidental infinite loops.
   DateTime? _lastPushAt;
 
+  bool _isPushing = false;
+
   Future<void> pushAfterWrite() async {
-    if (_isSyncing || _userId == null) return;
+    // Don't check _isSyncing — push must work even during a pull.
+    // Use a separate _isPushing guard to prevent concurrent pushes only.
+    if (_isPushing || _userId == null) return;
     if (_lastPushAt != null && DateTime.now().difference(_lastPushAt!) < const Duration(seconds: 2)) return;
     if (!await _isOnline()) return;
     _lastPushAt = DateTime.now();
+    _isPushing = true;
 
     try {
       await pushToSupabase();
     } catch (e) {
       debugPrint('[SyncService] pushAfterWrite failed: $e');
+    } finally {
+      _isPushing = false;
     }
   }
 
