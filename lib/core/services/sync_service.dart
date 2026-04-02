@@ -135,7 +135,16 @@ class SyncService with WidgetsBindingObserver {
   /// Pass [forceFullPull] = true to fetch everything and detect deletes.
   /// A full pull also runs automatically once per week and on first-ever sync.
   Future<void> fullSync({bool forceFullPull = false}) async {
-    if (_isSyncing || _userId == null) return;
+    if (_isSyncing) return;
+
+    // Wait briefly for auth session to propagate (can be null right after login)
+    var userId = _userId;
+    if (userId == null) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      userId = _userId;
+      if (userId == null) return; // Still null — not authenticated
+    }
+
     if (!await _isOnline()) return;
 
     // Rate limit: don't sync more than once per minute

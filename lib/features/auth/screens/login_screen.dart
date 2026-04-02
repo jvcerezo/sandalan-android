@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/guest_mode_service.dart';
 import '../../../core/services/sync_service.dart';
+import '../../../core/services/streak_service.dart';
 import '../../../data/local/app_database.dart';
 import '../../../core/utils/email_validator.dart';
 import '../../../shared/widgets/brand_mark.dart';
@@ -80,11 +81,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await GuestModeService.migrateToAccount(newUserId);
         }
       }
+      // Clear stale sync timestamps from previous session/user — forces full pull
+      await SyncService.clearSyncTimestamps();
       // Set up sync for the newly logged-in user
       final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
       SyncService.instance = syncService;
-      // Pull fresh data from Supabase
-      await syncService.fullSync();
+      // Force a full pull to get ALL data from Supabase (not incremental)
+      await syncService.fullSync(forceFullPull: true);
+      // Restore streak data from cloud
+      await StreakService.instance.pullFromCloud();
       // Start ongoing sync (background, on-resume, daily)
       syncService.startDailySync();
       if (mounted) context.go('/home');
@@ -113,9 +118,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (_wasGuest) {
           await GuestModeService.migrateToAccount(response.session!.user.id);
         }
+        // Clear stale sync timestamps — forces full pull on new device
+        await SyncService.clearSyncTimestamps();
         final syncService = SyncService(Supabase.instance.client, AppDatabase.instance);
         SyncService.instance = syncService;
-        await syncService.fullSync();
+        await syncService.fullSync(forceFullPull: true);
+        await StreakService.instance.pullFromCloud();
         syncService.startDailySync();
         if (mounted) {
           // Check if onboarding is complete

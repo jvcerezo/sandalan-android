@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'premium_service.dart';
 
 /// Tracks daily app usage streaks using SharedPreferences.
@@ -114,6 +116,9 @@ class StreakService {
     await prefs.setInt(_keyStreakBest, best);
     await prefs.setString(_keyLastActiveDate, todayStr);
 
+    // Push streak to Supabase for cross-device sync (fire-and-forget)
+    _pushStreakToCloud(streak, best, todayStr, pahinhaTokens);
+
     // Update 7-day history
     final historyJson = prefs.getString(_keyStreakHistory);
     List<String> history = [];
@@ -183,5 +188,70 @@ class StreakService {
     final dateA = DateTime(a.year, a.month, a.day);
     final dateB = DateTime(b.year, b.month, b.day);
     return dateB.difference(dateA).inDays;
+  }
+
+  // ─── Cross-device sync ─────────────────────────────────────────────────────
+
+  /// Push streak data to Supabase profiles table. Fire-and-forget.
+  Future<void> _pushStreakToCloud(int streak, int best, String lastDate, int tokens) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+      await Supabase.instance.client.from('profiles').update({
+        'streak_count': streak,
+        'streak_best': best,
+        'last_active_date': lastDate,
+        'pahinha_tokens': tokens,
+      }).eq('id', user.id);
+    } catch (e) {
+      if (kDebugMode) debugPrint('StreakService: push to cloud failed: $e');
+    }
+  }
+
+  /// Pull streak data from Supabase and restore to SharedPreferences.
+  /// Call this on login to restore streak on a new device.
+  /// Uses max(local, remote) to never lose progress.
+  Future<void> pullFromCloud() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final data = await Supabase.instance.client
+          .from('profiles')
+          .select('streak_count, streak_best, last_active_date, pahinha_tokens')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (data == null) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final localStreak = prefs.getInt(_keyStreakCount) ?? 0;
+      final localBest = prefs.getInt(_keyStreakBest) ?? 0;
+      final localTokens = prefs.getInt(_keyPahinhaTokens) ?? 0;
+
+      final cloudStreak = data['streak_count'] as int? ?? 0;
+      final cloudBest = data['streak_best'] as int? ?? 0;
+      final cloudDate = data['last_active_date'] as String?;
+      final cloudTokens = data['pahinha_tokens'] as int? ?? 0;
+
+      // Use whichever is higher (never lose progress)
+      if (cloudStreak > localStreak) {
+        await prefs.setInt(_keyStreakCount, cloudStreak);
+      }
+      if (cloudBest > localBest) {
+        await prefs.setInt(_keyStreakBest, cloudBest);
+      }
+      if (cloudTokens > localTokens) {
+        await prefs.setInt(_keyPahinhaTokens, cloudTokens);
+      }
+      if (cloudDate != null) {
+        final localDate = prefs.getString(_keyLastActiveDate);
+        if (localDate == null || cloudDate.compareTo(localDate) > 0) {
+          await prefs.setString(_keyLastActiveDate, cloudDate);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('StreakService: pull from cloud failed: $e');
+    }
   }
 }

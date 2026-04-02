@@ -157,11 +157,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           // Migrate guest preferences to Supabase profile
           await _migrateGuestPreferences();
           // Trigger a full sync to push migrated data to Supabase
+          await SyncService.clearSyncTimestamps();
           final syncService = SyncService(
             Supabase.instance.client,
             AppDatabase.instance,
           );
-          syncService.fullSync();
+          SyncService.instance = syncService;
+          await syncService.fullSync(forceFullPull: true);
           syncService.startDailySync();
         }
         context.go('/onboarding');

@@ -75,7 +75,9 @@ Future<void> main() async {
       syncStatus: syncStatusNotifier,
     );
     SyncService.instance = syncService;
-    syncService.fullSync(); // Initial sync on app start (fire-and-forget).
+    // Await initial sync to ensure data is fresh on startup.
+    // Uses incremental pull (fast) unless it's the first-ever sync (full pull).
+    await syncService.fullSync();
     syncService.startDailySync(); // Once-daily sync + on app background.
 
     // Sync checklist/guide progress from cloud (merge with local).
