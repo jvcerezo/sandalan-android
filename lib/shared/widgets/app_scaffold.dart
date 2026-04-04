@@ -247,6 +247,33 @@ class _AppScaffoldState extends State<AppScaffold> {
             ],
           ),
 
+          // ─── AI Chat FAB (Premium only, hidden on chat screen) ───
+          floatingActionButton: (!location.startsWith('/chat') && !keyboardVisible && PremiumService.instance.hasAccess)
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 64),
+                  child: SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: FloatingActionButton(
+                      heroTag: 'ai_chat_fab',
+                      onPressed: () => context.push('/chat'),
+                      elevation: 4,
+                      backgroundColor: colorScheme.surface,
+                      shape: const CircleBorder(),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/ai-chat-icon.png',
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
           // ─── Bottom Tab Bar ──────────────────────────────────────
           bottomNavigationBar: keyboardVisible
               ? null
