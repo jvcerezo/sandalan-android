@@ -248,7 +248,7 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
 
           // ─── AI Chat FAB (Premium only, hidden on chat screen) ───
-          floatingActionButton: (!location.startsWith('/chat') && !keyboardVisible && PremiumService.instance.hasAccess)
+          floatingActionButton: (!location.startsWith('/chat') && !keyboardVisible && PremiumService.instance.isPremium)
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 64),
                   child: SizedBox(
