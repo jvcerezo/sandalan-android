@@ -252,22 +252,16 @@ class _AppScaffoldState extends State<AppScaffold> {
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 64),
                   child: SizedBox(
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     child: FloatingActionButton(
                       heroTag: 'ai_chat_fab',
                       onPressed: () => context.push('/chat'),
-                      elevation: 4,
-                      backgroundColor: colorScheme.surface,
+                      elevation: 3,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       shape: const CircleBorder(),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/ai-chat-icon.png',
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      child: const Icon(LucideIcons.sparkles, size: 22),
                     ),
                   ),
                 )
