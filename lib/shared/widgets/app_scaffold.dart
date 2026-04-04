@@ -197,7 +197,9 @@ class _AppScaffoldState extends State<AppScaffold> {
         }
       },
       child: TourHost(
-        child: Scaffold(
+        child: Stack(
+          children: [
+          Scaffold(
           body: Column(
             children: [
               // ─── Top Header Bar ──────────────────────────────────────
@@ -246,27 +248,6 @@ class _AppScaffoldState extends State<AppScaffold> {
               Expanded(child: widget.child),
             ],
           ),
-
-          // ─── AI Chat FAB (Premium only, hidden on chat screen) ───
-          floatingActionButton: (!location.startsWith('/chat') && !keyboardVisible && PremiumService.instance.isPremium)
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: 64),
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: FloatingActionButton(
-                      heroTag: 'ai_chat_fab',
-                      onPressed: () => context.push('/chat'),
-                      elevation: 3,
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      shape: const CircleBorder(),
-                      child: const Icon(LucideIcons.sparkles, size: 22),
-                    ),
-                  ),
-                )
-              : null,
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
           // ─── Bottom Tab Bar ──────────────────────────────────────
           bottomNavigationBar: keyboardVisible
@@ -349,7 +330,102 @@ class _AppScaffoldState extends State<AppScaffold> {
                   ),
                 ),
         ),
+          // ─── Draggable AI Chat FAB (Premium only) ──────────────────
+          if (!location.startsWith('/chat') && !keyboardVisible && PremiumService.instance.isPremium)
+            _DraggableAiChatFab(colorScheme: colorScheme),
+          ], // Stack children
+        ), // Stack
       ),
+    );
+  }
+}
+
+/// Draggable floating AI chat button that snaps to left/right edge.
+class _DraggableAiChatFab extends StatefulWidget {
+  final ColorScheme colorScheme;
+  const _DraggableAiChatFab({required this.colorScheme});
+
+  @override
+  State<_DraggableAiChatFab> createState() => _DraggableAiChatFabState();
+}
+
+class _DraggableAiChatFabState extends State<_DraggableAiChatFab> {
+  // Position: defaults to bottom-right, above bottom nav
+  double? _top;
+  double? _left;
+  bool _initialized = false;
+
+  static const _fabSize = 48.0;
+  static const _edgeMargin = 8.0;
+  // Keep away from bottom nav (64) + some breathing room
+  static const _bottomMinMargin = 80.0;
+  // Keep below the top header bar
+  static const _topMinMargin = 100.0;
+
+  void _initPosition(BoxConstraints constraints) {
+    if (_initialized) return;
+    _initialized = true;
+    // Default: bottom-right, above bottom nav
+    _left = constraints.maxWidth - _fabSize - _edgeMargin;
+    _top = constraints.maxHeight - _fabSize - _bottomMinMargin;
+  }
+
+  void _onDragEnd(DragEndDetails details, BoxConstraints constraints) {
+    final screenWidth = constraints.maxWidth;
+    final screenHeight = constraints.maxHeight;
+
+    setState(() {
+      // Snap to nearest horizontal edge
+      final centerX = _left! + _fabSize / 2;
+      if (centerX < screenWidth / 2) {
+        _left = _edgeMargin; // snap left
+      } else {
+        _left = screenWidth - _fabSize - _edgeMargin; // snap right
+      }
+
+      // Clamp vertical position
+      _top = _top!.clamp(_topMinMargin, screenHeight - _fabSize - _bottomMinMargin);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _initPosition(constraints);
+        return Positioned(
+          top: _top,
+          left: _left,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              setState(() {
+                _top = (_top! + details.delta.dy).clamp(
+                  _topMinMargin,
+                  constraints.maxHeight - _fabSize - _bottomMinMargin,
+                );
+                _left = (_left! + details.delta.dx).clamp(
+                  _edgeMargin,
+                  constraints.maxWidth - _fabSize - _edgeMargin,
+                );
+              });
+            },
+            onPanEnd: (details) => _onDragEnd(details, constraints),
+            child: SizedBox(
+              width: _fabSize,
+              height: _fabSize,
+              child: FloatingActionButton(
+                heroTag: 'ai_chat_fab',
+                onPressed: () => context.push('/chat'),
+                elevation: 3,
+                backgroundColor: widget.colorScheme.primary,
+                foregroundColor: widget.colorScheme.onPrimary,
+                shape: const CircleBorder(),
+                child: const Icon(LucideIcons.sparkles, size: 22),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
