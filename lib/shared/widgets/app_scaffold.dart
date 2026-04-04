@@ -340,6 +340,10 @@ class _AppScaffoldState extends State<AppScaffold> {
   }
 }
 
+/// Global FAB position — persists across rebuilds and navigation.
+double? _fabTop;
+double? _fabLeft;
+
 /// Draggable floating AI chat button that snaps to left/right edge.
 class _DraggableAiChatFab extends StatefulWidget {
   final ColorScheme colorScheme;
@@ -349,83 +353,94 @@ class _DraggableAiChatFab extends StatefulWidget {
   State<_DraggableAiChatFab> createState() => _DraggableAiChatFabState();
 }
 
-class _DraggableAiChatFabState extends State<_DraggableAiChatFab> {
-  // Position: defaults to bottom-right, above bottom nav
-  double? _top;
-  double? _left;
-  bool _initialized = false;
-
+class _DraggableAiChatFabState extends State<_DraggableAiChatFab>
+    with SingleTickerProviderStateMixin {
   static const _fabSize = 48.0;
-  static const _edgeMargin = 8.0;
-  // Keep away from bottom nav (64) + some breathing room
-  static const _bottomMinMargin = 80.0;
-  // Keep below the top header bar
+  static const _edgeMargin = 12.0;
+  static const _bottomMinMargin = 84.0;
   static const _topMinMargin = 100.0;
 
-  void _initPosition(BoxConstraints constraints) {
-    if (_initialized) return;
-    _initialized = true;
-    // Default: bottom-right, above bottom nav
-    _left = constraints.maxWidth - _fabSize - _edgeMargin;
-    _top = constraints.maxHeight - _fabSize - _bottomMinMargin;
+  late AnimationController _snapController;
+  Animation<double>? _snapLeftAnim;
+  Animation<double>? _snapTopAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _snapController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )..addListener(() {
+        setState(() {
+          if (_snapLeftAnim != null) _fabLeft = _snapLeftAnim!.value;
+          if (_snapTopAnim != null) _fabTop = _snapTopAnim!.value;
+        });
+      });
   }
 
-  void _onDragEnd(DragEndDetails details, BoxConstraints constraints) {
-    final screenWidth = constraints.maxWidth;
-    final screenHeight = constraints.maxHeight;
+  @override
+  void dispose() {
+    _snapController.dispose();
+    super.dispose();
+  }
 
-    setState(() {
-      // Snap to nearest horizontal edge
-      final centerX = _left! + _fabSize / 2;
-      if (centerX < screenWidth / 2) {
-        _left = _edgeMargin; // snap left
-      } else {
-        _left = screenWidth - _fabSize - _edgeMargin; // snap right
-      }
+  void _initPosition(double screenWidth, double screenHeight) {
+    if (_fabLeft != null && _fabTop != null) return;
+    _fabLeft = screenWidth - _fabSize - _edgeMargin;
+    _fabTop = screenHeight - _fabSize - _bottomMinMargin;
+  }
 
-      // Clamp vertical position
-      _top = _top!.clamp(_topMinMargin, screenHeight - _fabSize - _bottomMinMargin);
-    });
+  void _onDragEnd(double screenWidth, double screenHeight) {
+    final centerX = _fabLeft! + _fabSize / 2;
+    final targetLeft = centerX < screenWidth / 2
+        ? _edgeMargin
+        : screenWidth - _fabSize - _edgeMargin;
+    final targetTop = _fabTop!.clamp(_topMinMargin, screenHeight - _fabSize - _bottomMinMargin);
+
+    _snapLeftAnim = Tween<double>(begin: _fabLeft, end: targetLeft)
+        .animate(CurvedAnimation(parent: _snapController, curve: Curves.easeOut));
+    _snapTopAnim = Tween<double>(begin: _fabTop, end: targetTop)
+        .animate(CurvedAnimation(parent: _snapController, curve: Curves.easeOut));
+
+    _snapController.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _initPosition(constraints);
-        return Positioned(
-          top: _top,
-          left: _left,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              setState(() {
-                _top = (_top! + details.delta.dy).clamp(
-                  _topMinMargin,
-                  constraints.maxHeight - _fabSize - _bottomMinMargin,
-                );
-                _left = (_left! + details.delta.dx).clamp(
-                  _edgeMargin,
-                  constraints.maxWidth - _fabSize - _edgeMargin,
-                );
-              });
-            },
-            onPanEnd: (details) => _onDragEnd(details, constraints),
-            child: SizedBox(
-              width: _fabSize,
-              height: _fabSize,
-              child: FloatingActionButton(
-                heroTag: 'ai_chat_fab',
-                onPressed: () => context.push('/chat'),
-                elevation: 3,
-                backgroundColor: widget.colorScheme.primary,
-                foregroundColor: widget.colorScheme.onPrimary,
-                shape: const CircleBorder(),
-                child: const Icon(LucideIcons.sparkles, size: 22),
-              ),
-            ),
+    final size = MediaQuery.of(context).size;
+    _initPosition(size.width, size.height);
+
+    return Positioned(
+      top: _fabTop,
+      left: _fabLeft,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            _fabTop = (_fabTop! + details.delta.dy).clamp(
+              _topMinMargin,
+              size.height - _fabSize - _bottomMinMargin,
+            );
+            _fabLeft = (_fabLeft! + details.delta.dx).clamp(
+              _edgeMargin,
+              size.width - _fabSize - _edgeMargin,
+            );
+          });
+        },
+        onPanEnd: (_) => _onDragEnd(size.width, size.height),
+        child: SizedBox(
+          width: _fabSize,
+          height: _fabSize,
+          child: FloatingActionButton(
+            heroTag: 'ai_chat_fab',
+            onPressed: () => context.push('/chat'),
+            elevation: 3,
+            backgroundColor: widget.colorScheme.primary,
+            foregroundColor: widget.colorScheme.onPrimary,
+            shape: const CircleBorder(),
+            child: const Icon(LucideIcons.sparkles, size: 22),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
