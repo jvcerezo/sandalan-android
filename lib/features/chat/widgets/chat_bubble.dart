@@ -46,12 +46,12 @@ class ChatBubble extends StatelessWidget {
                   bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(16),
                 ),
               ),
-              child: Text(
-                message.text,
-                style: tt.bodyMedium?.copyWith(
+              child: _RichMarkdownText(
+                text: message.text,
+                baseStyle: tt.bodyMedium?.copyWith(
                   color: isUser ? cs.onPrimary : cs.onSurface,
                   height: 1.4,
-                ),
+                ) ?? const TextStyle(),
               ),
             ),
             if (_isReportVisible)
@@ -79,5 +79,59 @@ class ChatBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Lightweight inline markdown renderer for chat bubbles.
+/// Supports **bold** and *italic* without pulling in a full markdown package.
+class _RichMarkdownText extends StatelessWidget {
+  final String text;
+  final TextStyle baseStyle;
+
+  const _RichMarkdownText({required this.text, required this.baseStyle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      _parse(text),
+      style: baseStyle,
+    );
+  }
+
+  TextSpan _parse(String input) {
+    final spans = <InlineSpan>[];
+    // Match **bold**, *italic*, and plain text segments
+    final regex = RegExp(r'\*\*(.+?)\*\*|\*(.+?)\*');
+    int lastEnd = 0;
+
+    for (final match in regex.allMatches(input)) {
+      // Add plain text before this match
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: input.substring(lastEnd, match.start)));
+      }
+
+      if (match.group(1) != null) {
+        // **bold**
+        spans.add(TextSpan(
+          text: match.group(1),
+          style: baseStyle.copyWith(fontWeight: FontWeight.w700),
+        ));
+      } else if (match.group(2) != null) {
+        // *italic*
+        spans.add(TextSpan(
+          text: match.group(2),
+          style: baseStyle.copyWith(fontStyle: FontStyle.italic),
+        ));
+      }
+
+      lastEnd = match.end;
+    }
+
+    // Remaining plain text
+    if (lastEnd < input.length) {
+      spans.add(TextSpan(text: input.substring(lastEnd)));
+    }
+
+    return TextSpan(children: spans);
   }
 }
