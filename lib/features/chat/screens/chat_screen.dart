@@ -123,38 +123,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_assistantName),
-        leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => GoRouter.of(context).go('/home'),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.settings2, size: 20),
-            onPressed: () async {
-              await showModalBottomSheet<bool>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => DraggableScrollableSheet(
-                  initialChildSize: 0.9,
-                  maxChildSize: 0.95,
-                  minChildSize: 0.3,
-                  builder: (ctx, ctrl) => AiSetupScreen(onComplete: () => Navigator.of(ctx).pop(true)),
-                ),
-              );
-              if (mounted) {
-                final name = await AiSetupScreen.getAssistantName();
-                setState(() => _assistantName = name);
-              }
-            },
-            tooltip: 'AI Settings',
-          ),
-        ],
-      ),
       body: Column(
         children: [
+          // ─── Inline header ─────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Row(
+              children: [
+                Text(
+                  _assistantName,
+                  style: tt.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(LucideIcons.settings2, size: 20),
+                  onPressed: () async {
+                    await showModalBottomSheet<bool>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => DraggableScrollableSheet(
+                        initialChildSize: 0.9,
+                        maxChildSize: 0.95,
+                        minChildSize: 0.3,
+                        builder: (ctx, ctrl) => AiSetupScreen(onComplete: () => Navigator.of(ctx).pop(true)),
+                      ),
+                    );
+                    if (mounted) {
+                      final name = await AiSetupScreen.getAssistantName();
+                      setState(() => _assistantName = name);
+                    }
+                  },
+                  tooltip: 'AI Settings',
+                ),
+              ],
+            ),
+          ),
           // ─── Messages ─────────────────────────────────────────────
           Expanded(
             child: chatState.messages.isEmpty && _showWelcome
