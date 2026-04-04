@@ -127,14 +127,23 @@ class BillingService {
   }
 
   /// Restore previous purchases (e.g. after reinstall).
-  /// Sets _userInitiatedPurchase so the stream handler processes them.
+  /// Uses a Completer so the stream handler signals when all
+  /// restored purchases have been processed — no arbitrary delay.
+  Completer<void>? _restoreCompleter;
+
   Future<void> restorePurchases() async {
     if (!_available) return;
     _userInitiatedPurchase = true;
+    _restoreCompleter = Completer<void>();
     await _iap.restorePurchases();
-    // Give the purchase stream a moment to deliver restored events
-    await Future.delayed(const Duration(seconds: 2));
+    // Wait for the stream to finish delivering restore events,
+    // but don't hang forever if nothing comes back.
+    await _restoreCompleter!.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {},
+    );
     _userInitiatedPurchase = false;
+    _restoreCompleter = null;
   }
 
   // ─── Purchase Stream Handler ─────────────────────────────────────────────
@@ -161,7 +170,6 @@ class BillingService {
 
         case PurchaseStatus.error:
           debugPrint('[BillingService] Purchase error: ${purchase.error}');
-          // Complete the purchase to dismiss the system UI
           if (purchase.pendingCompletePurchase) {
             await _iap.completePurchase(purchase);
           }
@@ -175,6 +183,11 @@ class BillingService {
             await _iap.completePurchase(purchase);
           }
       }
+    }
+
+    // Signal restore completion after processing the batch
+    if (_restoreCompleter != null && !_restoreCompleter!.isCompleted) {
+      _restoreCompleter!.complete();
     }
   }
 
