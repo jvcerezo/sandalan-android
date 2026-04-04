@@ -56,6 +56,7 @@ class ParseResult {
   final String? queryPeriod; // for date-relative queries (yesterday, this_week, this_month)
   final List<double>? ambiguousAmounts; // for amount clarification
   final bool needsAmountConfirmation; // for amounts > 100k
+  final List<ParseResult>? batchResults; // multiple transactions from multi-line input
 
   const ParseResult({
     required this.intent,
@@ -72,6 +73,7 @@ class ParseResult {
     this.queryPeriod,
     this.ambiguousAmounts,
     this.needsAmountConfirmation = false,
+    this.batchResults,
   });
 
   ParseResult copyWith({
@@ -88,6 +90,7 @@ class ParseResult {
     String? queryCategory,
     List<double>? ambiguousAmounts,
     bool? needsAmountConfirmation,
+    List<ParseResult>? batchResults,
   }) {
     return ParseResult(
       intent: intent ?? this.intent,
@@ -103,6 +106,7 @@ class ParseResult {
       queryCategory: queryCategory ?? this.queryCategory,
       ambiguousAmounts: ambiguousAmounts ?? this.ambiguousAmounts,
       needsAmountConfirmation: needsAmountConfirmation ?? this.needsAmountConfirmation,
+      batchResults: batchResults ?? this.batchResults,
     );
   }
 }
@@ -161,6 +165,7 @@ class ChatUiState {
   final ParseResult? pendingResult;
   final String? pendingRawInput;
   final bool isProcessing;
+  final List<ParseResult> pendingBatch; // queued batch transactions
 
   const ChatUiState({
     this.messages = const [],
@@ -168,6 +173,7 @@ class ChatUiState {
     this.pendingResult,
     this.pendingRawInput,
     this.isProcessing = false,
+    this.pendingBatch = const [],
   });
 
   ChatUiState copyWith({
@@ -176,6 +182,7 @@ class ChatUiState {
     ParseResult? pendingResult,
     String? pendingRawInput,
     bool? isProcessing,
+    List<ParseResult>? pendingBatch,
     bool clearPending = false,
   }) {
     return ChatUiState(
@@ -184,6 +191,7 @@ class ChatUiState {
       pendingResult: clearPending ? null : (pendingResult ?? this.pendingResult),
       pendingRawInput: clearPending ? null : (pendingRawInput ?? this.pendingRawInput),
       isProcessing: isProcessing ?? this.isProcessing,
+      pendingBatch: pendingBatch ?? this.pendingBatch,
     );
   }
 }

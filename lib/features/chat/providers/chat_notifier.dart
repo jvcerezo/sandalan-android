@@ -144,6 +144,32 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
         if (groqResponse.action != null) {
           // AI wants to create a transaction — use the local engine to handle it
           final action = groqResponse.action!;
+
+          // Handle batch transactions from Groq
+          if (action.type == 'batch' && action.batchActions != null) {
+            final batchResults = action.batchActions!.map((a) {
+              final isIncome = a.type == 'add_income';
+              return ParseResult(
+                intent: isIncome ? ChatIntent.logIncome : ChatIntent.logExpense,
+                amount: a.amount ?? 0,
+                category: a.category ?? (isIncome ? 'Salary' : 'Other'),
+                description: a.description,
+                isIncome: isIncome,
+                categorySource: 'ai',
+              );
+            }).toList();
+
+            final total = batchResults.fold<double>(0, (s, r) => s + (r.amount?.abs() ?? 0));
+            final descriptions = batchResults.map((r) => '${r.description} ₱${_formatAmount(r.amount!)}').join('\n  • ');
+            final batchResult = ParseResult(
+              intent: ChatIntent.logExpense,
+              message: '${batchResults.length} transactions (₱${_formatAmount(total)} total):\n  • $descriptions',
+              batchResults: batchResults,
+            );
+            await _handleParseResult(batchResult, trimmed);
+            return;
+          }
+
           if (action.type == 'add_expense' || action.type == 'add_income') {
             final isIncome = action.type == 'add_income';
 
@@ -316,9 +342,12 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       conversationState: ChatConversationState.idle,
       clearPending: true,
     );
+
+    // Process next batch item if any
+    await _processNextBatchItem();
   }
 
-  void cancelTransaction() {
+  Future<void> cancelTransaction() async {
     if (_actionInProgress) return;
     _actionInProgress = true;
 
@@ -330,6 +359,22 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
       conversationState: ChatConversationState.idle,
       clearPending: true,
     );
+
+    // Process next batch item if any
+    await _processNextBatchItem();
+  }
+
+  /// Process the next item in the batch queue.
+  Future<void> _processNextBatchItem() async {
+    if (state.pendingBatch.isEmpty) return;
+
+    final batch = List<ParseResult>.from(state.pendingBatch);
+    final next = batch.removeAt(0);
+    state = state.copyWith(pendingBatch: batch);
+
+    // Small delay so user sees the confirmation before next card appears
+    await Future.delayed(const Duration(milliseconds: 300));
+    await _handleParseResult(next, '');
   }
 
   /// Replace the last confirmation-type message with a plain bot message.
@@ -580,6 +625,17 @@ class ChatNotifier extends StateNotifier<ChatUiState> {
   // ─── State Machine Handlers ────────────────────────────────────────────
 
   Future<void> _handleParseResult(ParseResult result, String rawInput) async {
+    // ─── Batch transactions ──────────────────────────────────────────
+    if (result.batchResults != null && result.batchResults!.length >= 2) {
+      _addBotMessage(result.message ?? '${result.batchResults!.length} transactions detected');
+      // Queue all batch items and start processing the first one
+      final batch = List<ParseResult>.from(result.batchResults!);
+      final first = batch.removeAt(0);
+      state = state.copyWith(pendingBatch: batch);
+      await _handleParseResult(first, rawInput);
+      return;
+    }
+
     switch (result.intent) {
       case ChatIntent.help:
       case ChatIntent.transfer:

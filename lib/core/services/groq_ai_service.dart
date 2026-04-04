@@ -105,10 +105,13 @@ CAPABILITIES:
    or
    {"action": "add_income", "amount": 25000, "category": "Salary", "description": "monthly salary"}
 
+   MULTIPLE TRANSACTIONS: If the user lists multiple items (one per line or comma-separated), return a JSON ARRAY:
+   [{"action": "add_expense", "amount": 250, "category": "Food", "description": "lunch"},{"action": "add_expense", "amount": 50, "category": "Transportation", "description": "transpo"},{"action": "add_expense", "amount": 500, "category": "Housing", "description": "bills"}]
+
    CRITICAL RULES FOR TRANSACTIONS:
    - Do NOT say "I've logged it" or "Added" — YOU don't log anything, the app does.
    - Do NOT include any text before or after the JSON when logging a transaction.
-   - ONLY output the raw JSON object, nothing else.
+   - ONLY output the raw JSON object or array, nothing else.
    - The app will ask the user to confirm and pick an account AFTER you respond.
 
 2. ANSWER FINANCIAL QUESTIONS: Use the user's actual financial data below.
@@ -144,10 +147,35 @@ IMPORTANT RULES:
     'kuripot_tita': 'You are the ultimate kuripot (frugal) tita. Always finding ways to save, questions every purchase. "Bakit ka bumili nyan?!", "Mag-tipid ka!", "Mas mura sa palengke!"',
   };
 
-  /// Parse a JSON action from the AI response if present.
+  /// Parse a JSON action (single or array) from the AI response if present.
   static _AiAction? _parseAction(String content) {
     try {
-      // Look for JSON block in the response
+      // Try JSON array first (multiple transactions)
+      final arrayMatch = RegExp(r'\[[\s\S]*?\]').firstMatch(content);
+      if (arrayMatch != null) {
+        final decoded = jsonDecode(arrayMatch.group(0)!);
+        if (decoded is List && decoded.length >= 2) {
+          final actions = <_AiAction>[];
+          for (final item in decoded) {
+            if (item is Map<String, dynamic> && item['action'] != null) {
+              actions.add(_AiAction(
+                type: item['action'] as String,
+                amount: (item['amount'] as num?)?.toDouble(),
+                category: item['category'] as String?,
+                description: item['description'] as String?,
+              ));
+            }
+          }
+          if (actions.length >= 2) {
+            return _AiAction(
+              type: 'batch',
+              batchActions: actions,
+            );
+          }
+        }
+      }
+
+      // Fall back to single JSON object
       final jsonMatch = RegExp(r'\{[^{}]*"action"[^{}]*\}').firstMatch(content);
       if (jsonMatch == null) return null;
 
@@ -157,10 +185,8 @@ IMPORTANT RULES:
 
       // Extract the message — strip the JSON block and any markdown fencing
       var message = content
-          .replaceAll(RegExp(r'```json\s*\{[^{}]*\}\s*```', dotAll: true), '')
-          .replaceAll(RegExp(r'```\s*\{[^{}]*\}\s*```', dotAll: true), '')
+          .replaceAll(RegExp(r'```json\s*[\s\S]*?```', dotAll: true), '')
           .replaceAll(jsonMatch.group(0)!, '')
-          .replaceAll(RegExp(r'```json\s*'), '')
           .replaceAll(RegExp(r'```\s*'), '')
           .trim();
 
@@ -190,17 +216,19 @@ class GroqResponse {
 }
 
 class _AiAction {
-  final String type; // add_expense, add_income, transfer
+  final String type; // add_expense, add_income, transfer, batch
   final double? amount;
   final String? category;
   final String? description;
   final String? message;
+  final List<_AiAction>? batchActions; // for multi-transaction responses
 
   const _AiAction({
     required this.type,
     this.amount,
     this.category,
     this.description,
+    this.batchActions,
     this.message,
   });
 }

@@ -105,6 +105,15 @@ class ChatEngine {
   Future<ParseResult> parse(String rawInput) async {
     await _ensurePersonalityLoaded();
 
+    // ─── 0. Multi-line batch detection ───────────────────────────────
+    // If user sends multiple lines like:
+    //   Lunch 250
+    //   Transpo 50
+    //   Bills 500
+    // Parse each line individually and return a batch result.
+    final batchResult = await _tryParseBatch(rawInput);
+    if (batchResult != null) return batchResult;
+
     // ─── 1. Sanitize ─────────────────────────────────────────────────
     final sanitized = _sanitize(rawInput);
     if (sanitized == null) {
@@ -325,6 +334,109 @@ class ChatEngine {
       isIncome: isIncome,
       categorySource: categoryResult?.source,
       needsAmountConfirmation: needsConfirmation,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MULTI-LINE BATCH PARSING
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Detect multi-line input where each line is a separate transaction.
+  /// Returns null if not a batch (single line or lines don't look like transactions).
+  /// Pattern: each line has a description + amount, e.g.:
+  ///   Lunch 250
+  ///   Transpo 50
+  ///   Bills 500
+  Future<ParseResult?> _tryParseBatch(String rawInput) async {
+    // Split by newlines
+    final lines = rawInput
+        .split(RegExp(r'[\n\r]+'))
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    // Need at least 2 lines to be a batch
+    if (lines.length < 2) return null;
+
+    // Quick check: each line must have at least one number (amount).
+    // If any line has no number, it's probably not a batch.
+    final amountPattern = RegExp(r'\d+(\.\d+)?');
+    final linesWithAmount = lines.where((l) => amountPattern.hasMatch(l)).length;
+    if (linesWithAmount < 2 || linesWithAmount < lines.length) return null;
+
+    // Parse each line individually (skip batch detection to avoid infinite recursion)
+    final results = <ParseResult>[];
+    for (final line in lines) {
+      final result = await _parseSingleLine(line);
+      // Only include lines that resolved to an expense or income
+      if (result.intent == ChatIntent.logExpense || result.intent == ChatIntent.logIncome) {
+        results.add(result);
+      }
+    }
+
+    // Need at least 2 valid transactions to count as a batch
+    if (results.length < 2) return null;
+
+    final total = results.fold<double>(0, (sum, r) => sum + (r.amount?.abs() ?? 0));
+    final descriptions = results.map((r) => '${r.description} ₱${_formatAmount(r.amount!)}').join('\n  • ');
+
+    return ParseResult(
+      intent: ChatIntent.logExpense,
+      message: '${results.length} transactions (₱${_formatAmount(total)} total):\n  • $descriptions',
+      batchResults: results,
+    );
+  }
+
+  /// Parse a single line as a transaction (used by batch parser).
+  /// This is the same as parse() but skips batch detection and non-transaction checks.
+  Future<ParseResult> _parseSingleLine(String rawLine) async {
+    final sanitized = _sanitize(rawLine);
+    if (sanitized == null) {
+      return const ParseResult(intent: ChatIntent.unknown);
+    }
+
+    final lower = sanitized.toLowerCase();
+
+    // Extract amount
+    final amountExtraction = _extractAmount(lower);
+    if (amountExtraction.amounts.isEmpty || amountExtraction.amounts.length > 1) {
+      return const ParseResult(intent: ChatIntent.unknown);
+    }
+
+    final amount = amountExtraction.amounts.first;
+    if (amount < 1) return const ParseResult(intent: ChatIntent.unknown);
+
+    // Extract account
+    final accounts = await _getAccounts();
+    final accountMatch = _extractAccount(lower, accounts);
+
+    // Build description
+    final description = _cleanDescription(
+      sanitized,
+      amountExtraction.matchedTokens,
+      accountMatch?.matchedToken,
+    );
+
+    if (description.isEmpty) return const ParseResult(intent: ChatIntent.unknown);
+
+    // Check income vs expense
+    final incomeCheck = _checkIncome(lower, description.toLowerCase());
+    final isIncome = incomeCheck == _IncomeResult.income;
+
+    // Resolve category
+    final categoryResult = await _resolveCategory(description.toLowerCase(), lower);
+
+    final intent = isIncome ? ChatIntent.logIncome : ChatIntent.logExpense;
+
+    return ParseResult(
+      intent: intent,
+      amount: _roundAmount(amount),
+      category: categoryResult?.category,
+      description: description,
+      accountId: accountMatch?.accountId,
+      accountName: accountMatch?.accountName,
+      isIncome: isIncome,
+      categorySource: categoryResult?.source,
     );
   }
 
