@@ -74,11 +74,10 @@ class BillingService {
     // Load available products.
     await _loadProducts();
 
-    // NOTE: Do NOT auto-restore purchases here. The Google Play purchase
-    // is tied to the device's Google account, not the Sandalan user account.
-    // Auto-restoring would grant premium to ANY Sandalan account on a device
-    // where a different account previously purchased. Restore only when the
-    // user explicitly taps "Restore Purchase" in the paywall.
+    // Auto-restore: check for existing subscriptions on this Google account.
+    // Safe because Sandalan uses Google Sign-In — the Play subscription owner
+    // IS the logged-in user. Without this, users lose premium on reinstall.
+    await restorePurchases();
   }
 
   /// Load product details from the store.
@@ -128,10 +127,14 @@ class BillingService {
   }
 
   /// Restore previous purchases (e.g. after reinstall).
+  /// Sets _userInitiatedPurchase so the stream handler processes them.
   Future<void> restorePurchases() async {
     if (!_available) return;
     _userInitiatedPurchase = true;
     await _iap.restorePurchases();
+    // Give the purchase stream a moment to deliver restored events
+    await Future.delayed(const Duration(seconds: 2));
+    _userInitiatedPurchase = false;
   }
 
   // ─── Purchase Stream Handler ─────────────────────────────────────────────
